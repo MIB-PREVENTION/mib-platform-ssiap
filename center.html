@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>MIB Prévention — Plateforme Formation Incendie</title>
-<meta name="theme-color" content="#f0f4ff">
+<title>MIB — Tableau de bord Centre</title>
+<meta name="theme-color" content="#eef2ff">
 <link rel="manifest" href="manifest.json">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -13,505 +13,958 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Syne:wght@700;800;900&display=swap');
 
 :root{
-  --bg:       #eef2ff;
-  --bg2:      #f8faff;
-  --card:     #ffffff;
-  --text:     #111827;
-  --text2:    #6b7280;
-  --text3:    #9ca3af;
-  --border:   rgba(0,0,0,.07);
-  --red:      #e63946;
-  --blue:     #2563eb;
-  --green:    #059669;
-  --orange:   #d97706;
-  --purple:   #7c3aed;
+  --bg:#eef2ff;--card:#ffffff;--text:#111827;--text2:#6b7280;--text3:#9ca3af;
+  --border:rgba(0,0,0,.07);--blue:#2563eb;--red:#e63946;--green:#059669;--orange:#d97706;--purple:#7c3aed;
 }
-
 *{box-sizing:border-box;margin:0;padding:0;}
-html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;}
+html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);}
 
-/* ── FOND ── */
-.bg{position:fixed;inset:0;z-index:0;overflow:hidden;}
-.bg-gradient{
-  position:absolute;inset:0;
-  background:
-    radial-gradient(ellipse 70% 50% at 10% 10%,  rgba(230,57,70,.12)  0%,transparent 65%),
-    radial-gradient(ellipse 60% 45% at 90% 90%,  rgba(37,99,235,.12)  0%,transparent 65%),
-    radial-gradient(ellipse 50% 40% at 55% 50%,  rgba(124,58,237,.07) 0%,transparent 70%),
-    linear-gradient(160deg,#eef2ff 0%,#f5f7ff 50%,#edf0fb 100%);
-}
-/* Grille perspective douce */
-.bg-grid{
-  position:absolute;inset:0;
-  background-image:
-    linear-gradient(rgba(100,116,139,.06) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(100,116,139,.06) 1px,transparent 1px);
-  background-size:48px 48px;
-  transform:perspective(600px) rotateX(18deg) scale(1.4);
-  transform-origin:50% 0%;
-}
-/* Orbes colorés */
-.orb{position:absolute;border-radius:50%;filter:blur(70px);animation:drift 14s ease-in-out infinite;pointer-events:none;}
-.orb1{width:500px;height:500px;top:-120px;right:-80px; background:rgba(230,57,70,.18); animation-delay:0s;}
-.orb2{width:600px;height:600px;bottom:-150px;left:-100px;background:rgba(37,99,235,.16); animation-delay:-6s;}
-.orb3{width:350px;height:350px;top:50%;left:55%;         background:rgba(124,58,237,.1);  animation-delay:-11s;}
-@keyframes drift{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(-25px,18px) scale(1.04)}66%{transform:translate(18px,-22px) scale(.96)}}
+.bg-wrap{position:fixed;inset:0;z-index:0;
+  background:radial-gradient(ellipse 70% 50% at 10% 0%,rgba(37,99,235,.08) 0%,transparent 60%),
+  radial-gradient(ellipse 50% 40% at 90% 100%,rgba(124,58,237,.08) 0%,transparent 60%),
+  linear-gradient(160deg,#eef2ff 0%,#f5f7ff 50%,#edf0fb 100%);}
 
-/* ── CARD PRINCIPALE ── */
-.scene{perspective:1400px;perspective-origin:50% 40%;}
-.main-card{
-  position:relative;
-  background:linear-gradient(145deg,#ffffff 0%,#f8faff 100%);
-  border-radius:28px;
-  border:1px solid rgba(255,255,255,.9);
-  backdrop-filter:blur(20px);
-  -webkit-backdrop-filter:blur(20px);
-  /* Ombres multiples = profondeur réelle */
-  box-shadow:
-    0 2px 0 rgba(255,255,255,.8) inset,          /* reflet top */
-    0 -1px 0 rgba(0,0,0,.04) inset,              /* ombre bottom interne */
-    1px 0 0 rgba(255,255,255,.7) inset,           /* reflet gauche */
-    20px 20px 60px rgba(100,116,139,.18),         /* ombre portée douce */
-    0 8px 25px rgba(100,116,139,.12),
-    0 2px 8px rgba(100,116,139,.1);
-  transform-style:preserve-3d;
-  transition:transform .12s ease, box-shadow .12s ease;
-}
-/* Trait de lumière haut */
-.main-card::before{
-  content:'';position:absolute;top:0;left:8%;right:8%;height:1px;
-  background:linear-gradient(90deg,transparent,rgba(255,255,255,1),transparent);
-  border-radius:0 0 50% 50%;
-}
+/* SIDEBAR */
+.sidebar{width:230px;min-height:100vh;background:linear-gradient(180deg,#fff 0%,#f8faff 100%);
+  border-right:1px solid rgba(0,0,0,.06);padding:20px 14px;flex-shrink:0;
+  box-shadow:4px 0 20px rgba(100,116,139,.07);}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;cursor:pointer;
+  font-size:.84rem;font-weight:600;color:var(--text2);transition:all .2s;margin-bottom:3px;}
+.nav-item:hover{background:linear-gradient(145deg,#f8faff,#eef1f8);color:var(--text);}
+.nav-item.on{background:linear-gradient(135deg,#eff6ff,#dbeafe);color:#1d4ed8;
+  box-shadow:3px 3px 10px rgba(37,99,235,.1);}
+.nav-icon{font-size:1rem;width:20px;text-align:center;}
+.nav-sep{height:1px;background:rgba(0,0,0,.05);margin:10px 0;}
 
-/* ── BOUTONS RÔLE ── */
-.role-btn{
-  position:relative;cursor:pointer;border-radius:18px;padding:22px 10px 18px;
-  text-align:center;
-  background:linear-gradient(145deg,#f8faff 0%,#eef1f8 100%);
-  border:1.5px solid rgba(0,0,0,.07);
-  transition:all .3s cubic-bezier(.34,1.56,.64,1);
-  transform-style:preserve-3d;
-  /* Relief neumorphique */
-  box-shadow:
-    4px 4px 12px rgba(100,116,139,.2),
-    -3px -3px 8px rgba(255,255,255,.95),
-    inset 0 1px 0 rgba(255,255,255,.8),
-    inset 0 -1px 0 rgba(0,0,0,.04);
-}
-.role-btn:hover{
-  transform:translateY(-6px) rotateX(8deg) scale(1.04);
-  box-shadow:
-    8px 18px 35px rgba(100,116,139,.25),
-    -3px -3px 8px rgba(255,255,255,.95),
-    inset 0 1px 0 rgba(255,255,255,.9),
-    inset 0 -1px 0 rgba(0,0,0,.04);
-}
-.role-btn:active{
-  transform:translateY(2px) scale(.98);
-  box-shadow:
-    2px 4px 10px rgba(100,116,139,.15),
-    inset 3px 3px 8px rgba(0,0,0,.08),
-    inset -1px -1px 4px rgba(255,255,255,.6);
-}
-/* Actif — couleurs distinctives */
-.role-btn.act-c{
-  background:linear-gradient(145deg,#eff6ff,#dbeafe);
-  border-color:rgba(37,99,235,.35);
-  box-shadow:0 0 0 3px rgba(37,99,235,.12),8px 15px 35px rgba(37,99,235,.2),
-    inset 0 1px 0 rgba(255,255,255,.9),inset 0 -1px 0 rgba(37,99,235,.1);
-}
-.role-btn.act-f{
-  background:linear-gradient(145deg,#fff1f2,#ffe4e6);
-  border-color:rgba(230,57,70,.35);
-  box-shadow:0 0 0 3px rgba(230,57,70,.12),8px 15px 35px rgba(230,57,70,.2),
-    inset 0 1px 0 rgba(255,255,255,.9),inset 0 -1px 0 rgba(230,57,70,.1);
-}
-.role-btn.act-s{
-  background:linear-gradient(145deg,#ecfdf5,#d1fae5);
-  border-color:rgba(5,150,105,.35);
-  box-shadow:0 0 0 3px rgba(5,150,105,.12),8px 15px 35px rgba(5,150,105,.2),
-    inset 0 1px 0 rgba(255,255,255,.9),inset 0 -1px 0 rgba(5,150,105,.1);
-}
+/* TOPBAR */
+.topbar{background:#fff;border-bottom:1px solid rgba(0,0,0,.06);padding:14px 24px;
+  display:flex;align-items:center;justify-content:space-between;
+  box-shadow:0 2px 10px rgba(100,116,139,.06);}
 
-.role-icon{font-size:2.5rem;display:block;margin-bottom:10px;filter:drop-shadow(0 3px 8px rgba(0,0,0,.15));transition:transform .3s;}
-.role-btn:hover .role-icon{transform:translateZ(16px) scale(1.15);}
-.role-lbl{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text2);transition:color .2s;}
-.role-btn.act-c .role-lbl{color:#1d4ed8;}
-.role-btn.act-f .role-lbl{color:#b91c1c;}
-.role-btn.act-s .role-lbl{color:#065f46;}
+/* CARD */
+.card{background:#fff;border-radius:18px;border:1px solid rgba(255,255,255,.9);
+  box-shadow:5px 5px 18px rgba(100,116,139,.11),-3px -3px 10px rgba(255,255,255,.9),inset 0 1px 0 rgba(255,255,255,.8);}
 
-/* ── PANELS ── */
-.panel{display:none;}
-.panel.show{display:block;animation:up .4s cubic-bezier(.34,1.56,.64,1);}
-@keyframes up{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+/* KPI */
+.kpi{background:linear-gradient(145deg,#f8faff,#eef1f8);border-radius:16px;padding:20px;
+  border:1.5px solid rgba(255,255,255,.9);
+  box-shadow:4px 4px 12px rgba(100,116,139,.13),-3px -3px 8px rgba(255,255,255,.95),inset 0 1px 0 rgba(255,255,255,.8);
+  transition:transform .2s;cursor:default;}
+.kpi:hover{transform:translateY(-3px);}
+.kpi-val{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;line-height:1;}
+.kpi-lbl{font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-top:5px;}
+.kpi-icon{font-size:1.6rem;margin-bottom:8px;}
 
-/* ── INPUT CREUSÉ (sur fond clair) ── */
-.inp{
-  width:100%;padding:13px 17px;border-radius:13px;
+/* INPUTS */
+.inp{width:100%;padding:11px 15px;border-radius:12px;
   background:linear-gradient(145deg,#e8edf5,#f3f6fc);
-  border:1.5px solid rgba(0,0,0,.08);
-  color:var(--text);font-family:'Inter',sans-serif;font-size:.95rem;
-  outline:none;transition:all .25s;
-  /* Effet creusé neumorphique */
-  box-shadow:
-    inset 3px 3px 8px rgba(100,116,139,.2),
-    inset -2px -2px 5px rgba(255,255,255,.9);
-}
-.inp:focus{
-  border-color:rgba(37,99,235,.4);
-  background:linear-gradient(145deg,#e4eaf3,#f0f4fc);
-  box-shadow:
-    inset 3px 3px 10px rgba(100,116,139,.22),
-    inset -2px -2px 5px rgba(255,255,255,.9),
-    0 0 0 4px rgba(37,99,235,.08);
-}
+  border:1.5px solid rgba(0,0,0,.07);color:var(--text);font-family:'Inter',sans-serif;font-size:.88rem;
+  outline:none;transition:all .2s;
+  box-shadow:inset 3px 3px 7px rgba(100,116,139,.16),inset -2px -2px 5px rgba(255,255,255,.9);}
+.inp:focus{border-color:rgba(37,99,235,.35);box-shadow:inset 3px 3px 7px rgba(100,116,139,.18),inset -2px -2px 5px rgba(255,255,255,.9),0 0 0 3px rgba(37,99,235,.08);}
 .inp::placeholder{color:var(--text3);}
 .inp option{background:#fff;color:var(--text);}
-.lbl{font-size:.7rem;font-weight:700;color:var(--text2);letter-spacing:.07em;text-transform:uppercase;display:block;margin-bottom:7px;}
+.lbl{font-size:.68rem;font-weight:700;color:var(--text2);letter-spacing:.07em;text-transform:uppercase;display:block;margin-bottom:6px;}
 
-/* ── BOUTONS PRINCIPAUX ── */
-.btn-main{
-  width:100%;padding:15px 20px;border-radius:14px;border:none;
-  font-weight:800;font-size:.95rem;color:#fff;cursor:pointer;
-  letter-spacing:.03em;position:relative;overflow:hidden;
-  transition:all .25s cubic-bezier(.34,1.56,.64,1);
-}
-/* Reflet interne */
-.btn-main::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:50%;
-  background:linear-gradient(180deg,rgba(255,255,255,.22),transparent);
-  border-radius:14px 14px 0 0;pointer-events:none;
-}
-/* Brillance au survol */
-.btn-main::after{
-  content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;
-  background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);
-  transition:left .5s;pointer-events:none;
-}
-.btn-main:hover::after{left:100%;}
-.btn-main:hover{transform:translateY(-3px) scale(1.015);}
-.btn-main:active{transform:translateY(1px) scale(.99);}
-.btn-main:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+/* BOUTONS */
+.btn{padding:10px 18px;border-radius:11px;border:none;font-weight:700;font-size:.82rem;cursor:pointer;
+  transition:all .2s;letter-spacing:.02em;position:relative;overflow:hidden;}
+.btn::before{content:'';position:absolute;top:0;left:0;right:0;height:45%;background:linear-gradient(180deg,rgba(255,255,255,.18),transparent);border-radius:11px 11px 0 0;pointer-events:none;}
+.btn:hover{transform:translateY(-2px);}
+.btn:active{transform:translateY(1px);}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none;}
+.btn-blue{background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;box-shadow:0 4px 14px rgba(37,99,235,.35),inset 0 1px 0 rgba(255,255,255,.2);}
+.btn-green{background:linear-gradient(135deg,#10b981,#065f46);color:#fff;box-shadow:0 4px 14px rgba(16,185,129,.35),inset 0 1px 0 rgba(255,255,255,.2);}
+.btn-red{background:linear-gradient(135deg,#ef4444,#b91c1c);color:#fff;box-shadow:0 4px 14px rgba(239,68,68,.35),inset 0 1px 0 rgba(255,255,255,.2);}
+.btn-orange{background:linear-gradient(135deg,#f59e0b,#b45309);color:#fff;box-shadow:0 4px 14px rgba(245,158,11,.35),inset 0 1px 0 rgba(255,255,255,.2);}
+.btn-gray{background:linear-gradient(135deg,#9ca3af,#6b7280);color:#fff;box-shadow:0 4px 10px rgba(107,114,128,.25),inset 0 1px 0 rgba(255,255,255,.2);}
+.btn-sm{padding:7px 13px;font-size:.75rem;border-radius:9px;}
+.btn-xs{padding:5px 10px;font-size:.7rem;border-radius:8px;}
 
-.btn-c{background:linear-gradient(135deg,#3b82f6,#1d4ed8);box-shadow:0 6px 22px rgba(37,99,235,.45),0 3px 8px rgba(0,0,0,.15),inset 0 1px 0 rgba(255,255,255,.25);}
-.btn-f{background:linear-gradient(135deg,#ef4444,#b91c1c);box-shadow:0 6px 22px rgba(239,68,68,.45),0 3px 8px rgba(0,0,0,.15),inset 0 1px 0 rgba(255,255,255,.25);}
-.btn-s{background:linear-gradient(135deg,#10b981,#065f46);box-shadow:0 6px 22px rgba(16,185,129,.45),0 3px 8px rgba(0,0,0,.15),inset 0 1px 0 rgba(255,255,255,.25);}
+/* TABLE */
+.tbl{width:100%;border-collapse:separate;border-spacing:0;}
+.tbl th{background:linear-gradient(145deg,#f8faff,#eef1f8);padding:10px 14px;font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);text-align:left;}
+.tbl th:first-child{border-radius:10px 0 0 0;}.tbl th:last-child{border-radius:0 10px 0 0;}
+.tbl td{padding:11px 14px;font-size:.84rem;border-bottom:1px solid rgba(0,0,0,.04);background:#fff;vertical-align:middle;}
+.tbl tr:hover td{background:#fafbff;}
+.tbl tr:last-child td:first-child{border-radius:0 0 0 10px;}.tbl tr:last-child td:last-child{border-radius:0 0 10px 0;}
+.tbl tr:last-child td{border-bottom:none;}
 
-/* ── BADGE RÔLE ── */
-.badge-r{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:999px;font-size:.7rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;margin-bottom:18px;
-  box-shadow:0 2px 8px rgba(0,0,0,.08),inset 0 1px 0 rgba(255,255,255,.7);}
-.badge-c{background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1.5px solid rgba(37,99,235,.2);color:#1d4ed8;}
-.badge-f{background:linear-gradient(135deg,#fff1f2,#ffe4e6);border:1.5px solid rgba(239,68,68,.2);color:#b91c1c;}
-.badge-s{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border:1.5px solid rgba(16,185,129,.2);color:#065f46;}
+/* BADGE */
+.badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:.68rem;font-weight:700;letter-spacing:.05em;}
+.b-green{background:#f0fdf4;color:#065f46;border:1px solid #bbf7d0;}
+.b-blue{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;}
+.b-orange{background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;}
+.b-red{background:#fff1f2;color:#b91c1c;border:1px solid #fecdd3;}
+.b-gray{background:#f9fafb;color:#6b7280;border:1px solid #e5e7eb;}
 
-/* ── SÉPARATEUR ── */
-.sep{height:1px;background:linear-gradient(90deg,transparent,rgba(0,0,0,.08),transparent);margin:20px 0;}
+/* MODULE CARD */
+.mod-card{border-radius:14px;padding:16px;border:2px solid;transition:all .2s;cursor:default;}
+.mod-on{background:linear-gradient(145deg,#eff6ff,#dbeafe);border-color:rgba(37,99,235,.3);}
+.mod-off{background:linear-gradient(145deg,#f9fafb,#f3f4f6);border-color:rgba(0,0,0,.07);opacity:.6;}
+.mod-icon{font-size:1.8rem;margin-bottom:8px;}
+.mod-title{font-size:.85rem;font-weight:700;color:var(--text);}
+.mod-desc{font-size:.72rem;color:var(--text2);margin-top:3px;}
+.mod-status{font-size:.68rem;font-weight:700;margin-top:6px;}
+.mod-on .mod-status{color:#1d4ed8;}
+.mod-off .mod-status{color:var(--text3);}
 
-/* ── ERREUR ── */
-.err-box{background:linear-gradient(135deg,#fff1f2,#ffe4e6);border:1.5px solid rgba(239,68,68,.25);border-radius:12px;padding:11px 15px;font-size:.82rem;color:#b91c1c;box-shadow:inset 0 1px 0 rgba(255,255,255,.8);}
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.25);backdrop-filter:blur(6px);z-index:50;
+  display:flex;align-items:center;justify-content:center;padding:16px;}
+.modal-box{background:#fff;border-radius:20px;padding:26px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto;
+  box-shadow:0 30px 70px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.8);}
 
-/* ── PILLS MODULES ── */
-.pill{
-  display:inline-flex;align-items:center;gap:5px;padding:6px 14px;
-  border-radius:999px;font-size:.7rem;font-weight:600;cursor:default;
-  background:rgba(255,255,255,.85);
-  border:1.5px solid rgba(0,0,0,.07);
-  color:var(--text2);
-  box-shadow:3px 3px 8px rgba(100,116,139,.15),-2px -2px 5px rgba(255,255,255,.9);
-  transition:all .2s;
-}
-.pill:hover{transform:translateY(-2px);color:var(--text);box-shadow:4px 6px 14px rgba(100,116,139,.2),-2px -2px 5px rgba(255,255,255,.9);}
+/* PLAN BANNER */
+.plan-banner{border-radius:16px;padding:18px 22px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.pb-starter{background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1.5px solid #bfdbfe;}
+.pb-pro{background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1.5px solid #bbf7d0;}
+.pb-expert{background:linear-gradient(135deg,#fdf4ff,#f3e8ff);border:1.5px solid #e9d5ff;}
+.pb-demo{background:linear-gradient(135deg,#f9fafb,#f3f4f6);border:1.5px solid #e5e7eb;}
 
-/* ── LOGO ── */
-.logo-t{font-family:'Syne',sans-serif;font-weight:900;letter-spacing:-.02em;color:var(--text);}
-.logo-icon{
-  width:64px;height:64px;border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:1.9rem;
-  background:linear-gradient(145deg,#ef4444,#b91c1c);
-  box-shadow:5px 5px 20px rgba(239,68,68,.45),-3px -3px 10px rgba(255,255,255,.6),inset 0 1px 0 rgba(255,180,180,.4);
-}
+/* CSV ZONE */
+.csv-zone{border:2px dashed rgba(37,99,235,.3);border-radius:14px;padding:28px;text-align:center;
+  background:linear-gradient(145deg,#eff6ff,#f0f4ff);cursor:pointer;transition:all .2s;}
+.csv-zone:hover{border-color:rgba(37,99,235,.5);background:linear-gradient(145deg,#dbeafe,#eff6ff);}
 
-/* ── MODE STAGIAIRE ── */
-.mode-btn{
-  padding:11px;border-radius:12px;font-size:.78rem;font-weight:600;cursor:pointer;
-  background:linear-gradient(145deg,#e8edf5,#f3f6fc);
-  border:1.5px solid rgba(0,0,0,.07);color:var(--text2);
-  transition:all .2s;width:100%;
-  box-shadow:inset 2px 2px 6px rgba(100,116,139,.18),inset -1px -1px 4px rgba(255,255,255,.9);
-}
-.mode-btn.on{
-  background:linear-gradient(135deg,#ecfdf5,#d1fae5);
-  border-color:rgba(16,185,129,.35);color:#065f46;font-weight:700;
-  box-shadow:0 4px 14px rgba(16,185,129,.18),inset 2px 2px 6px rgba(16,185,129,.08);
-}
+/* ALERT */
+.alert-ok{background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:10px;padding:10px 14px;font-size:.82rem;color:#065f46;}
+.alert-err{background:#fff1f2;border:1.5px solid #fecdd3;border-radius:10px;padding:10px 14px;font-size:.82rem;color:#b91c1c;}
 
-/* ── HINT SECTION ── */
-.hint{font-size:.68rem;color:var(--text3);text-transform:uppercase;letter-spacing:.12em;text-align:center;margin-bottom:14px;}
+/* PIN DISPLAY */
+.pin-display{background:linear-gradient(145deg,#e8edf5,#f3f6fc);border-radius:12px;padding:12px;
+  font-family:monospace;font-size:1.6rem;font-weight:800;letter-spacing:.4em;text-align:center;
+  color:var(--blue);box-shadow:inset 3px 3px 8px rgba(100,116,139,.18),inset -2px -2px 5px rgba(255,255,255,.9);}
 
-/* ── SPINNER ── */
-.spin{width:18px;height:18px;border:2.5px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:sp .6s linear infinite;display:inline-block;vertical-align:middle;}
+.sep{height:1px;background:linear-gradient(90deg,transparent,rgba(0,0,0,.07),transparent);margin:16px 0;}
+.logo-t{font-family:'Syne',sans-serif;font-weight:800;}
+.spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .6s linear infinite;display:inline-block;vertical-align:middle;}
 @keyframes sp{to{transform:rotate(360deg)}}
+.hidden{display:none!important;}
+
+/* PROGRESS */
+.prog-bar{height:8px;border-radius:999px;background:#e5e7eb;overflow:hidden;margin-top:6px;}
+.prog-fill{height:100%;border-radius:999px;transition:width .4s;background:linear-gradient(90deg,#3b82f6,#1d4ed8);}
 </style>
 </head>
 <body>
+<div class="bg-wrap"></div>
 
-<!-- FOND -->
-<div class="bg">
-  <div class="bg-gradient"></div>
-  <div class="bg-grid"></div>
-  <div class="orb orb1"></div>
-  <div class="orb orb2"></div>
-  <div class="orb orb3"></div>
+<div class="relative z-10 flex min-h-screen">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="flex items-center gap-3 mb-7">
+      <div style="width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);display:flex;align-items:center;justify-content:center;font-size:1.1rem;box-shadow:2px 2px 8px rgba(37,99,235,.35);">🏢</div>
+      <div>
+        <div class="logo-t" style="font-size:.95rem;color:var(--text);" id="sb-centre-nom">Mon Centre</div>
+        <div style="font-size:.65rem;color:var(--text3);" id="sb-plan-lbl">Plan —</div>
+      </div>
+    </div>
+
+    <nav>
+      <div class="nav-item on" onclick="showTab('dashboard')" id="nav-dashboard"><span class="nav-icon">📊</span>Tableau de bord</div>
+      <div class="nav-item" onclick="showTab('formateurs')" id="nav-formateurs"><span class="nav-icon">👨‍🏫</span>Formateurs</div>
+      <div class="nav-item" onclick="showTab('stagiaires')" id="nav-stagiaires"><span class="nav-icon">👨‍🎓</span>Stagiaires</div>
+      <div class="nav-item" onclick="showTab('sessions')" id="nav-sessions"><span class="nav-icon">📡</span>Sessions</div>
+      <div class="sep"></div>
+      <div class="nav-item" onclick="showTab('modules')" id="nav-modules"><span class="nav-icon">🧩</span>Mes modules</div>
+      <div class="nav-item" onclick="showTab('qualiopi')" id="nav-qualiopi"><span class="nav-icon">📋</span>Qualiopi</div>
+      <div class="nav-item" onclick="showTab('compte')" id="nav-compte"><span class="nav-icon">⚙️</span>Mon compte</div>
+    </nav>
+
+    <div style="margin-top:auto;padding-top:30px;">
+      <div class="sep"></div>
+      <button onclick="logout()" class="btn btn-gray btn-sm" style="width:100%;">🚪 Déconnexion</button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="flex-1 flex flex-col" style="max-height:100vh;overflow:hidden;">
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div>
+        <h1 class="logo-t" style="font-size:1.1rem;" id="top-title">Tableau de bord</h1>
+        <p style="font-size:.72rem;color:var(--text3);" id="top-sub">Vue générale de votre centre</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <div style="font-size:.8rem;color:var(--text2);">Expire : <strong id="top-expire">—</strong></div>
+        <button onclick="loadAll()" class="btn btn-blue btn-sm">🔄</button>
+      </div>
+    </div>
+
+    <!-- CONTENU -->
+    <div class="flex-1 p-6 overflow-y-auto">
+
+      <!-- ── DASHBOARD ── -->
+      <div id="tab-dashboard">
+        <!-- KPIs -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div class="kpi">
+            <div class="kpi-icon">👨‍🏫</div>
+            <div class="kpi-val text-blue-600" id="kpi-f">—</div>
+            <div class="kpi-lbl">Formateurs</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-icon">👨‍🎓</div>
+            <div class="kpi-val text-green-600" id="kpi-s">—</div>
+            <div class="kpi-lbl">Stagiaires</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-icon">📡</div>
+            <div class="kpi-val text-purple-600" id="kpi-ses">—</div>
+            <div class="kpi-lbl">Sessions ce mois</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-icon">🏆</div>
+            <div class="kpi-val text-orange-600" id="kpi-cup">—</div>
+            <div class="kpi-lbl">Challenge Cup</div>
+          </div>
+        </div>
+
+        <!-- PLAN + LIMITES -->
+        <div class="plan-banner pb-starter mb-6" id="plan-banner">
+          <div>
+            <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:4px;">Votre plan</div>
+            <div class="logo-t" style="font-size:1.3rem;" id="dash-plan">—</div>
+            <div style="font-size:.78rem;color:var(--text2);margin-top:2px;" id="dash-expire-info">—</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:.72rem;color:var(--text2);margin-bottom:8px;">Utilisation</div>
+            <div style="font-size:.82rem;font-weight:600;" id="dash-usage-f">— formateurs</div>
+            <div class="prog-bar" style="min-width:160px;"><div class="prog-fill" id="prog-f" style="width:0%;"></div></div>
+            <div style="font-size:.82rem;font-weight:600;margin-top:8px;" id="dash-usage-s">— stagiaires</div>
+            <div class="prog-bar"><div class="prog-fill" id="prog-s" style="width:0%;background:linear-gradient(90deg,#10b981,#065f46);"></div></div>
+          </div>
+        </div>
+
+        <!-- DERNIÈRES ACTIVITÉS -->
+        <div class="card p-5">
+          <div class="flex justify-between items-center mb-4">
+            <h2 style="font-size:.95rem;font-weight:700;">Dernières sessions</h2>
+            <button onclick="showTab('sessions')" class="btn btn-blue btn-sm">Voir toutes →</button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="tbl" id="tbl-recent-sessions">
+              <thead><tr><th>Type</th><th>Formateur</th><th>Niveau</th><th>Date</th><th>Statut</th></tr></thead>
+              <tbody id="body-recent-sessions"><tr><td colspan="5" style="text-align:center;color:var(--text3);padding:20px;">Chargement...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── FORMATEURS ── -->
+      <div id="tab-formateurs" class="hidden">
+        <div class="flex justify-between items-center mb-5">
+          <div>
+            <h2 style="font-size:1rem;font-weight:700;">Équipe de formateurs</h2>
+            <p style="font-size:.78rem;color:var(--text2);margin-top:2px;">Gérez les accès PIN de vos formateurs</p>
+          </div>
+          <button onclick="openModal('modal-add-formateur')" class="btn btn-green">+ Ajouter</button>
+        </div>
+        <div class="card p-5">
+          <div class="overflow-x-auto">
+            <table class="tbl" id="tbl-formateurs">
+              <thead><tr><th>Nom</th><th>Email</th><th>Rôle</th><th>PIN</th><th>Statut</th><th>Actions</th></tr></thead>
+              <tbody id="body-formateurs"><tr><td colspan="6" style="text-align:center;color:var(--text3);padding:20px;">Chargement...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── STAGIAIRES ── -->
+      <div id="tab-stagiaires" class="hidden">
+        <div class="flex flex-wrap justify-between items-center gap-3 mb-5">
+          <div>
+            <h2 style="font-size:1rem;font-weight:700;">Liste des stagiaires</h2>
+            <p style="font-size:.78rem;color:var(--text2);margin-top:2px;" id="stag-count-lbl">—</p>
+          </div>
+          <div class="flex gap-2 flex-wrap">
+            <button onclick="openModal('modal-add-stagiaire')" class="btn btn-green btn-sm">+ Ajouter</button>
+            <button onclick="openModal('modal-csv')" class="btn btn-blue btn-sm">📥 Import CSV</button>
+            <button onclick="exportCSV()" class="btn btn-gray btn-sm">📤 Export CSV</button>
+          </div>
+        </div>
+        <!-- Filtres -->
+        <div class="card p-4 mb-4">
+          <div class="flex flex-wrap gap-3">
+            <input type="text" id="search-stag" class="inp" style="max-width:220px;" placeholder="🔍 Rechercher..." oninput="filterStagiaires()">
+            <select id="filter-niveau" class="inp" style="max-width:140px;" onchange="filterStagiaires()">
+              <option value="">Tous niveaux</option>
+              <option value="SSIAP1">SSIAP 1</option>
+              <option value="SSIAP2">SSIAP 2</option>
+              <option value="SSIAP3">SSIAP 3</option>
+            </select>
+          </div>
+        </div>
+        <div class="card p-5">
+          <div class="overflow-x-auto">
+            <table class="tbl">
+              <thead><tr><th>Nom</th><th>Prénom</th><th>Email</th><th>Niveau</th><th>Inscrit le</th><th>Actions</th></tr></thead>
+              <tbody id="body-stagiaires"><tr><td colspan="6" style="text-align:center;color:var(--text3);padding:20px;">Chargement...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SESSIONS ── -->
+      <div id="tab-sessions" class="hidden">
+        <h2 style="font-size:1rem;font-weight:700;margin-bottom:20px;">Historique des sessions</h2>
+        <div class="card p-5">
+          <div class="overflow-x-auto">
+            <table class="tbl">
+              <thead><tr><th>Type</th><th>Formateur</th><th>Niveau</th><th>Participants</th><th>Date</th><th>Durée</th><th>Statut</th></tr></thead>
+              <tbody id="body-sessions"><tr><td colspan="7" style="text-align:center;color:var(--text3);padding:20px;">Chargement...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── MODULES ── -->
+      <div id="tab-modules" class="hidden">
+        <h2 style="font-size:1rem;font-weight:700;margin-bottom:6px;">Modules activés</h2>
+        <p style="font-size:.78rem;color:var(--text2);margin-bottom:20px;">Modules inclus dans votre plan actuel</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="grid-modules"></div>
+        <div style="margin-top:24px;padding:16px 20px;border-radius:14px;background:linear-gradient(145deg,#fff7ed,#ffedd5);border:1.5px solid #fed7aa;">
+          <p style="font-size:.82rem;color:#c2410c;font-weight:600;">💡 Vous souhaitez activer d'autres modules ?</p>
+          <p style="font-size:.78rem;color:#92400e;margin-top:4px;">Contactez MIB Prévention pour faire évoluer votre plan.</p>
+          <a href="mailto:contact@mib-prevention.fr" class="btn btn-orange btn-sm" style="display:inline-flex;margin-top:10px;text-decoration:none;">📧 Nous contacter</a>
+        </div>
+      </div>
+
+      <!-- ── QUALIOPI ── -->
+      <div id="tab-qualiopi" class="hidden">
+        <h2 style="font-size:1rem;font-weight:700;margin-bottom:6px;">Documents Qualiopi</h2>
+        <p style="font-size:.78rem;color:var(--text2);margin-bottom:20px;">Émargements numériques et bilans pédagogiques</p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div class="kpi">
+            <div class="kpi-icon">📝</div>
+            <div class="kpi-val text-blue-600" id="q-emargt">—</div>
+            <div class="kpi-lbl">Émargements</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-icon">✅</div>
+            <div class="kpi-val text-green-600" id="q-signes">—</div>
+            <div class="kpi-lbl">Signés</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-icon">📄</div>
+            <div class="kpi-val text-purple-600" id="q-pdf">—</div>
+            <div class="kpi-lbl">PDFs générés</div>
+          </div>
+        </div>
+        <div class="card p-5">
+          <div class="flex justify-between items-center mb-4">
+            <h3 style="font-size:.9rem;font-weight:700;">Feuilles d'émargement</h3>
+            <button onclick="loadQualiopi()" class="btn btn-blue btn-sm">🔄 Actualiser</button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="tbl">
+              <thead><tr><th>Formation</th><th>Date</th><th>Formateur</th><th>Participants</th><th>Signés</th><th>PDF</th></tr></thead>
+              <tbody id="body-qualiopi"><tr><td colspan="6" style="text-align:center;color:var(--text3);padding:20px;">Chargement...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── COMPTE ── -->
+      <div id="tab-compte" class="hidden">
+        <h2 style="font-size:1rem;font-weight:700;margin-bottom:20px;">Mon compte</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div class="card p-5">
+            <h3 style="font-size:.9rem;font-weight:700;margin-bottom:14px;">🏢 Informations du centre</h3>
+            <div class="space-y-3" id="compte-infos">
+              <div class="space-y-1">
+                <span class="lbl">Nom du centre</span>
+                <div style="font-size:.9rem;font-weight:600;" id="info-nom">—</div>
+              </div>
+              <div class="space-y-1">
+                <span class="lbl">Email</span>
+                <div style="font-size:.9rem;" id="info-email">—</div>
+              </div>
+              <div class="space-y-1">
+                <span class="lbl">Plan</span>
+                <div id="info-plan">—</div>
+              </div>
+              <div class="space-y-1">
+                <span class="lbl">Expiration licence</span>
+                <div style="font-size:.9rem;font-weight:600;" id="info-expire">—</div>
+              </div>
+            </div>
+          </div>
+          <div class="card p-5">
+            <h3 style="font-size:.9rem;font-weight:700;margin-bottom:14px;">🔑 Clé de licence</h3>
+            <div class="pin-display" style="letter-spacing:.12em;font-size:.9rem;" id="info-key">—</div>
+            <p style="font-size:.72rem;color:var(--text3);margin-top:8px;text-align:center;">Conservez cette clé pour vous reconnecter</p>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /contenu -->
+  </div><!-- /main -->
 </div>
 
-<!-- PAGE -->
-<div class="relative z-10 min-h-screen flex flex-col items-center justify-center p-4 py-10 scene">
+<!-- ═══════════ MODALES ═══════════ -->
 
-  <!-- LOGO -->
-  <div class="text-center mb-10">
-    <div class="inline-flex items-center gap-4 mb-6">
-      <div class="logo-icon">🛡️</div>
-      <div style="text-align:left;">
-        <div class="logo-t" style="font-size:1.9rem;line-height:1.05;">MIB Prévention</div>
-        <div style="font-size:.7rem;color:var(--text2);letter-spacing:.14em;text-transform:uppercase;margin-top:5px;font-weight:600;">Plateforme · Formation Incendie</div>
-      </div>
+<!-- Ajouter formateur -->
+<div id="modal-add-formateur" class="modal-bg hidden">
+  <div class="modal-box">
+    <div class="flex justify-between items-center mb-5">
+      <h3 style="font-size:1.05rem;font-weight:800;">👨‍🏫 <span id="modal-f-title">Nouveau formateur</span></h3>
+      <button onclick="closeModal('modal-add-formateur')" style="width:32px;height:32px;border-radius:50%;background:#f3f4f6;border:none;cursor:pointer;">✕</button>
     </div>
-    <!-- Modules pills -->
-    <div class="flex flex-wrap justify-center gap-2">
-      <span class="pill">🎯 Quiz SSIAP</span>
-      <span class="pill">📡 Quiz Salle</span>
-      <span class="pill">🏆 Challenge Cup</span>
-      <span class="pill">🔴 SSI Virtuel</span>
+    <input type="hidden" id="f-edit-id">
+    <div class="space-y-3">
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="lbl">Prénom</label><input type="text" id="f-prenom" class="inp" placeholder="Jean"></div>
+        <div><label class="lbl">Nom</label><input type="text" id="f-nom" class="inp" placeholder="MARTIN"></div>
+      </div>
+      <div><label class="lbl">Email (optionnel)</label><input type="email" id="f-email" class="inp" placeholder="jean.martin@centre.fr"></div>
+      <div>
+        <label class="lbl">Rôle</label>
+        <select id="f-role" class="inp">
+          <option value="formateur">Formateur</option>
+          <option value="responsable">Responsable de centre</option>
+        </select>
+      </div>
+      <div>
+        <label class="lbl">PIN (6 chiffres)</label>
+        <input type="text" id="f-pin" class="inp" placeholder="Ex : 123456" maxlength="6" inputmode="numeric"
+          oninput="this.value=this.value.replace(/[^0-9]/g,'')"
+          style="letter-spacing:.3em;font-size:1.2rem;text-align:center;">
+        <p style="font-size:.7rem;color:var(--text3);margin-top:4px;">Ce PIN permet au formateur de se connecter.</p>
+      </div>
+      <div id="f-pin-display" class="hidden">
+        <div class="pin-display" id="f-pin-generated"></div>
+        <p style="font-size:.72rem;color:var(--text2);margin-top:6px;text-align:center;">Transmettez ce PIN au formateur</p>
+      </div>
+      <div id="f-msg" class="hidden"></div>
+      <div class="flex gap-3 mt-1">
+        <button onclick="closeModal('modal-add-formateur')" class="btn btn-gray flex-1">Annuler</button>
+        <button onclick="saveFormateur()" class="btn btn-green flex-1" id="btn-save-f">Enregistrer</button>
+      </div>
     </div>
   </div>
+</div>
 
-  <!-- CARD -->
-  <div class="main-card w-full p-7" style="max-width:440px;">
-
-    <p class="hint">Sélectionnez votre profil</p>
-
-    <!-- 3 BOUTONS RÔLE -->
-    <div class="grid grid-cols-3 gap-4 mb-2">
-      <div class="role-btn" onclick="pick('centre')" id="rb-c">
-        <span class="role-icon">🏢</span>
-        <span class="role-lbl">Centre</span>
+<!-- Ajouter stagiaire -->
+<div id="modal-add-stagiaire" class="modal-bg hidden">
+  <div class="modal-box">
+    <div class="flex justify-between items-center mb-5">
+      <h3 style="font-size:1.05rem;font-weight:800;">👨‍🎓 <span id="modal-s-title">Nouveau stagiaire</span></h3>
+      <button onclick="closeModal('modal-add-stagiaire')" style="width:32px;height:32px;border-radius:50%;background:#f3f4f6;border:none;cursor:pointer;">✕</button>
+    </div>
+    <input type="hidden" id="s-edit-id">
+    <div class="space-y-3">
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="lbl">Prénom</label><input type="text" id="s-prenom" class="inp" placeholder="Marie"></div>
+        <div><label class="lbl">Nom</label><input type="text" id="s-nom" class="inp" placeholder="DUPONT"></div>
       </div>
-      <div class="role-btn" onclick="pick('formateur')" id="rb-f">
-        <span class="role-icon">👨‍🏫</span>
-        <span class="role-lbl">Formateur</span>
+      <div><label class="lbl">Email (optionnel)</label><input type="email" id="s-email" class="inp" placeholder="marie.dupont@email.fr"></div>
+      <div><label class="lbl">Téléphone (optionnel)</label><input type="tel" id="s-tel" class="inp" placeholder="06 00 00 00 00"></div>
+      <div>
+        <label class="lbl">Niveau</label>
+        <select id="s-niveau" class="inp">
+          <option value="SSIAP1">SSIAP 1 — Équipier</option>
+          <option value="SSIAP2">SSIAP 2 — Chef d'équipe</option>
+          <option value="SSIAP3">SSIAP 3 — Chef de service</option>
+        </select>
       </div>
-      <div class="role-btn" onclick="pick('stagiaire')" id="rb-s">
-        <span class="role-icon">👨‍🎓</span>
-        <span class="role-lbl">Stagiaire</span>
+      <div id="s-msg" class="hidden"></div>
+      <div class="flex gap-3 mt-1">
+        <button onclick="closeModal('modal-add-stagiaire')" class="btn btn-gray flex-1">Annuler</button>
+        <button onclick="saveStagiaire()" class="btn btn-green flex-1" id="btn-save-s">Enregistrer</button>
       </div>
     </div>
-
-    <div class="sep"></div>
-
-    <!-- DÉFAUT -->
-    <div class="panel show" id="p-def" style="text-align:center;padding:22px 0;color:var(--text3);font-size:.88rem;font-style:italic;">
-      ↑ Choisissez votre profil pour continuer
-    </div>
-
-    <!-- ═══ CENTRE ═══ -->
-    <div class="panel" id="p-c">
-      <span class="badge-r badge-c">🏢 Responsable de centre</span>
-      <div class="space-y-4">
-        <div>
-          <label class="lbl">Email du centre</label>
-          <input type="email" id="c-email" class="inp" placeholder="contact@moncentre.fr">
-        </div>
-        <div>
-          <label class="lbl">Clé de licence</label>
-          <input type="text" id="c-key" class="inp"
-            placeholder="XXXX-XXXX-XXXX-XXXX"
-            style="letter-spacing:.1em;text-transform:uppercase;"
-            oninput="this.value=this.value.toUpperCase()">
-        </div>
-        <div id="e-c" class="err-box hidden"></div>
-        <button class="btn-main btn-c" id="b-c" onclick="doCentre()">Accéder au tableau de bord →</button>
-      </div>
-    </div>
-
-    <!-- ═══ FORMATEUR ═══ -->
-    <div class="panel" id="p-f">
-      <span class="badge-r badge-f">👨‍🏫 Formateur / Superviseur</span>
-      <div class="space-y-4">
-        <div>
-          <label class="lbl">Centre de formation</label>
-          <select id="f-sel" class="inp" style="cursor:pointer;">
-            <option value="">— Sélectionnez votre centre —</option>
-          </select>
-        </div>
-        <div>
-          <label class="lbl">Votre PIN (6 chiffres)</label>
-          <input type="password" id="f-pin" class="inp"
-            placeholder="• • • • • •" maxlength="6" inputmode="numeric"
-            oninput="this.value=this.value.replace(/[^0-9]/g,'')"
-            onkeydown="if(event.key==='Enter')doFormateur()"
-            style="letter-spacing:.5em;font-size:1.4rem;text-align:center;">
-        </div>
-        <div id="e-f" class="err-box hidden"></div>
-        <button class="btn-main btn-f" id="b-f" onclick="doFormateur()">Accéder à mon espace →</button>
-      </div>
-    </div>
-
-    <!-- ═══ STAGIAIRE ═══ -->
-    <div class="panel" id="p-s">
-      <span class="badge-r badge-s">👨‍🎓 Stagiaire</span>
-      <div class="space-y-4">
-        <div class="grid grid-cols-2 gap-2">
-          <button class="mode-btn on" id="m-code" onclick="setMode('code')">🔢 Code session</button>
-          <button class="mode-btn" id="m-qr" onclick="setMode('qr')">📱 QR Code</button>
-        </div>
-        <div id="z-code">
-          <label class="lbl">Code de session</label>
-          <input type="text" id="s-code" class="inp"
-            placeholder="Ex : INCENDIE-1430"
-            style="text-align:center;letter-spacing:.08em;text-transform:uppercase;"
-            oninput="this.value=this.value.toUpperCase()">
-          <p style="font-size:.68rem;color:var(--text3);margin-top:6px;text-align:center;">Code affiché par votre formateur</p>
-        </div>
-        <div id="z-qr" class="hidden" style="background:linear-gradient(145deg,#e8edf5,#f3f6fc);border:1.5px dashed rgba(16,185,129,.3);border-radius:14px;padding:28px;text-align:center;color:var(--text2);font-size:.85rem;line-height:1.8;box-shadow:inset 3px 3px 8px rgba(100,116,139,.15),inset -2px -2px 5px rgba(255,255,255,.9);">
-          📱 Scannez le QR code<br>affiché par votre formateur
-        </div>
-        <div>
-          <label class="lbl">Votre prénom et nom</label>
-          <input type="text" id="s-nom" class="inp" placeholder="Ex : Jean MARTIN">
-        </div>
-        <div id="e-s" class="err-box hidden"></div>
-        <button class="btn-main btn-s" id="b-s" onclick="doStagiaire()">Rejoindre la session →</button>
-      </div>
-    </div>
-
   </div>
+</div>
 
-  <!-- FOOTER -->
-  <p style="margin-top:24px;font-size:.67rem;color:var(--text3);text-align:center;letter-spacing:.06em;font-weight:500;">
-    MIB PRÉVENTION © 2026 · FORMATION INCENDIE SSIAP 1 · 2 · 3
-  </p>
+<!-- Import CSV -->
+<div id="modal-csv" class="modal-bg hidden">
+  <div class="modal-box">
+    <div class="flex justify-between items-center mb-5">
+      <h3 style="font-size:1.05rem;font-weight:800;">📥 Import CSV stagiaires</h3>
+      <button onclick="closeModal('modal-csv')" style="width:32px;height:32px;border-radius:50%;background:#f3f4f6;border:none;cursor:pointer;">✕</button>
+    </div>
+    <div class="space-y-4">
+      <div style="background:linear-gradient(145deg,#f8faff,#eef1f8);border-radius:12px;padding:14px;font-size:.8rem;line-height:1.7;color:var(--text2);">
+        <strong style="color:var(--text);">Format attendu (colonnes) :</strong><br>
+        <code style="background:#e8edf5;padding:3px 8px;border-radius:6px;font-size:.78rem;">prenom;nom;email;telephone;niveau</code><br>
+        <span style="font-size:.72rem;">La première ligne est l'en-tête (ignorée). Niveaux : SSIAP1, SSIAP2, SSIAP3</span>
+      </div>
+      <div class="csv-zone" onclick="document.getElementById('csv-file').click()">
+        <div style="font-size:2rem;margin-bottom:8px;">📄</div>
+        <div style="font-weight:600;color:var(--blue);">Cliquez pour choisir un fichier CSV</div>
+        <div style="font-size:.72rem;color:var(--text3);margin-top:4px;">ou glissez-déposez ici</div>
+        <input type="file" id="csv-file" accept=".csv,.txt" style="display:none;" onchange="previewCSV(this)">
+      </div>
+      <div id="csv-preview" class="hidden">
+        <div style="font-size:.8rem;font-weight:700;margin-bottom:8px;" id="csv-preview-title"></div>
+        <div class="overflow-x-auto" style="max-height:200px;">
+          <table class="tbl" style="font-size:.78rem;" id="tbl-csv-preview">
+            <thead><tr><th>Prénom</th><th>Nom</th><th>Email</th><th>Niveau</th><th>Statut</th></tr></thead>
+            <tbody id="body-csv-preview"></tbody>
+          </table>
+        </div>
+      </div>
+      <div id="csv-msg" class="hidden"></div>
+      <div class="flex gap-3">
+        <button onclick="closeModal('modal-csv')" class="btn btn-gray flex-1">Annuler</button>
+        <button onclick="importCSV()" class="btn btn-blue flex-1" id="btn-import" disabled>Importer</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
-let stagMode='code';
+// ============================================================
+// ÉTAT
+// ============================================================
+let CENTER=null;
+let allStagiaires=[];
+let csvData=[];
+let editingFormateurId=null;
+let editingStagiaireId=null;
 
-/* TILT 3D */
-const card=document.querySelector('.main-card');
-document.addEventListener('mousemove',e=>{
-  const r=card.getBoundingClientRect();
-  const dx=(e.clientX-(r.left+r.width/2))/r.width;
-  const dy=(e.clientY-(r.top+r.height/2))/r.height;
-  card.style.transform=`rotateX(${dy*-7}deg) rotateY(${dx*7}deg) translateZ(0)`;
+// ============================================================
+// INIT
+// ============================================================
+window.addEventListener('DOMContentLoaded',async()=>{
+  const session=SESSION.load('centre');
+  if(!session){window.location.href='index.html';return;}
+  try{
+    CENTER=await DB.getById('centers',session.center_id);
+    updateSidebar();
+    loadAll();
+  }catch(e){console.error(e);window.location.href='index.html';}
 });
-document.addEventListener('mouseleave',()=>{card.style.transform='';});
 
-/* RÔLE */
-function pick(r){
-  document.querySelectorAll('.role-btn').forEach(b=>b.className='role-btn');
-  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('show'));
-  const m={centre:'act-c',formateur:'act-f',stagiaire:'act-s'};
-  document.getElementById({centre:'rb-c',formateur:'rb-f',stagiaire:'rb-s'}[r]).classList.add(m[r]);
-  document.getElementById({centre:'p-c',formateur:'p-f',stagiaire:'p-s'}[r]).classList.add('show');
-  if(r==='formateur')loadCentres();
+function updateSidebar(){
+  if(!CENTER)return;
+  document.getElementById('sb-centre-nom').textContent=CENTER.nom;
+  document.getElementById('sb-plan-lbl').textContent=`Plan ${CENTER.plan||'—'}`;
+  document.getElementById('top-expire').textContent=CENTER.license_expires_at?UTILS.dateStr(CENTER.license_expires_at):'—';
 }
 
-/* MODE STAGIAIRE */
-function setMode(m){
-  stagMode=m;
-  document.getElementById('z-code').classList.toggle('hidden',m!=='code');
-  document.getElementById('z-qr').classList.toggle('hidden',m!=='qr');
-  document.getElementById('m-code').classList.toggle('on',m==='code');
-  document.getElementById('m-qr').classList.toggle('on',m==='qr');
+function logout(){SESSION.clear('centre');window.location.href='index.html';}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+const TABS=['dashboard','formateurs','stagiaires','sessions','modules','qualiopi','compte'];
+const TAB_TITLES={
+  dashboard:['Tableau de bord','Vue générale de votre centre'],
+  formateurs:['Formateurs','Gérez votre équipe pédagogique'],
+  stagiaires:['Stagiaires','Liste et gestion des apprenants'],
+  sessions:['Sessions','Historique de toutes les sessions'],
+  modules:['Modules actifs','Fonctionnalités de votre plan'],
+  qualiopi:['Qualiopi','Émargements et bilans pédagogiques'],
+  compte:['Mon compte','Informations et licence']
+};
+function showTab(t){
+  TABS.forEach(id=>{
+    document.getElementById(`tab-${id}`).classList.toggle('hidden',id!==t);
+    document.getElementById(`nav-${id}`).classList.toggle('on',id===t);
+  });
+  const[title,sub]=TAB_TITLES[t]||['',''];
+  document.getElementById('top-title').textContent=title;
+  document.getElementById('top-sub').textContent=sub;
+  if(t==='formateurs')loadFormateurs();
+  if(t==='stagiaires')loadStagiaires();
+  if(t==='sessions')loadSessions();
+  if(t==='modules')renderModules();
+  if(t==='qualiopi')loadQualiopi();
+  if(t==='compte')renderCompte();
 }
 
-/* HELPERS */
-function showErr(id,msg){const e=document.getElementById(id);e.textContent=msg;e.classList.remove('hidden');}
-function hideErr(id){document.getElementById(id).classList.add('hidden');}
-function setLoad(id,on,txt=''){const b=document.getElementById(id);b.disabled=on;b.innerHTML=on?'<span class="spin"></span>':txt;}
-
-/* LOGIN CENTRE */
-async function doCentre(){
-  hideErr('e-c');
-  const email=document.getElementById('c-email').value.trim().toLowerCase();
-  const key=document.getElementById('c-key').value.trim().toUpperCase();
-  if(!email||!key){showErr('e-c','❌ Remplissez tous les champs.');return;}
-  setLoad('b-c',true);
+// ============================================================
+// LOAD ALL (dashboard)
+// ============================================================
+async function loadAll(){
+  if(!CENTER)return;
+  const cid=CENTER.id;
+  const debut=new Date(new Date().setDate(1)).toISOString();
   try{
-    const{data,error}=await supabase.from('centers').select('*')
-      .eq('email',email).eq('license_key',key).eq('license_status','active').single();
-    if(error||!data)throw new Error('nf');
-    if(data.license_expires_at&&new Date(data.license_expires_at)<new Date())throw new Error('exp');
-    SESSION.save('centre',{center_id:data.id,center_nom:data.nom,plan:data.plan,role:'centre'});
-    window.location.href='center.html';
-  }catch(e){
-    showErr('e-c',e.message==='exp'?'❌ Licence expirée — contactez MIB Prévention.':'❌ Email ou clé de licence incorrects.');
-    setLoad('b-c',false,'Accéder au tableau de bord →');
-  }
-}
+    const[{count:nf},{count:ns},{count:nses},{count:ncup}]=await Promise.all([
+      supabase.from('formateurs').select('*',{count:'exact',head:true}).eq('center_id',cid).eq('actif',true),
+      supabase.from('stagiaires').select('*',{count:'exact',head:true}).eq('center_id',cid).eq('actif',true),
+      supabase.from('quiz_salle_sessions').select('*',{count:'exact',head:true}).eq('center_id',cid).gte('created_at',debut),
+      supabase.from('challenge_sessions').select('*',{count:'exact',head:true}).eq('center_id',cid).gte('created_at',debut),
+    ]);
+    document.getElementById('kpi-f').textContent=nf??0;
+    document.getElementById('kpi-s').textContent=ns??0;
+    document.getElementById('kpi-ses').textContent=nses??0;
+    document.getElementById('kpi-cup').textContent=ncup??0;
 
-/* LOGIN FORMATEUR */
-async function loadCentres(){
+    // Plan info
+    document.getElementById('dash-plan').textContent=`Plan ${CENTER.plan||'—'}`;
+    document.getElementById('dash-expire-info').textContent=CENTER.license_expires_at?`Expire le ${UTILS.dateStr(CENTER.license_expires_at)}`:'';
+    const pf=Math.min(100,Math.round(((nf||0)/CENTER.max_formateurs)*100));
+    const ps=Math.min(100,Math.round(((ns||0)/CENTER.max_stagiaires)*100));
+    document.getElementById('dash-usage-f').textContent=`${nf??0} / ${CENTER.max_formateurs} formateurs`;
+    document.getElementById('dash-usage-s').textContent=`${ns??0} / ${CENTER.max_stagiaires} stagiaires`;
+    document.getElementById('prog-f').style.width=pf+'%';
+    document.getElementById('prog-s').style.width=ps+'%';
+    if(pf>80)document.getElementById('prog-f').style.background='linear-gradient(90deg,#f59e0b,#b45309)';
+    if(ps>80)document.getElementById('prog-s').style.background='linear-gradient(90deg,#f59e0b,#b45309)';
+  }catch(e){console.error(e);}
+
+  // Dernières sessions
   try{
-    const{data}=await supabase.from('centers').select('id,nom').eq('license_status','active').order('nom');
-    const sel=document.getElementById('f-sel');
-    sel.innerHTML='<option value="">— Sélectionnez votre centre —</option>';
-    (data||[]).forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.nom;sel.appendChild(o);});
+    const{data}=await supabase.from('quiz_salle_sessions')
+      .select('*,formateurs(nom,prenom)')
+      .eq('center_id',cid).order('created_at',{ascending:false}).limit(5);
+    const tbody=document.getElementById('body-recent-sessions');
+    if(!data||!data.length){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:20px;">Aucune session</td></tr>';return;}
+    tbody.innerHTML=data.map(s=>`<tr>
+      <td><span class="badge b-blue">📡 Quiz Salle</span></td>
+      <td style="font-size:.82rem;">${s.formateurs?`${s.formateurs.prenom} ${s.formateurs.nom}`:'—'}</td>
+      <td><span class="badge b-gray">${s.niveau||'—'}</span></td>
+      <td style="font-size:.8rem;">${UTILS.dateStr(s.created_at)}</td>
+      <td>${statusBadge(s.status)}</td>
+    </tr>`).join('');
   }catch(e){console.error(e);}
 }
-async function doFormateur(){
-  hideErr('e-f');
-  const cid=document.getElementById('f-sel').value;
+
+// ============================================================
+// FORMATEURS
+// ============================================================
+async function loadFormateurs(){
+  if(!CENTER)return;
+  try{
+    const{data}=await supabase.from('formateurs').select('*').eq('center_id',CENTER.id).order('nom');
+    const tbody=document.getElementById('body-formateurs');
+    if(!data||!data.length){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:20px;">Aucun formateur</td></tr>';return;}
+    tbody.innerHTML=data.map(f=>`<tr>
+      <td><strong>${f.prenom} ${f.nom}</strong></td>
+      <td style="font-size:.8rem;color:var(--text2);">${f.email||'—'}</td>
+      <td><span class="badge ${f.role==='responsable'?'b-blue':'b-gray'}">${f.role}</span></td>
+      <td style="font-size:.8rem;color:var(--text2);">PIN hashé ●●●●●●</td>
+      <td><span class="badge ${f.actif?'b-green':'b-red'}">${f.actif?'Actif':'Inactif'}</span></td>
+      <td>
+        <div style="display:flex;gap:5px;">
+          <button onclick="editFormateur('${f.id}')" class="btn btn-blue btn-xs">✏️</button>
+          <button onclick="toggleFormateur('${f.id}',${f.actif})" class="btn ${f.actif?'btn-orange':'btn-green'} btn-xs">${f.actif?'⏸':'▶'}</button>
+          <button onclick="deleteFormateur('${f.id}')" class="btn btn-red btn-xs">🗑️</button>
+        </div>
+      </td>
+    </tr>`).join('');
+  }catch(e){console.error(e);}
+}
+
+async function saveFormateur(){
+  const prenom=document.getElementById('f-prenom').value.trim();
+  const nom=document.getElementById('f-nom').value.trim();
+  const email=document.getElementById('f-email').value.trim().toLowerCase();
+  const role=document.getElementById('f-role').value;
   const pin=document.getElementById('f-pin').value;
-  if(!cid){showErr('e-f','❌ Sélectionnez votre centre.');return;}
-  if(pin.length!==6){showErr('e-f','❌ Entrez votre PIN à 6 chiffres.');return;}
-  setLoad('b-f',true);
+  const msgEl=document.getElementById('f-msg');
+  msgEl.classList.add('hidden');
+
+  if(!prenom||!nom){msgEl.innerHTML='<div class="alert-err">❌ Prénom et nom obligatoires.</div>';msgEl.classList.remove('hidden');return;}
+
+  const btnEl=document.getElementById('btn-save-f');
+  btnEl.disabled=true;btnEl.innerHTML='<span class="spin"></span>';
+
   try{
-    const h=await UTILS.hash(pin);
-    const{data,error}=await supabase.from('formateurs')
-      .select('*,centers(nom,plan,module_auto_entrainement,module_quiz_salle,module_challenge_cup,module_ssi_supervise,module_ssi_autoformation)')
-      .eq('center_id',cid).eq('pin_hash',h).eq('actif',true).single();
-    if(error||!data)throw new Error('bad');
-    SESSION.save('formateur',{formateur_id:data.id,formateur_nom:`${data.prenom} ${data.nom}`,center_id:data.center_id,center_nom:data.centers?.nom,role_formateur:data.role,modules:data.centers});
-    window.location.href='formateur.html';
+    const isEdit=!!editingFormateurId;
+    let pinHash=undefined;
+    if(pin){
+      if(pin.length!==6){msgEl.innerHTML='<div class="alert-err">❌ Le PIN doit faire exactement 6 chiffres.</div>';msgEl.classList.remove('hidden');btnEl.disabled=false;btnEl.textContent='Enregistrer';return;}
+      pinHash=await UTILS.hash(pin);
+    }else if(!isEdit){
+      msgEl.innerHTML='<div class="alert-err">❌ Définissez un PIN pour le nouveau formateur.</div>';msgEl.classList.remove('hidden');btnEl.disabled=false;btnEl.textContent='Enregistrer';return;
+    }
+
+    const payload={prenom,nom,email:email||null,role,center_id:CENTER.id,...(pinHash?{pin_hash:pinHash}:{})};
+    if(isEdit){await supabase.from('formateurs').update(payload).eq('id',editingFormateurId);}
+    else{await supabase.from('formateurs').insert(payload);}
+
+    if(pin){
+      document.getElementById('f-pin-generated').textContent=pin;
+      document.getElementById('f-pin-display').classList.remove('hidden');
+      msgEl.innerHTML=`<div class="alert-ok">✅ Formateur ${isEdit?'modifié':'créé'} ! Transmettez le PIN ci-dessus.</div>`;
+    }else{
+      msgEl.innerHTML=`<div class="alert-ok">✅ Formateur modifié.</div>`;
+    }
+    msgEl.classList.remove('hidden');
+    loadFormateurs();loadAll();
   }catch(e){
-    showErr('e-f','❌ PIN incorrect ou compte désactivé.');
-    setLoad('b-f',false,'Accéder à mon espace →');
-  }
+    msgEl.innerHTML=`<div class="alert-err">❌ Erreur : ${e.message}</div>`;
+    msgEl.classList.remove('hidden');
+  }finally{btnEl.disabled=false;btnEl.textContent='Enregistrer';}
 }
 
-/* LOGIN STAGIAIRE */
-async function doStagiaire(){
-  hideErr('e-s');
-  const code=document.getElementById('s-code').value.trim().toUpperCase();
+async function editFormateur(id){
+  const{data}=await supabase.from('formateurs').select('*').eq('id',id).single();
+  if(!data)return;
+  editingFormateurId=id;
+  document.getElementById('modal-f-title').textContent='Modifier le formateur';
+  document.getElementById('f-prenom').value=data.prenom;
+  document.getElementById('f-nom').value=data.nom;
+  document.getElementById('f-email').value=data.email||'';
+  document.getElementById('f-role').value=data.role;
+  document.getElementById('f-pin').value='';
+  document.getElementById('f-pin-display').classList.add('hidden');
+  document.getElementById('f-msg').classList.add('hidden');
+  openModal('modal-add-formateur');
+}
+
+function resetFormateurModal(){
+  editingFormateurId=null;
+  document.getElementById('modal-f-title').textContent='Nouveau formateur';
+  ['f-prenom','f-nom','f-email','f-pin'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f-role').value='formateur';
+  document.getElementById('f-pin-display').classList.add('hidden');
+  document.getElementById('f-msg').classList.add('hidden');
+}
+
+async function toggleFormateur(id,actif){
+  await supabase.from('formateurs').update({actif:!actif}).eq('id',id);
+  loadFormateurs();
+}
+async function deleteFormateur(id){
+  if(!confirm('Supprimer ce formateur ?'))return;
+  await supabase.from('formateurs').delete().eq('id',id);
+  loadFormateurs();loadAll();
+}
+
+// ============================================================
+// STAGIAIRES
+// ============================================================
+async function loadStagiaires(){
+  if(!CENTER)return;
+  try{
+    const{data}=await supabase.from('stagiaires').select('*').eq('center_id',CENTER.id).eq('actif',true).order('nom');
+    allStagiaires=data||[];
+    document.getElementById('stag-count-lbl').textContent=`${allStagiaires.length} stagiaire(s) actif(s)`;
+    renderStagiaires(allStagiaires);
+  }catch(e){console.error(e);}
+}
+
+function renderStagiaires(data){
+  const tbody=document.getElementById('body-stagiaires');
+  if(!data.length){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:20px;">Aucun stagiaire</td></tr>';return;}
+  tbody.innerHTML=data.map(s=>`<tr>
+    <td><strong>${s.nom}</strong></td>
+    <td>${s.prenom}</td>
+    <td style="font-size:.8rem;color:var(--text2);">${s.email||'—'}</td>
+    <td><span class="badge ${s.niveau==='SSIAP1'?'b-blue':s.niveau==='SSIAP2'?'b-orange':'b-red'}">${s.niveau}</span></td>
+    <td style="font-size:.8rem;">${UTILS.dateStr(s.created_at)}</td>
+    <td>
+      <div style="display:flex;gap:5px;">
+        <button onclick="editStagiaire('${s.id}')" class="btn btn-blue btn-xs">✏️</button>
+        <button onclick="deleteStagiaire('${s.id}')" class="btn btn-red btn-xs">🗑️</button>
+      </div>
+    </td>
+  </tr>`).join('');
+}
+
+function filterStagiaires(){
+  const q=document.getElementById('search-stag').value.toLowerCase();
+  const niv=document.getElementById('filter-niveau').value;
+  renderStagiaires(allStagiaires.filter(s=>
+    (!q||(s.nom+' '+s.prenom).toLowerCase().includes(q)||( s.email||'').toLowerCase().includes(q))&&
+    (!niv||s.niveau===niv)
+  ));
+}
+
+async function saveStagiaire(){
+  const prenom=document.getElementById('s-prenom').value.trim();
   const nom=document.getElementById('s-nom').value.trim();
-  if(!nom){showErr('e-s','❌ Entrez votre prénom et nom.');return;}
-  if(stagMode==='code'&&!code){showErr('e-s','❌ Entrez le code de session.');return;}
-  setLoad('b-s',true);
+  const email=document.getElementById('s-email').value.trim().toLowerCase();
+  const tel=document.getElementById('s-tel').value.trim();
+  const niveau=document.getElementById('s-niveau').value;
+  const msgEl=document.getElementById('s-msg');
+  msgEl.classList.add('hidden');
+  if(!prenom||!nom){msgEl.innerHTML='<div class="alert-err">❌ Prénom et nom obligatoires.</div>';msgEl.classList.remove('hidden');return;}
+
+  const btnEl=document.getElementById('btn-save-s');
+  btnEl.disabled=true;btnEl.innerHTML='<span class="spin"></span>';
+  const isEdit=!!editingStagiaireId;
   try{
-    const{data:qs}=await supabase.from('quiz_salle_sessions').select('id')
-      .eq('session_number',code).in('status',['attente','question','correction']).maybeSingle();
-    if(qs){
-      SESSION.save('stagiaire',{session_id:qs.id,session_type:'quiz_salle',nom_affiche:nom,role:'stagiaire'});
-      window.location.href=`quiz-salle.html?session=${qs.id}&nom=${encodeURIComponent(nom)}`;return;
+    // Vérif doublon
+    if(!isEdit){
+      const dup=allStagiaires.find(s=>s.nom.toLowerCase()===nom.toLowerCase()&&s.prenom.toLowerCase()===prenom.toLowerCase());
+      if(dup){msgEl.innerHTML='<div class="alert-err">⚠️ Un stagiaire avec ce nom existe déjà.</div>';msgEl.classList.remove('hidden');btnEl.disabled=false;btnEl.textContent='Enregistrer';return;}
     }
-    const{data:cs}=await supabase.from('challenge_sessions').select('id')
-      .eq('session_number',code).in('status',['attente','playing']).maybeSingle();
-    if(cs){
-      SESSION.save('stagiaire',{session_id:cs.id,session_type:'challenge',nom_affiche:nom,role:'stagiaire'});
-      window.location.href=`challenge-cup.html?session=${cs.id}&nom=${encodeURIComponent(nom)}`;return;
-    }
-    throw new Error('nf');
+    const payload={prenom,nom,email:email||null,telephone:tel||null,niveau,center_id:CENTER.id,actif:true};
+    if(isEdit)await supabase.from('stagiaires').update(payload).eq('id',editingStagiaireId);
+    else await supabase.from('stagiaires').insert(payload);
+    msgEl.innerHTML=`<div class="alert-ok">✅ Stagiaire ${isEdit?'modifié':'ajouté'} !</div>`;
+    msgEl.classList.remove('hidden');
+    loadStagiaires();loadAll();
   }catch(e){
-    showErr('e-s','❌ Session introuvable. Vérifiez le code affiché par votre formateur.');
-    setLoad('b-s',false,'Rejoindre la session →');
-  }
+    msgEl.innerHTML=`<div class="alert-err">❌ Erreur : ${e.message}</div>`;
+    msgEl.classList.remove('hidden');
+  }finally{btnEl.disabled=false;btnEl.textContent='Enregistrer';}
 }
 
-/* RESTAURATION */
-window.addEventListener('DOMContentLoaded',()=>{
-  if(SESSION.load('centre'))    {window.location.href='center.html';return;}
-  if(SESSION.load('formateur')) {window.location.href='formateur.html';return;}
-});
+async function editStagiaire(id){
+  const s=allStagiaires.find(x=>x.id===id);if(!s)return;
+  editingStagiaireId=id;
+  document.getElementById('modal-s-title').textContent='Modifier le stagiaire';
+  document.getElementById('s-prenom').value=s.prenom;
+  document.getElementById('s-nom').value=s.nom;
+  document.getElementById('s-email').value=s.email||'';
+  document.getElementById('s-tel').value=s.telephone||'';
+  document.getElementById('s-niveau').value=s.niveau||'SSIAP1';
+  document.getElementById('s-msg').classList.add('hidden');
+  openModal('modal-add-stagiaire');
+}
+
+async function deleteStagiaire(id){
+  if(!confirm('Supprimer ce stagiaire ?'))return;
+  await supabase.from('stagiaires').update({actif:false}).eq('id',id);
+  loadStagiaires();loadAll();
+}
+
+function exportCSV(){
+  const rows=[['Prenom','Nom','Email','Telephone','Niveau'],...allStagiaires.map(s=>[s.prenom,s.nom,s.email||'',s.telephone||'',s.niveau])];
+  const csv=rows.map(r=>r.join(';')).join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
+  a.download=`stagiaires_${CENTER.nom.replace(/\s/g,'_')}_${new Date().toISOString().slice(0,10)}.csv`;a.click();
+}
+
+// ── CSV IMPORT ──
+function previewCSV(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const lines=e.target.result.split(/\r?\n/).filter(l=>l.trim());
+    const rows=lines.slice(1).map(l=>l.split(';').map(c=>c.trim()));
+    csvData=rows.filter(r=>r.length>=2&&r[0]&&r[1]);
+    const existing=new Set(allStagiaires.map(s=>`${s.nom.toLowerCase()}_${s.prenom.toLowerCase()}`));
+    document.getElementById('csv-preview-title').textContent=`${csvData.length} stagiaires détectés`;
+    document.getElementById('body-csv-preview').innerHTML=csvData.map(r=>{
+      const key=`${(r[1]||'').toLowerCase()}_${(r[0]||'').toLowerCase()}`;
+      const dup=existing.has(key);
+      return`<tr><td>${r[0]||'—'}</td><td>${r[1]||'—'}</td><td style="font-size:.75rem;">${r[2]||'—'}</td><td>${r[4]||'SSIAP1'}</td><td>${dup?'<span class="badge b-orange">⚠️ Doublon</span>':'<span class="badge b-green">✅ OK</span>'}</td></tr>`;
+    }).join('');
+    document.getElementById('csv-preview').classList.remove('hidden');
+    document.getElementById('btn-import').disabled=false;
+  };
+  reader.readAsText(file,'UTF-8');
+}
+
+async function importCSV(){
+  if(!csvData.length)return;
+  const existing=new Set(allStagiaires.map(s=>`${s.nom.toLowerCase()}_${s.prenom.toLowerCase()}`));
+  const toInsert=csvData.filter(r=>{const k=`${(r[1]||'').toLowerCase()}_${(r[0]||'').toLowerCase()}`;return!existing.has(k);})
+    .map(r=>({prenom:r[0],nom:r[1],email:r[2]||null,telephone:r[3]||null,niveau:r[4]||'SSIAP1',center_id:CENTER.id,actif:true}));
+  if(!toInsert.length){document.getElementById('csv-msg').innerHTML='<div class="alert-err">⚠️ Tous les stagiaires existent déjà.</div>';document.getElementById('csv-msg').classList.remove('hidden');return;}
+  const btnEl=document.getElementById('btn-import');btnEl.disabled=true;btnEl.innerHTML='<span class="spin"></span>';
+  try{
+    await supabase.from('stagiaires').insert(toInsert);
+    document.getElementById('csv-msg').innerHTML=`<div class="alert-ok">✅ ${toInsert.length} stagiaire(s) importé(s) !</div>`;
+    document.getElementById('csv-msg').classList.remove('hidden');
+    loadStagiaires();loadAll();
+  }catch(e){
+    document.getElementById('csv-msg').innerHTML=`<div class="alert-err">❌ Erreur import : ${e.message}</div>`;
+    document.getElementById('csv-msg').classList.remove('hidden');
+  }finally{btnEl.disabled=false;btnEl.textContent='Importer';}
+}
+
+// ============================================================
+// SESSIONS
+// ============================================================
+async function loadSessions(){
+  if(!CENTER)return;
+  try{
+    const[{data:qs},{data:cs},{data:ssi}]=await Promise.all([
+      supabase.from('quiz_salle_sessions').select('*,formateurs(nom,prenom)').eq('center_id',CENTER.id).order('created_at',{ascending:false}).limit(20),
+      supabase.from('challenge_sessions').select('*,formateurs(nom,prenom)').eq('center_id',CENTER.id).order('created_at',{ascending:false}).limit(10),
+      supabase.from('ssi_sessions').select('*,formateurs(nom,prenom)').eq('center_id',CENTER.id).order('created_at',{ascending:false}).limit(10),
+    ]);
+    const all=[
+      ...(qs||[]).map(s=>({...s,type:'quiz_salle',typeLabel:'📡 Quiz Salle'})),
+      ...(cs||[]).map(s=>({...s,type:'challenge',typeLabel:'🏆 Challenge Cup'})),
+      ...(ssi||[]).map(s=>({...s,type:'ssi',typeLabel:'🔴 SSI Supervisé'})),
+    ].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+    const tbody=document.getElementById('body-sessions');
+    if(!all.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:20px;">Aucune session</td></tr>';return;}
+    tbody.innerHTML=all.map(s=>`<tr>
+      <td><span class="badge b-blue" style="font-size:.7rem;">${s.typeLabel}</span></td>
+      <td style="font-size:.82rem;">${s.formateurs?`${s.formateurs.prenom} ${s.formateurs.nom}`:'—'}</td>
+      <td><span class="badge b-gray" style="font-size:.68rem;">${s.niveau||'—'}</span></td>
+      <td style="font-size:.8rem;text-align:center;">—</td>
+      <td style="font-size:.8rem;">${UTILS.dateStr(s.created_at)}</td>
+      <td style="font-size:.8rem;">—</td>
+      <td>${statusBadge(s.status)}</td>
+    </tr>`).join('');
+  }catch(e){console.error(e);}
+}
+
+// ============================================================
+// MODULES
+// ============================================================
+const MODULE_DEFS=[
+  {key:'module_auto_entrainement',icon:'🎯',title:'Quiz auto-entraînement',desc:'Stagiaire s\'entraîne à la maison, seul, avec suivi'},
+  {key:'module_quiz_salle',icon:'📡',title:'Quiz Salle',desc:'Formateur envoie un quiz en temps réel en salle'},
+  {key:'module_challenge_cup',icon:'🏆',title:'Challenge Cup',desc:'Jeu gamifié avec équipes, boîtes et classement'},
+  {key:'module_ssi_supervise',icon:'🔴',title:'SSI Supervisé',desc:'Simulation panneau SSI avec formateur superviseur'},
+  {key:'module_ssi_autoformation',icon:'🟡',title:'SSI Auto-formation',desc:'Scénarios SSI guidés, stagiaire seul à la maison'},
+];
+function renderModules(){
+  const grid=document.getElementById('grid-modules');
+  grid.innerHTML=MODULE_DEFS.map(m=>{
+    const on=CENTER&&CENTER[m.key];
+    return`<div class="mod-card ${on?'mod-on':'mod-off'}">
+      <div class="mod-icon">${m.icon}</div>
+      <div class="mod-title">${m.title}</div>
+      <div class="mod-desc">${m.desc}</div>
+      <div class="mod-status">${on?'✅ Activé':'⭕ Non inclus dans votre plan'}</div>
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+// QUALIOPI
+// ============================================================
+async function loadQualiopi(){
+  if(!CENTER)return;
+  try{
+    const{data:parts}=await supabase.from('formation_participants').select('*,formation_sessions(titre,date_session,formateurs(nom,prenom))').limit(20);
+    const total=(parts||[]).length;
+    const signes=(parts||[]).filter(p=>p.emargement_signe).length;
+    document.getElementById('q-emargt').textContent=total;
+    document.getElementById('q-signes').textContent=signes;
+    document.getElementById('q-pdf').textContent='—';
+    document.getElementById('body-qualiopi').innerHTML=total?
+      '<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:20px;">Fonctionnalité disponible via l\'interface formateur</td></tr>':
+      '<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:20px;">Aucun émargement pour le moment</td></tr>';
+  }catch(e){console.error(e);}
+}
+
+// ============================================================
+// COMPTE
+// ============================================================
+function renderCompte(){
+  if(!CENTER)return;
+  document.getElementById('info-nom').textContent=CENTER.nom;
+  document.getElementById('info-email').textContent=CENTER.email;
+  document.getElementById('info-plan').innerHTML=`<span class="badge b-blue">Plan ${CENTER.plan}</span>`;
+  document.getElementById('info-expire').textContent=CENTER.license_expires_at?UTILS.dateStr(CENTER.license_expires_at):'—';
+  document.getElementById('info-key').textContent=CENTER.license_key||'—';
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+function statusBadge(s){
+  const m={active:{cls:'b-green',lbl:'✅ Actif'},en_cours:{cls:'b-blue',lbl:'🔵 En cours'},terminee:{cls:'b-gray',lbl:'⬜ Terminée'},attente:{cls:'b-orange',lbl:'⏳ Attente'},termine:{cls:'b-gray',lbl:'⬜ Terminé'},playing:{cls:'b-blue',lbl:'🎮 En jeu'},annulee:{cls:'b-red',lbl:'❌ Annulée'}};
+  const c=m[s]||{cls:'b-gray',lbl:s||'—'};
+  return`<span class="badge ${c.cls}" style="font-size:.68rem;">${c.lbl}</span>`;
+}
+function openModal(id){
+  if(id==='modal-add-formateur')resetFormateurModal();
+  if(id==='modal-add-stagiaire'){editingStagiaireId=null;document.getElementById('modal-s-title').textContent='Nouveau stagiaire';['s-prenom','s-nom','s-email','s-tel'].forEach(i=>document.getElementById(i).value='');document.getElementById('s-niveau').value='SSIAP1';document.getElementById('s-msg').classList.add('hidden');}
+  if(id==='modal-csv'){csvData=[];document.getElementById('csv-preview').classList.add('hidden');document.getElementById('csv-msg').classList.add('hidden');document.getElementById('btn-import').disabled=true;document.getElementById('csv-file').value='';}
+  document.getElementById(id).classList.remove('hidden');
+}
+function closeModal(id){document.getElementById(id).classList.add('hidden');}
+document.querySelectorAll('.modal-bg').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.add('hidden');}));
 </script>
 </body>
 </html>
