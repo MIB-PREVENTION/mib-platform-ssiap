@@ -1,1 +1,940 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>MIB Admin — Panneau de contrôle</title>
+<meta name="robots" content="noindex, nofollow">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="supabase.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Syne:wght@700;800;900&display=swap');
 
+:root{
+  --bg:#eef2ff;--card:#ffffff;--text:#111827;--text2:#6b7280;--text3:#9ca3af;
+  --border:rgba(0,0,0,.07);--red:#e63946;--blue:#2563eb;--green:#059669;
+  --orange:#d97706;--purple:#7c3aed;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);}
+
+/* FOND */
+.bg-wrap{position:fixed;inset:0;z-index:0;
+  background:radial-gradient(ellipse 70% 50% at 10% 10%,rgba(230,57,70,.1) 0%,transparent 65%),
+  radial-gradient(ellipse 60% 45% at 90% 90%,rgba(37,99,235,.1) 0%,transparent 65%),
+  linear-gradient(160deg,#eef2ff 0%,#f5f7ff 50%,#edf0fb 100%);}
+
+/* CARD */
+.card{background:#fff;border-radius:20px;border:1px solid rgba(255,255,255,.9);
+  box-shadow:6px 6px 20px rgba(100,116,139,.12),-3px -3px 10px rgba(255,255,255,.9),inset 0 1px 0 rgba(255,255,255,.8);}
+
+/* KPI */
+.kpi{background:linear-gradient(145deg,#f8faff,#eef1f8);border-radius:16px;padding:20px;
+  border:1.5px solid rgba(255,255,255,.9);
+  box-shadow:4px 4px 12px rgba(100,116,139,.15),-3px -3px 8px rgba(255,255,255,.95),inset 0 1px 0 rgba(255,255,255,.8);}
+.kpi-val{font-family:'Syne',sans-serif;font-size:2.2rem;font-weight:800;line-height:1;}
+.kpi-lbl{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-top:6px;}
+.kpi-icon{font-size:1.8rem;margin-bottom:10px;}
+
+/* INPUTS */
+.inp{width:100%;padding:11px 15px;border-radius:12px;
+  background:linear-gradient(145deg,#e8edf5,#f3f6fc);
+  border:1.5px solid rgba(0,0,0,.07);color:var(--text);font-family:'Inter',sans-serif;font-size:.9rem;
+  outline:none;transition:all .2s;
+  box-shadow:inset 3px 3px 7px rgba(100,116,139,.18),inset -2px -2px 5px rgba(255,255,255,.9);}
+.inp:focus{border-color:rgba(37,99,235,.35);box-shadow:inset 3px 3px 7px rgba(100,116,139,.2),inset -2px -2px 5px rgba(255,255,255,.9),0 0 0 3px rgba(37,99,235,.08);}
+.inp::placeholder{color:var(--text3);}
+.inp option{background:#fff;color:var(--text);}
+.lbl{font-size:.68rem;font-weight:700;color:var(--text2);letter-spacing:.07em;text-transform:uppercase;display:block;margin-bottom:6px;}
+
+/* BOUTONS */
+.btn{padding:10px 18px;border-radius:11px;border:none;font-weight:700;font-size:.82rem;cursor:pointer;
+  transition:all .2s;letter-spacing:.02em;position:relative;overflow:hidden;}
+.btn::before{content:'';position:absolute;top:0;left:0;right:0;height:45%;background:linear-gradient(180deg,rgba(255,255,255,.2),transparent);border-radius:11px 11px 0 0;pointer-events:none;}
+.btn:hover{transform:translateY(-2px);}
+.btn:active{transform:translateY(1px);}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none;}
+.btn-blue{background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;box-shadow:0 4px 14px rgba(37,99,235,.4),inset 0 1px 0 rgba(255,255,255,.2);}
+.btn-green{background:linear-gradient(135deg,#10b981,#065f46);color:#fff;box-shadow:0 4px 14px rgba(16,185,129,.4),inset 0 1px 0 rgba(255,255,255,.2);}
+.btn-red{background:linear-gradient(135deg,#ef4444,#b91c1c);color:#fff;box-shadow:0 4px 14px rgba(239,68,68,.4),inset 0 1px 0 rgba(255,255,255,.2);}
+.btn-orange{background:linear-gradient(135deg,#f59e0b,#b45309);color:#fff;box-shadow:0 4px 14px rgba(245,158,11,.4),inset 0 1px 0 rgba(255,255,255,.2);}
+.btn-gray{background:linear-gradient(135deg,#9ca3af,#6b7280);color:#fff;box-shadow:0 4px 10px rgba(107,114,128,.3),inset 0 1px 0 rgba(255,255,255,.2);}
+.btn-sm{padding:7px 13px;font-size:.75rem;border-radius:9px;}
+
+/* LOGIN CARD */
+.login-card{background:linear-gradient(145deg,#ffffff,#f8faff);border-radius:24px;
+  border:1px solid rgba(255,255,255,.9);
+  box-shadow:20px 20px 60px rgba(100,116,139,.18),0 8px 25px rgba(100,116,139,.12),inset 0 1px 0 rgba(255,255,255,.8);}
+.logo-t{font-family:'Syne',sans-serif;font-weight:900;}
+.logo-icon{width:56px;height:56px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;
+  background:linear-gradient(145deg,#ef4444,#b91c1c);
+  box-shadow:4px 4px 14px rgba(239,68,68,.4),-2px -2px 8px rgba(255,255,255,.6),inset 0 1px 0 rgba(255,180,180,.3);}
+.btn-login{width:100%;padding:14px;border-radius:13px;border:none;font-weight:800;font-size:.95rem;color:#fff;cursor:pointer;
+  background:linear-gradient(135deg,#ef4444,#b91c1c);
+  box-shadow:0 6px 20px rgba(239,68,68,.4),inset 0 1px 0 rgba(255,255,255,.25);
+  transition:all .25s;position:relative;overflow:hidden;}
+.btn-login::before{content:'';position:absolute;top:0;left:0;right:0;height:50%;background:linear-gradient(180deg,rgba(255,255,255,.2),transparent);pointer-events:none;}
+.btn-login:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(239,68,68,.5);}
+.btn-login:active{transform:translateY(1px);}
+
+/* BADGE PLAN */
+.badge-plan{display:inline-block;padding:3px 10px;border-radius:999px;font-size:.68rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;}
+.bp-demo{background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;}
+.bp-starter{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;}
+.bp-pro{background:#f0fdf4;color:#065f46;border:1px solid #bbf7d0;}
+.bp-expert{background:#fdf4ff;color:#7e22ce;border:1px solid #e9d5ff;}
+.bp-entreprise{background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;}
+
+/* BADGE STATUS */
+.bs-active{background:#f0fdf4;color:#065f46;border:1px solid #bbf7d0;}
+.bs-suspended{background:#fff1f2;color:#b91c1c;border:1px solid #fecdd3;}
+.bs-expired{background:#fafafa;color:#6b7280;border:1px solid #e5e7eb;}
+.badge-st{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:999px;font-size:.68rem;font-weight:700;}
+
+/* TABLE */
+.tbl{width:100%;border-collapse:separate;border-spacing:0;}
+.tbl th{background:linear-gradient(145deg,#f8faff,#eef1f8);padding:11px 14px;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);text-align:left;}
+.tbl th:first-child{border-radius:10px 0 0 0;}
+.tbl th:last-child{border-radius:0 10px 0 0;}
+.tbl td{padding:12px 14px;font-size:.85rem;border-bottom:1px solid rgba(0,0,0,.04);background:#fff;vertical-align:middle;}
+.tbl tr:hover td{background:#fafbff;}
+.tbl tr:last-child td:first-child{border-radius:0 0 0 10px;}
+.tbl tr:last-child td:last-child{border-radius:0 0 10px 0;}
+.tbl tr:last-child td{border-bottom:none;}
+
+/* TABS */
+.tab-btn{padding:9px 18px;border-radius:10px;border:none;font-weight:600;font-size:.82rem;cursor:pointer;transition:all .2s;color:var(--text2);background:transparent;}
+.tab-btn.on{background:#fff;color:var(--text);box-shadow:3px 3px 10px rgba(100,116,139,.15),-2px -2px 6px rgba(255,255,255,.9);}
+
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.3);backdrop-filter:blur(6px);z-index:50;display:flex;align-items:center;justify-content:center;padding:16px;}
+.modal-box{background:#fff;border-radius:20px;padding:28px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;
+  box-shadow:0 30px 80px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.8);}
+
+/* SPINNER */
+.spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .6s linear infinite;display:inline-block;vertical-align:middle;}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* ALERT */
+.alert-ok{background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:10px;padding:10px 14px;font-size:.82rem;color:#065f46;}
+.alert-err{background:#fff1f2;border:1.5px solid #fecdd3;border-radius:10px;padding:10px 14px;font-size:.82rem;color:#b91c1c;}
+
+/* SIDEBAR */
+.sidebar{width:220px;min-height:100vh;background:linear-gradient(180deg,#fff 0%,#f8faff 100%);
+  border-right:1px solid rgba(0,0,0,.06);padding:24px 16px;
+  box-shadow:4px 0 20px rgba(100,116,139,.08);}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;cursor:pointer;
+  font-size:.85rem;font-weight:600;color:var(--text2);transition:all .2s;margin-bottom:4px;}
+.nav-item:hover{background:linear-gradient(145deg,#f8faff,#eef1f8);color:var(--text);}
+.nav-item.on{background:linear-gradient(135deg,#eff6ff,#dbeafe);color:#1d4ed8;
+  box-shadow:3px 3px 10px rgba(37,99,235,.12);}
+.nav-icon{font-size:1.1rem;width:22px;text-align:center;}
+
+/* CLÉ GÉNÉRÉE */
+.key-display{background:linear-gradient(145deg,#e8edf5,#f3f6fc);border-radius:12px;padding:14px 18px;
+  font-family:monospace;font-size:1.1rem;font-weight:700;letter-spacing:.15em;text-align:center;
+  color:var(--blue);box-shadow:inset 3px 3px 8px rgba(100,116,139,.18),inset -2px -2px 5px rgba(255,255,255,.9);}
+
+.sep{height:1px;background:linear-gradient(90deg,transparent,rgba(0,0,0,.07),transparent);margin:18px 0;}
+.hidden{display:none!important;}
+</style>
+</head>
+<body>
+<div class="bg-wrap"></div>
+
+<!-- ═══════════ PAGE LOGIN ═══════════ -->
+<div id="page-login" class="relative z-10 min-h-screen flex items-center justify-center p-4">
+  <div class="login-card w-full p-8" style="max-width:400px;">
+    <div class="flex items-center gap-3 mb-7">
+      <div class="logo-icon">⚙️</div>
+      <div>
+        <div class="logo-t text-gray-900" style="font-size:1.4rem;">Admin MIB</div>
+        <div style="font-size:.7rem;color:var(--text2);letter-spacing:.1em;text-transform:uppercase;margin-top:2px;">Accès restreint</div>
+      </div>
+    </div>
+    <div class="space-y-4">
+      <div>
+        <label class="lbl">Mot de passe</label>
+        <div style="position:relative;">
+          <input type="password" id="login-pwd" class="inp" placeholder="••••••••••••"
+            style="padding-right:46px;" onkeydown="if(event.key==='Enter')doLogin()">
+          <button onclick="togglePwd()" style="position:absolute;right:13px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:1.1rem;color:var(--text3);">👁</button>
+        </div>
+      </div>
+      <div id="login-err" class="alert-err hidden"></div>
+      <button class="btn-login" onclick="doLogin()">Accéder au panneau →</button>
+    </div>
+    <p style="margin-top:20px;font-size:.7rem;color:var(--text3);text-align:center;">URL confidentielle — ne pas partager</p>
+  </div>
+</div>
+
+<!-- ═══════════ APP PRINCIPALE ═══════════ -->
+<div id="page-app" class="hidden relative z-10 flex min-h-screen">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar flex-shrink-0">
+    <div class="flex items-center gap-2 mb-8">
+      <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#ef4444,#b91c1c);display:flex;align-items:center;justify-content:center;font-size:1rem;box-shadow:2px 2px 8px rgba(239,68,68,.35);">⚙️</div>
+      <div>
+        <div class="logo-t" style="font-size:1rem;color:var(--text);">MIB Admin</div>
+        <div style="font-size:.65rem;color:var(--text3);">Panneau de contrôle</div>
+      </div>
+    </div>
+
+    <nav>
+      <div class="nav-item on" onclick="showTab('dashboard')" id="nav-dashboard">
+        <span class="nav-icon">📊</span> Dashboard
+      </div>
+      <div class="nav-item" onclick="showTab('centres')" id="nav-centres">
+        <span class="nav-icon">🏢</span> Centres
+      </div>
+      <div class="nav-item" onclick="showTab('licences')" id="nav-licences">
+        <span class="nav-icon">🔑</span> Licences
+      </div>
+      <div class="nav-item" onclick="showTab('contenus')" id="nav-contenus">
+        <span class="nav-icon">🎬</span> Contenus
+      </div>
+      <div class="nav-item" onclick="showTab('stats')" id="nav-stats">
+        <span class="nav-icon">📈</span> Statistiques
+      </div>
+    </nav>
+
+    <div style="margin-top:auto;padding-top:40px;">
+      <div class="sep"></div>
+      <button onclick="logout()" class="btn btn-gray btn-sm w-full">🚪 Déconnexion</button>
+    </div>
+  </div>
+
+  <!-- CONTENU PRINCIPAL -->
+  <div class="flex-1 p-6 overflow-y-auto" style="max-height:100vh;">
+
+    <!-- ── DASHBOARD ── -->
+    <div id="tab-dashboard">
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h1 class="logo-t" style="font-size:1.5rem;color:var(--text);">Bonjour Michel 👋</h1>
+          <p style="font-size:.82rem;color:var(--text2);margin-top:2px;">Voici l'état de la plateforme en temps réel</p>
+        </div>
+        <button onclick="loadAll()" class="btn btn-blue btn-sm">🔄 Actualiser</button>
+      </div>
+
+      <!-- KPI -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div class="kpi">
+          <div class="kpi-icon">🏢</div>
+          <div class="kpi-val text-blue-600" id="kpi-centres">—</div>
+          <div class="kpi-lbl">Centres actifs</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-icon">🔑</div>
+          <div class="kpi-val text-purple-600" id="kpi-licences">—</div>
+          <div class="kpi-lbl">Licences valides</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-icon">👨‍🎓</div>
+          <div class="kpi-val text-green-600" id="kpi-stagiaires">—</div>
+          <div class="kpi-lbl">Stagiaires total</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-icon">📡</div>
+          <div class="kpi-val text-orange-600" id="kpi-sessions">—</div>
+          <div class="kpi-lbl">Sessions ce mois</div>
+        </div>
+      </div>
+
+      <!-- Derniers centres -->
+      <div class="card p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h2 style="font-size:1rem;font-weight:700;">Derniers centres inscrits</h2>
+          <button onclick="showTab('centres')" class="btn btn-blue btn-sm">Voir tous →</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="tbl" id="tbl-recent">
+            <thead><tr>
+              <th>Centre</th><th>Plan</th><th>Statut</th><th>Expire</th>
+            </tr></thead>
+            <tbody id="body-recent"><tr><td colspan="4" style="text-align:center;color:var(--text3);padding:20px;">Chargement...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── CENTRES ── -->
+    <div id="tab-centres" class="hidden">
+      <div class="flex items-center justify-between mb-6">
+        <h1 class="logo-t" style="font-size:1.5rem;">Centres de formation</h1>
+        <button onclick="openModal('modal-new-centre')" class="btn btn-green">+ Nouveau centre</button>
+      </div>
+
+      <!-- Filtres -->
+      <div class="card p-4 mb-4">
+        <div class="flex flex-wrap gap-3">
+          <input type="text" id="search-centres" class="inp" style="max-width:260px;" placeholder="🔍 Rechercher un centre..." oninput="filterCentres()">
+          <select id="filter-plan" class="inp" style="max-width:160px;" onchange="filterCentres()">
+            <option value="">Tous les plans</option>
+            <option value="demo">Démo</option>
+            <option value="starter">Starter</option>
+            <option value="pro">Pro</option>
+            <option value="expert">Expert</option>
+            <option value="entreprise">Entreprise</option>
+          </select>
+          <select id="filter-status" class="inp" style="max-width:160px;" onchange="filterCentres()">
+            <option value="">Tous les statuts</option>
+            <option value="active">Actif</option>
+            <option value="suspended">Suspendu</option>
+            <option value="expired">Expiré</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="card p-5">
+        <div class="overflow-x-auto">
+          <table class="tbl" id="tbl-centres">
+            <thead><tr>
+              <th>Centre</th><th>Email</th><th>Plan</th><th>Statut</th><th>Expire</th><th>Formateurs</th><th>Actions</th>
+            </tr></thead>
+            <tbody id="body-centres"><tr><td colspan="7" style="text-align:center;color:var(--text3);padding:20px;">Chargement...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── LICENCES ── -->
+    <div id="tab-licences" class="hidden">
+      <div class="flex items-center justify-between mb-6">
+        <h1 class="logo-t" style="font-size:1.5rem;">Gestion des licences</h1>
+        <button onclick="openModal('modal-gen-licence')" class="btn btn-blue">🔑 Générer une licence</button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <!-- Plans et limites -->
+        <div class="card p-5">
+          <h3 style="font-weight:700;margin-bottom:14px;">📋 Plans disponibles</h3>
+          <div class="space-y-3">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-radius:10px;background:linear-gradient(145deg,#f8faff,#eef1f8);">
+              <span class="badge-plan bp-demo">Démo</span>
+              <span style="font-size:.8rem;color:var(--text2);">1 formateur · 5 stagiaires · Quiz seul</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-radius:10px;background:linear-gradient(145deg,#eff6ff,#dbeafe);">
+              <span class="badge-plan bp-starter">Starter</span>
+              <span style="font-size:.8rem;color:var(--text2);">3 formateurs · 30 stagiaires · Quiz + Salle</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-radius:10px;background:linear-gradient(145deg,#f0fdf4,#dcfce7);">
+              <span class="badge-plan bp-pro">Pro</span>
+              <span style="font-size:.8rem;color:var(--text2);">10 formateurs · 100 stagiaires · + Challenge Cup</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-radius:10px;background:linear-gradient(145deg,#fdf4ff,#f3e8ff);">
+              <span class="badge-plan bp-expert">Expert</span>
+              <span style="font-size:.8rem;color:var(--text2);">20 formateurs · 200 stagiaires · Tout inclus</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-radius:10px;background:linear-gradient(145deg,#fff7ed,#ffedd5);">
+              <span class="badge-plan bp-entreprise">Entreprise</span>
+              <span style="font-size:.8rem;color:var(--text2);">Illimité · Multi-centres · Sur devis</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Licence indépendant -->
+        <div class="card p-5">
+          <h3 style="font-weight:700;margin-bottom:14px;">👤 Licence Indépendant</h3>
+          <p style="font-size:.82rem;color:var(--text2);margin-bottom:14px;line-height:1.6;">Formateur indépendant sans centre — licence mensuelle sans renouvellement automatique.</p>
+          <div class="space-y-2" style="font-size:.82rem;">
+            <div style="display:flex;gap:8px;align-items:center;"><span style="color:var(--green);">✅</span> 1 formateur (lui-même)</div>
+            <div style="display:flex;gap:8px;align-items:center;"><span style="color:var(--green);">✅</span> Jusqu'à 20 stagiaires</div>
+            <div style="display:flex;gap:8px;align-items:center;"><span style="color:var(--green);">✅</span> Quiz auto-entraînement</div>
+            <div style="display:flex;gap:8px;align-items:center;"><span style="color:var(--green);">✅</span> Quiz Salle</div>
+            <div style="display:flex;gap:8px;align-items:center;"><span style="color:var(--text3);">⭕</span> Facturation mensuelle manuelle</div>
+            <div style="display:flex;gap:8px;align-items:center;"><span style="color:var(--text3);">⭕</span> Pas de renouvellement auto</div>
+          </div>
+          <div class="sep"></div>
+          <button onclick="openModal('modal-gen-licence');document.getElementById('gen-type').value='independant'" class="btn btn-orange btn-sm">
+            Créer licence indépendant →
+          </button>
+        </div>
+      </div>
+
+      <!-- Toutes les licences -->
+      <div class="card p-5">
+        <h3 style="font-weight:700;margin-bottom:14px;">Toutes les licences</h3>
+        <div class="overflow-x-auto">
+          <table class="tbl" id="tbl-licences">
+            <thead><tr>
+              <th>Centre</th><th>Type</th><th>Plan</th><th>Cycle</th><th>Statut</th><th>Expire le</th><th>Clé</th><th>Actions</th>
+            </tr></thead>
+            <tbody id="body-licences"><tr><td colspan="8" style="text-align:center;color:var(--text3);padding:20px;">Chargement...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── CONTENUS ── -->
+    <div id="tab-contenus" class="hidden">
+      <div class="flex items-center justify-between mb-6">
+        <h1 class="logo-t" style="font-size:1.5rem;">Contenus pédagogiques</h1>
+        <button onclick="openModal('modal-upload')" class="btn btn-green">+ Ajouter un contenu</button>
+      </div>
+      <div class="card p-5">
+        <div class="overflow-x-auto">
+          <table class="tbl" id="tbl-contenus">
+            <thead><tr>
+              <th>Titre</th><th>Type</th><th>Niveau</th><th>Catégorie</th><th>Statut</th><th>Actions</th>
+            </tr></thead>
+            <tbody id="body-contenus"><tr><td colspan="6" style="text-align:center;color:var(--text3);padding:20px;">Chargement...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── STATS ── -->
+    <div id="tab-stats" class="hidden">
+      <h1 class="logo-t mb-6" style="font-size:1.5rem;">Statistiques globales</h1>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="kpi">
+          <div class="kpi-icon">🎯</div>
+          <div class="kpi-val text-blue-600" id="stat-quiz">—</div>
+          <div class="kpi-lbl">Sessions Quiz ce mois</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-icon">🏆</div>
+          <div class="kpi-val text-purple-600" id="stat-challenge">—</div>
+          <div class="kpi-lbl">Parties Challenge Cup</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-icon">🔴</div>
+          <div class="kpi-val text-red-600" id="stat-ssi">—</div>
+          <div class="kpi-lbl">Sessions SSI</div>
+        </div>
+      </div>
+      <div class="card p-5">
+        <p style="color:var(--text2);font-size:.85rem;text-align:center;padding:20px;">
+          📊 Les graphiques d'évolution seront ajoutés prochainement.
+        </p>
+      </div>
+    </div>
+
+  </div><!-- /contenu -->
+</div><!-- /app -->
+
+<!-- ═══════════ MODALES ═══════════ -->
+
+<!-- Nouveau centre -->
+<div id="modal-new-centre" class="modal-bg hidden">
+  <div class="modal-box">
+    <div class="flex justify-between items-center mb-5">
+      <h3 style="font-size:1.1rem;font-weight:800;">🏢 Nouveau centre</h3>
+      <button onclick="closeModal('modal-new-centre')" style="width:32px;height:32px;border-radius:50%;background:#f3f4f6;border:none;cursor:pointer;font-size:1rem;">✕</button>
+    </div>
+    <div class="space-y-3">
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="lbl">Nom du centre</label><input type="text" id="nc-nom" class="inp" placeholder="Centre Formation Paris"></div>
+        <div><label class="lbl">Email</label><input type="email" id="nc-email" class="inp" placeholder="contact@centre.fr"></div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="lbl">Téléphone</label><input type="tel" id="nc-tel" class="inp" placeholder="06 00 00 00 00"></div>
+        <div><label class="lbl">Ville</label><input type="text" id="nc-ville" class="inp" placeholder="Paris"></div>
+      </div>
+      <div class="sep"></div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="lbl">Plan</label>
+          <select id="nc-plan" class="inp" onchange="updateLimits()">
+            <option value="demo">Démo</option>
+            <option value="starter">Starter</option>
+            <option value="pro">Pro</option>
+            <option value="expert">Expert</option>
+            <option value="entreprise">Entreprise</option>
+          </select>
+        </div>
+        <div>
+          <label class="lbl">Type de licence</label>
+          <select id="nc-type" class="inp">
+            <option value="centre">Centre</option>
+            <option value="independant">Indépendant</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="lbl">Cycle de facturation</label>
+          <select id="nc-cycle" class="inp">
+            <option value="annuel">Annuel</option>
+            <option value="mensuel">Mensuel</option>
+          </select>
+        </div>
+        <div>
+          <label class="lbl">Durée (mois)</label>
+          <input type="number" id="nc-duree" class="inp" value="12" min="1" max="36">
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="lbl">Max formateurs</label><input type="number" id="nc-maxf" class="inp" value="1"></div>
+        <div><label class="lbl">Max stagiaires</label><input type="number" id="nc-maxs" class="inp" value="5"></div>
+      </div>
+      <!-- Modules -->
+      <div>
+        <label class="lbl">Modules activés</label>
+        <div class="grid grid-cols-2 gap-2 mt-1">
+          <label style="display:flex;align-items:center;gap:8px;font-size:.82rem;cursor:pointer;"><input type="checkbox" id="mod-auto" checked> 🎯 Quiz auto-entraîn.</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:.82rem;cursor:pointer;"><input type="checkbox" id="mod-salle"> 📡 Quiz Salle</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:.82rem;cursor:pointer;"><input type="checkbox" id="mod-cup"> 🏆 Challenge Cup</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:.82rem;cursor:pointer;"><input type="checkbox" id="mod-ssi"> 🔴 SSI Supervisé</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:.82rem;cursor:pointer;"><input type="checkbox" id="mod-ssiauto"> 🟡 SSI Auto-formation</label>
+        </div>
+      </div>
+      <div id="nc-key-result" class="key-display hidden"></div>
+      <div id="nc-msg" class="hidden"></div>
+      <div class="flex gap-3 mt-2">
+        <button onclick="closeModal('modal-new-centre')" class="btn btn-gray flex-1">Annuler</button>
+        <button onclick="createCentre()" class="btn btn-green flex-1" id="btn-create-centre">Créer le centre</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Générer une licence -->
+<div id="modal-gen-licence" class="modal-bg hidden">
+  <div class="modal-box">
+    <div class="flex justify-between items-center mb-5">
+      <h3 style="font-size:1.1rem;font-weight:800;">🔑 Générer une licence</h3>
+      <button onclick="closeModal('modal-gen-licence')" style="width:32px;height:32px;border-radius:50%;background:#f3f4f6;border:none;cursor:pointer;font-size:1rem;">✕</button>
+    </div>
+    <div class="space-y-3">
+      <div>
+        <label class="lbl">Centre concerné</label>
+        <select id="gen-centre" class="inp">
+          <option value="">— Sélectionnez un centre —</option>
+        </select>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="lbl">Plan</label>
+          <select id="gen-plan" class="inp">
+            <option value="demo">Démo</option>
+            <option value="starter">Starter</option>
+            <option value="pro">Pro</option>
+            <option value="expert">Expert</option>
+            <option value="entreprise">Entreprise</option>
+          </select>
+        </div>
+        <div>
+          <label class="lbl">Type</label>
+          <select id="gen-type" class="inp">
+            <option value="centre">Centre</option>
+            <option value="independant">Indépendant</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="lbl">Cycle</label>
+          <select id="gen-cycle" class="inp">
+            <option value="annuel">Annuel</option>
+            <option value="mensuel">Mensuel</option>
+          </select>
+        </div>
+        <div>
+          <label class="lbl">Durée (mois)</label>
+          <input type="number" id="gen-duree" class="inp" value="12" min="1">
+        </div>
+      </div>
+      <div id="gen-key-result" class="key-display hidden"></div>
+      <div id="gen-msg" class="hidden"></div>
+      <div class="flex gap-3">
+        <button onclick="closeModal('modal-gen-licence')" class="btn btn-gray flex-1">Annuler</button>
+        <button onclick="genLicence()" class="btn btn-blue flex-1" id="btn-gen">Générer la clé</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Upload contenu -->
+<div id="modal-upload" class="modal-bg hidden">
+  <div class="modal-box">
+    <div class="flex justify-between items-center mb-5">
+      <h3 style="font-size:1.1rem;font-weight:800;">🎬 Ajouter un contenu</h3>
+      <button onclick="closeModal('modal-upload')" style="width:32px;height:32px;border-radius:50%;background:#f3f4f6;border:none;cursor:pointer;font-size:1rem;">✕</button>
+    </div>
+    <div class="space-y-3">
+      <div><label class="lbl">Titre</label><input type="text" id="up-titre" class="inp" placeholder="Introduction au SSI"></div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="lbl">Type</label>
+          <select id="up-type" class="inp">
+            <option value="video">🎬 Vidéo</option>
+            <option value="photo">🖼️ Photo / Schéma</option>
+            <option value="pdf">📄 PDF / Fiche</option>
+          </select>
+        </div>
+        <div>
+          <label class="lbl">Niveau</label>
+          <select id="up-niveau" class="inp">
+            <option value="">Tous niveaux</option>
+            <option value="SSIAP1">SSIAP 1</option>
+            <option value="SSIAP2">SSIAP 2</option>
+            <option value="SSIAP3">SSIAP 3</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label class="lbl">Catégorie</label>
+        <select id="up-cat" class="inp">
+          <option value="general">Général</option>
+          <option value="sdi">SDI — Détection</option>
+          <option value="smsi">SMSI — Mise en sécurité</option>
+          <option value="uga">UGA — Alarme</option>
+          <option value="evacuation">Évacuation</option>
+          <option value="reglementation">Réglementation</option>
+        </select>
+      </div>
+      <div><label class="lbl">Description</label><textarea id="up-desc" class="inp" rows="2" placeholder="Description du contenu..." style="resize:vertical;"></textarea></div>
+      <div>
+        <label class="lbl">Fichier</label>
+        <input type="file" id="up-file" class="inp" style="padding:8px;" accept="video/*,image/*,.pdf">
+      </div>
+      <div id="up-progress" class="hidden" style="background:#f3f4f6;border-radius:8px;height:8px;overflow:hidden;">
+        <div id="up-bar" style="height:100%;width:0;background:linear-gradient(90deg,#3b82f6,#1d4ed8);transition:width .3s;border-radius:8px;"></div>
+      </div>
+      <div id="up-msg" class="hidden"></div>
+      <div class="flex gap-3">
+        <button onclick="closeModal('modal-upload')" class="btn btn-gray flex-1">Annuler</button>
+        <button onclick="uploadContenu()" class="btn btn-green flex-1" id="btn-upload">Uploader →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// AUTH
+// ============================================================
+const ADMIN_HASH='a8f5f167f44f4964e6c998dee827110c847d0b4a5d61b3e7a99ee18fc3e00b37'; // SHA-256('MIB2026admin')
+
+let allCentres=[];
+
+async function doLogin(){
+  const pwd=document.getElementById('login-pwd').value;
+  const err=document.getElementById('login-err');
+  err.classList.add('hidden');
+  if(!pwd)return;
+  const h=await UTILS.hash(pwd);
+  if(h!==ADMIN_HASH){err.textContent='❌ Mot de passe incorrect.';err.classList.remove('hidden');return;}
+  SESSION.save('admin',{role:'admin'});
+  showApp();
+}
+function togglePwd(){const i=document.getElementById('login-pwd');i.type=i.type==='password'?'text':'password';}
+function logout(){SESSION.clear('admin');document.getElementById('page-app').classList.add('hidden');document.getElementById('page-login').classList.remove('hidden');}
+
+function showApp(){
+  document.getElementById('page-login').classList.add('hidden');
+  document.getElementById('page-app').classList.remove('hidden');
+  loadAll();
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+const TABS=['dashboard','centres','licences','contenus','stats'];
+function showTab(t){
+  TABS.forEach(id=>{
+    document.getElementById(`tab-${id}`).classList.toggle('hidden',id!==t);
+    document.getElementById(`nav-${id}`).classList.toggle('on',id===t);
+  });
+  if(t==='centres')loadCentres();
+  if(t==='licences'){loadLicences();loadCentresSelect();}
+  if(t==='contenus')loadContenus();
+  if(t==='stats')loadStats();
+}
+
+// ============================================================
+// DONNÉES
+// ============================================================
+async function loadAll(){
+  // KPIs
+  try{
+    const[{count:nc},{count:nl},{count:ns},{count:nses}]=await Promise.all([
+      supabase.from('centers').select('*',{count:'exact',head:true}).eq('license_status','active'),
+      supabase.from('centers').select('*',{count:'exact',head:true}).eq('license_status','active'),
+      supabase.from('stagiaires').select('*',{count:'exact',head:true}).eq('actif',true),
+      supabase.from('quiz_salle_sessions').select('*',{count:'exact',head:true})
+        .gte('created_at',new Date(new Date().setDate(1)).toISOString())
+    ]);
+    document.getElementById('kpi-centres').textContent=nc??'0';
+    document.getElementById('kpi-licences').textContent=nl??'0';
+    document.getElementById('kpi-stagiaires').textContent=ns??'0';
+    document.getElementById('kpi-sessions').textContent=nses??'0';
+  }catch(e){console.error(e);}
+
+  // Derniers centres
+  try{
+    const{data}=await supabase.from('centers').select('nom,email,plan,license_status,license_expires_at').order('created_at',{ascending:false}).limit(5);
+    const tbody=document.getElementById('body-recent');
+    if(!data||!data.length){tbody.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:20px;">Aucun centre</td></tr>';return;}
+    tbody.innerHTML=data.map(c=>`<tr>
+      <td><strong>${c.nom}</strong><br><span style="font-size:.75rem;color:var(--text3);">${c.email}</span></td>
+      <td><span class="badge-plan bp-${c.plan}">${c.plan}</span></td>
+      <td>${statusBadge(c.license_status)}</td>
+      <td style="font-size:.82rem;">${c.license_expires_at?UTILS.dateStr(c.license_expires_at):'—'}</td>
+    </tr>`).join('');
+  }catch(e){console.error(e);}
+}
+
+async function loadCentres(){
+  try{
+    const{data}=await supabase.from('centers').select('*').order('created_at',{ascending:false});
+    allCentres=data||[];
+    renderCentres(allCentres);
+  }catch(e){console.error(e);}
+}
+
+function renderCentres(data){
+  const tbody=document.getElementById('body-centres');
+  if(!data.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:20px;">Aucun centre</td></tr>';return;}
+  tbody.innerHTML=data.map(c=>`<tr>
+    <td><strong>${c.nom}</strong></td>
+    <td style="font-size:.8rem;color:var(--text2);">${c.email}</td>
+    <td><span class="badge-plan bp-${c.plan}">${c.plan}</span></td>
+    <td>${statusBadge(c.license_status)}</td>
+    <td style="font-size:.8rem;">${c.license_expires_at?UTILS.dateStr(c.license_expires_at):'—'}</td>
+    <td style="font-size:.82rem;text-align:center;">${c.max_formateurs??'—'}</td>
+    <td>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button onclick="toggleStatus('${c.id}','${c.license_status}')" class="btn btn-sm ${c.license_status==='active'?'btn-orange':'btn-green'}">${c.license_status==='active'?'⏸ Suspendre':'▶ Réactiver'}</button>
+        <button onclick="extendLicence('${c.id}')" class="btn btn-blue btn-sm">📅 Prolonger</button>
+      </div>
+    </td>
+  </tr>`).join('');
+}
+
+function filterCentres(){
+  const q=document.getElementById('search-centres').value.toLowerCase();
+  const plan=document.getElementById('filter-plan').value;
+  const status=document.getElementById('filter-status').value;
+  renderCentres(allCentres.filter(c=>
+    (!q||c.nom.toLowerCase().includes(q)||c.email.toLowerCase().includes(q))&&
+    (!plan||c.plan===plan)&&(!status||c.license_status===status)
+  ));
+}
+
+async function loadLicences(){
+  try{
+    const{data}=await supabase.from('centers').select('id,nom,license_type,plan,billing_cycle,license_status,license_expires_at,license_key,auto_renewal').order('created_at',{ascending:false});
+    const tbody=document.getElementById('body-licences');
+    if(!data||!data.length){tbody.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:20px;">Aucune licence</td></tr>';return;}
+    tbody.innerHTML=data.map(c=>`<tr>
+      <td><strong>${c.nom}</strong></td>
+      <td style="font-size:.8rem;">${c.license_type==='independant'?'👤 Indépendant':'🏢 Centre'}</td>
+      <td><span class="badge-plan bp-${c.plan}">${c.plan}</span></td>
+      <td style="font-size:.8rem;">${c.billing_cycle==='mensuel'?'📅 Mensuel':'📆 Annuel'}${c.auto_renewal?' 🔄':''}</td>
+      <td>${statusBadge(c.license_status)}</td>
+      <td style="font-size:.8rem;">${c.license_expires_at?UTILS.dateStr(c.license_expires_at):'—'}</td>
+      <td><code style="font-size:.72rem;background:#f3f4f6;padding:3px 8px;border-radius:6px;">${c.license_key||'—'}</code></td>
+      <td><button onclick="extendLicence('${c.id}')" class="btn btn-blue btn-sm">📅 Prolonger</button></td>
+    </tr>`).join('');
+  }catch(e){console.error(e);}
+}
+
+async function loadCentresSelect(){
+  try{
+    const{data}=await supabase.from('centers').select('id,nom').order('nom');
+    const sel=document.getElementById('gen-centre');
+    sel.innerHTML='<option value="">— Sélectionnez un centre —</option>';
+    (data||[]).forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.nom;sel.appendChild(o);});
+  }catch(e){}
+}
+
+async function loadContenus(){
+  try{
+    const{data}=await supabase.from('contenus').select('*').order('created_at',{ascending:false});
+    const tbody=document.getElementById('body-contenus');
+    if(!data||!data.length){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:20px;">Aucun contenu</td></tr>';return;}
+    const icons={video:'🎬',photo:'🖼️',pdf:'📄',schema:'📐'};
+    tbody.innerHTML=data.map(c=>`<tr>
+      <td><strong>${c.titre}</strong></td>
+      <td>${icons[c.type]||'📁'} ${c.type}</td>
+      <td style="font-size:.8rem;">${c.niveau||'Tous'}</td>
+      <td style="font-size:.8rem;">${c.categorie||'—'}</td>
+      <td>${c.actif?'<span style="color:var(--green);">✅ Actif</span>':'<span style="color:var(--text3);">⏸ Inactif</span>'}</td>
+      <td><button onclick="deleteContenu('${c.id}')" class="btn btn-red btn-sm">🗑️</button></td>
+    </tr>`).join('');
+  }catch(e){console.error(e);}
+}
+
+async function loadStats(){
+  try{
+    const start=new Date(new Date().setDate(1)).toISOString();
+    const[{count:q},{count:ch},{count:ssi}]=await Promise.all([
+      supabase.from('quiz_salle_sessions').select('*',{count:'exact',head:true}).gte('created_at',start),
+      supabase.from('challenge_sessions').select('*',{count:'exact',head:true}).gte('created_at',start),
+      supabase.from('ssi_sessions').select('*',{count:'exact',head:true}).gte('created_at',start),
+    ]);
+    document.getElementById('stat-quiz').textContent=q??'0';
+    document.getElementById('stat-challenge').textContent=ch??'0';
+    document.getElementById('stat-ssi').textContent=ssi??'0';
+  }catch(e){console.error(e);}
+}
+
+// ============================================================
+// ACTIONS LICENCES
+// ============================================================
+function genKey(){
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const seg=()=>Array.from({length:4},()=>chars[Math.floor(Math.random()*chars.length)]).join('');
+  return`${seg()}-${seg()}-${seg()}-${seg()}`;
+}
+
+async function createCentre(){
+  const nom=document.getElementById('nc-nom').value.trim();
+  const email=document.getElementById('nc-email').value.trim().toLowerCase();
+  const plan=document.getElementById('nc-plan').value;
+  const type=document.getElementById('nc-type').value;
+  const cycle=document.getElementById('nc-cycle').value;
+  const duree=parseInt(document.getElementById('nc-duree').value)||12;
+  const maxF=parseInt(document.getElementById('nc-maxf').value)||1;
+  const maxS=parseInt(document.getElementById('nc-maxs').value)||5;
+  const msgEl=document.getElementById('nc-msg');
+  msgEl.classList.add('hidden');
+  if(!nom||!email){msgEl.innerHTML='<div class="alert-err">❌ Nom et email obligatoires.</div>';msgEl.classList.remove('hidden');return;}
+
+  const key=genKey();
+  const expires=new Date();expires.setMonth(expires.getMonth()+duree);
+
+  const btnEl=document.getElementById('btn-create-centre');
+  btnEl.disabled=true;btnEl.innerHTML='<span class="spin"></span>';
+
+  try{
+    const{error}=await supabase.from('centers').insert({
+      nom,email,plan,license_key:key,license_status:'active',
+      license_type:type,billing_cycle:cycle,auto_renewal:cycle==='annuel',
+      license_expires_at:expires.toISOString(),
+      max_formateurs:maxF,max_stagiaires:maxS,
+      module_auto_entrainement:document.getElementById('mod-auto').checked,
+      module_quiz_salle:document.getElementById('mod-salle').checked,
+      module_challenge_cup:document.getElementById('mod-cup').checked,
+      module_ssi_supervise:document.getElementById('mod-ssi').checked,
+      module_ssi_autoformation:document.getElementById('mod-ssiauto').checked,
+    });
+    if(error)throw error;
+    const keyEl=document.getElementById('nc-key-result');
+    keyEl.textContent=key;keyEl.classList.remove('hidden');
+    msgEl.innerHTML=`<div class="alert-ok">✅ Centre créé ! Clé de licence générée ci-dessus — à transmettre au client.</div>`;
+    msgEl.classList.remove('hidden');
+    loadAll();loadCentres();
+  }catch(e){
+    msgEl.innerHTML=`<div class="alert-err">❌ Erreur : ${e.message}</div>`;msgEl.classList.remove('hidden');
+  }finally{btnEl.disabled=false;btnEl.textContent='Créer le centre';}
+}
+
+async function genLicence(){
+  const centreId=document.getElementById('gen-centre').value;
+  const plan=document.getElementById('gen-plan').value;
+  const type=document.getElementById('gen-type').value;
+  const cycle=document.getElementById('gen-cycle').value;
+  const duree=parseInt(document.getElementById('gen-duree').value)||12;
+  const msgEl=document.getElementById('gen-msg');
+  msgEl.classList.add('hidden');
+  if(!centreId){msgEl.innerHTML='<div class="alert-err">❌ Sélectionnez un centre.</div>';msgEl.classList.remove('hidden');return;}
+
+  const key=genKey();
+  const expires=new Date();expires.setMonth(expires.getMonth()+duree);
+  const btnEl=document.getElementById('btn-gen');
+  btnEl.disabled=true;btnEl.innerHTML='<span class="spin"></span>';
+
+  try{
+    const{error}=await supabase.from('centers').update({
+      plan,license_key:key,license_status:'active',
+      license_type:type,billing_cycle:cycle,auto_renewal:cycle==='annuel',
+      license_expires_at:expires.toISOString()
+    }).eq('id',centreId);
+    if(error)throw error;
+    const keyEl=document.getElementById('gen-key-result');
+    keyEl.textContent=key;keyEl.classList.remove('hidden');
+    msgEl.innerHTML='<div class="alert-ok">✅ Nouvelle licence générée — à transmettre au centre.</div>';
+    msgEl.classList.remove('hidden');
+    loadLicences();
+  }catch(e){
+    msgEl.innerHTML=`<div class="alert-err">❌ Erreur : ${e.message}</div>`;msgEl.classList.remove('hidden');
+  }finally{btnEl.disabled=false;btnEl.textContent='Générer la clé';}
+}
+
+async function toggleStatus(id,current){
+  const newStatus=current==='active'?'suspended':'active';
+  if(!confirm(`${newStatus==='suspended'?'Suspendre':'Réactiver'} ce centre ?`))return;
+  await supabase.from('centers').update({license_status:newStatus}).eq('id',id);
+  loadCentres();loadLicences();
+}
+
+async function extendLicence(id){
+  const mois=prompt('Prolonger de combien de mois ?','12');
+  if(!mois||isNaN(mois))return;
+  const{data}=await supabase.from('centers').select('license_expires_at').eq('id',id).single();
+  const base=data?.license_expires_at?new Date(data.license_expires_at):new Date();
+  if(base<new Date())base.setTime(Date.now());
+  base.setMonth(base.getMonth()+parseInt(mois));
+  await supabase.from('centers').update({license_expires_at:base.toISOString(),license_status:'active'}).eq('id',id);
+  loadCentres();loadLicences();alert(`✅ Licence prolongée jusqu'au ${UTILS.dateStr(base)}`);
+}
+
+async function deleteContenu(id){
+  if(!confirm('Supprimer ce contenu ?'))return;
+  await supabase.from('contenus').delete().eq('id',id);
+  loadContenus();
+}
+
+// ============================================================
+// UPLOAD CONTENU
+// ============================================================
+async function uploadContenu(){
+  const titre=document.getElementById('up-titre').value.trim();
+  const type=document.getElementById('up-type').value;
+  const niveau=document.getElementById('up-niveau').value;
+  const cat=document.getElementById('up-cat').value;
+  const desc=document.getElementById('up-desc').value.trim();
+  const file=document.getElementById('up-file').files[0];
+  const msgEl=document.getElementById('up-msg');
+  msgEl.classList.add('hidden');
+  if(!titre||!file){msgEl.innerHTML='<div class="alert-err">❌ Titre et fichier obligatoires.</div>';msgEl.classList.remove('hidden');return;}
+
+  const btn=document.getElementById('btn-upload');btn.disabled=true;btn.innerHTML='<span class="spin"></span>';
+  const bucket=type==='video'?'videos':type==='pdf'?'documents':'photos';
+  const path=`${cat}/${Date.now()}_${file.name}`;
+
+  try{
+    document.getElementById('up-progress').classList.remove('hidden');
+    const url=await STORAGE.upload(bucket,path,file);
+    document.getElementById('up-bar').style.width='80%';
+    await supabase.from('contenus').insert({titre,type,niveau:niveau||null,categorie:cat,description:desc,url,actif:true});
+    document.getElementById('up-bar').style.width='100%';
+    msgEl.innerHTML='<div class="alert-ok">✅ Contenu uploadé et enregistré !</div>';msgEl.classList.remove('hidden');
+    loadContenus();
+  }catch(e){
+    msgEl.innerHTML=`<div class="alert-err">❌ Erreur upload : ${e.message}</div>`;msgEl.classList.remove('hidden');
+  }finally{btn.disabled=false;btn.textContent='Uploader →';document.getElementById('up-bar').style.width='0';}
+}
+
+// ============================================================
+// HELPERS UI
+// ============================================================
+function statusBadge(s){
+  const cfg={active:{cls:'bs-active',icon:'✅',lbl:'Actif'},suspended:{cls:'bs-suspended',icon:'⏸',lbl:'Suspendu'},expired:{cls:'bs-expired',icon:'⌛',lbl:'Expiré'}};
+  const c=cfg[s]||cfg.expired;
+  return`<span class="badge-st ${c.cls}">${c.icon} ${c.lbl}</span>`;
+}
+function updateLimits(){
+  const limits={demo:[1,5],starter:[3,30],pro:[10,100],expert:[20,200],entreprise:[99,999]};
+  const[f,s]=limits[document.getElementById('nc-plan').value]||[1,5];
+  document.getElementById('nc-maxf').value=f;document.getElementById('nc-maxs').value=s;
+}
+function openModal(id){document.getElementById(id).classList.remove('hidden');}
+function closeModal(id){document.getElementById(id).classList.add('hidden');}
+document.querySelectorAll('.modal-bg').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.add('hidden');}));
+
+// ============================================================
+// INIT
+// ============================================================
+window.addEventListener('DOMContentLoaded',()=>{
+  if(SESSION.load('admin'))showApp();
+});
+</script>
+</body>
+</html>
