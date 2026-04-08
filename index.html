@@ -13,127 +13,68 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Syne:wght@700;800;900&display=swap');
 
 :root{
-  --bg:       #eef2ff;
-  --bg2:      #f8faff;
-  --card:     #ffffff;
-  --text:     #111827;
-  --text2:    #6b7280;
-  --text3:    #9ca3af;
-  --border:   rgba(0,0,0,.07);
-  --red:      #e63946;
-  --blue:     #2563eb;
-  --green:    #059669;
-  --orange:   #d97706;
-  --purple:   #7c3aed;
+  --bg:#eef2ff;--card:#ffffff;--text:#111827;--text2:#6b7280;--text3:#9ca3af;
+  --border:rgba(0,0,0,.07);--blue:#2563eb;--red:#e63946;--green:#059669;--orange:#d97706;
 }
-
 *{box-sizing:border-box;margin:0;padding:0;}
-html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;}
+html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);}
 
-/* ── FOND ── */
-.bg{position:fixed;inset:0;z-index:0;overflow:hidden;}
-.bg-gradient{
-  position:absolute;inset:0;
-  background:
-    radial-gradient(ellipse 70% 50% at 10% 10%,  rgba(230,57,70,.12)  0%,transparent 65%),
-    radial-gradient(ellipse 60% 45% at 90% 90%,  rgba(37,99,235,.12)  0%,transparent 65%),
-    radial-gradient(ellipse 50% 40% at 55% 50%,  rgba(124,58,237,.07) 0%,transparent 70%),
-    linear-gradient(160deg,#eef2ff 0%,#f5f7ff 50%,#edf0fb 100%);
-}
-/* Grille perspective douce */
-.bg-grid{
-  position:absolute;inset:0;
-  background-image:
-    linear-gradient(rgba(100,116,139,.06) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(100,116,139,.06) 1px,transparent 1px);
+.bg-wrap{position:fixed;inset:0;z-index:0;overflow:hidden;
+  background:radial-gradient(ellipse 70% 50% at 10% 0%,rgba(37,99,235,.08) 0%,transparent 60%),
+  radial-gradient(ellipse 50% 40% at 90% 100%,rgba(124,58,237,.08) 0%,transparent 60%),
+  linear-gradient(160deg,#eef2ff 0%,#f5f7ff 50%,#edf0fb 100%);}
+.bg-grid{position:absolute;inset:0;
+  background-image:linear-gradient(rgba(100,116,139,.05) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(100,116,139,.05) 1px,transparent 1px);
   background-size:48px 48px;
-  transform:perspective(600px) rotateX(18deg) scale(1.4);
-  transform-origin:50% 0%;
-}
-/* Orbes colorés */
+  transform:perspective(600px) rotateX(18deg) scale(1.4);transform-origin:50% 0%;}
 .orb{position:absolute;border-radius:50%;filter:blur(70px);animation:drift 14s ease-in-out infinite;pointer-events:none;}
-.orb1{width:500px;height:500px;top:-120px;right:-80px; background:rgba(230,57,70,.18); animation-delay:0s;}
-.orb2{width:600px;height:600px;bottom:-150px;left:-100px;background:rgba(37,99,235,.16); animation-delay:-6s;}
-.orb3{width:350px;height:350px;top:50%;left:55%;         background:rgba(124,58,237,.1);  animation-delay:-11s;}
+.orb1{width:500px;height:500px;top:-120px;right:-80px;background:rgba(230,57,70,.15);animation-delay:0s;}
+.orb2{width:600px;height:600px;bottom:-150px;left:-100px;background:rgba(37,99,235,.13);animation-delay:-6s;}
+.orb3{width:350px;height:350px;top:50%;left:55%;background:rgba(124,58,237,.08);animation-delay:-11s;}
 @keyframes drift{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(-25px,18px) scale(1.04)}66%{transform:translate(18px,-22px) scale(.96)}}
 
-/* ── CARD PRINCIPALE ── */
+/* SCENE 3D */
 .scene{perspective:1400px;perspective-origin:50% 40%;}
 .main-card{
   position:relative;
   background:linear-gradient(145deg,#ffffff 0%,#f8faff 100%);
-  border-radius:28px;
-  border:1px solid rgba(255,255,255,.9);
-  backdrop-filter:blur(20px);
-  -webkit-backdrop-filter:blur(20px);
-  /* Ombres multiples = profondeur réelle */
+  border-radius:28px;border:1px solid rgba(255,255,255,.9);
   box-shadow:
-    0 2px 0 rgba(255,255,255,.8) inset,          /* reflet top */
-    0 -1px 0 rgba(0,0,0,.04) inset,              /* ombre bottom interne */
-    1px 0 0 rgba(255,255,255,.7) inset,           /* reflet gauche */
-    20px 20px 60px rgba(100,116,139,.18),         /* ombre portée douce */
+    0 2px 0 rgba(255,255,255,.8) inset,
+    0 -1px 0 rgba(0,0,0,.04) inset,
+    1px 0 0 rgba(255,255,255,.7) inset,
+    20px 20px 60px rgba(100,116,139,.18),
     0 8px 25px rgba(100,116,139,.12),
     0 2px 8px rgba(100,116,139,.1);
   transform-style:preserve-3d;
-  transition:transform .12s ease, box-shadow .12s ease;
+  transition:transform .12s ease;
 }
-/* Trait de lumière haut */
-.main-card::before{
-  content:'';position:absolute;top:0;left:8%;right:8%;height:1px;
-  background:linear-gradient(90deg,transparent,rgba(255,255,255,1),transparent);
-  border-radius:0 0 50% 50%;
-}
+.main-card::before{content:'';position:absolute;top:0;left:8%;right:8%;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,1),transparent);}
 
-/* ── BOUTONS RÔLE ── */
+/* BOUTONS RÔLE */
 .role-btn{
-  position:relative;cursor:pointer;border-radius:18px;padding:22px 10px 18px;
-  text-align:center;
+  position:relative;cursor:pointer;border-radius:18px;padding:22px 10px 18px;text-align:center;
   background:linear-gradient(145deg,#f8faff 0%,#eef1f8 100%);
   border:1.5px solid rgba(0,0,0,.07);
-  transition:all .3s cubic-bezier(.34,1.56,.64,1);
-  transform-style:preserve-3d;
-  /* Relief neumorphique */
-  box-shadow:
-    4px 4px 12px rgba(100,116,139,.2),
-    -3px -3px 8px rgba(255,255,255,.95),
-    inset 0 1px 0 rgba(255,255,255,.8),
-    inset 0 -1px 0 rgba(0,0,0,.04);
-}
-.role-btn:hover{
-  transform:translateY(-6px) rotateX(8deg) scale(1.04);
-  box-shadow:
-    8px 18px 35px rgba(100,116,139,.25),
-    -3px -3px 8px rgba(255,255,255,.95),
-    inset 0 1px 0 rgba(255,255,255,.9),
-    inset 0 -1px 0 rgba(0,0,0,.04);
-}
-.role-btn:active{
-  transform:translateY(2px) scale(.98);
-  box-shadow:
-    2px 4px 10px rgba(100,116,139,.15),
-    inset 3px 3px 8px rgba(0,0,0,.08),
-    inset -1px -1px 4px rgba(255,255,255,.6);
-}
-/* Actif — couleurs distinctives */
-.role-btn.act-c{
-  background:linear-gradient(145deg,#eff6ff,#dbeafe);
-  border-color:rgba(37,99,235,.35);
+  transition:all .3s cubic-bezier(.34,1.56,.64,1);transform-style:preserve-3d;
+  box-shadow:4px 4px 12px rgba(100,116,139,.2),-3px -3px 8px rgba(255,255,255,.95),
+    inset 0 1px 0 rgba(255,255,255,.8),inset 0 -1px 0 rgba(0,0,0,.04);}
+.role-btn:hover{transform:translateY(-6px) rotateX(8deg) scale(1.04);
+  box-shadow:8px 18px 35px rgba(100,116,139,.25),-3px -3px 8px rgba(255,255,255,.95),
+    inset 0 1px 0 rgba(255,255,255,.9);}
+.role-btn:active{transform:translateY(2px) scale(.98);
+  box-shadow:2px 4px 10px rgba(100,116,139,.15),inset 3px 3px 8px rgba(0,0,0,.08);}
+.role-btn.act-c{background:linear-gradient(145deg,#eff6ff,#dbeafe);border-color:rgba(37,99,235,.35);
   box-shadow:0 0 0 3px rgba(37,99,235,.12),8px 15px 35px rgba(37,99,235,.2),
-    inset 0 1px 0 rgba(255,255,255,.9),inset 0 -1px 0 rgba(37,99,235,.1);
-}
-.role-btn.act-f{
-  background:linear-gradient(145deg,#fff1f2,#ffe4e6);
-  border-color:rgba(230,57,70,.35);
+    inset 0 1px 0 rgba(255,255,255,.9);}
+.role-btn.act-f{background:linear-gradient(145deg,#fff1f2,#ffe4e6);border-color:rgba(230,57,70,.35);
   box-shadow:0 0 0 3px rgba(230,57,70,.12),8px 15px 35px rgba(230,57,70,.2),
-    inset 0 1px 0 rgba(255,255,255,.9),inset 0 -1px 0 rgba(230,57,70,.1);
-}
-.role-btn.act-s{
-  background:linear-gradient(145deg,#ecfdf5,#d1fae5);
-  border-color:rgba(5,150,105,.35);
+    inset 0 1px 0 rgba(255,255,255,.9);}
+.role-btn.act-s{background:linear-gradient(145deg,#ecfdf5,#d1fae5);border-color:rgba(5,150,105,.35);
   box-shadow:0 0 0 3px rgba(5,150,105,.12),8px 15px 35px rgba(5,150,105,.2),
-    inset 0 1px 0 rgba(255,255,255,.9),inset 0 -1px 0 rgba(5,150,105,.1);
-}
-
+    inset 0 1px 0 rgba(255,255,255,.9);}
 .role-icon{font-size:2.5rem;display:block;margin-bottom:10px;filter:drop-shadow(0 3px 8px rgba(0,0,0,.15));transition:transform .3s;}
 .role-btn:hover .role-icon{transform:translateZ(16px) scale(1.15);}
 .role-lbl{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text2);transition:color .2s;}
@@ -141,142 +82,119 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
 .role-btn.act-f .role-lbl{color:#b91c1c;}
 .role-btn.act-s .role-lbl{color:#065f46;}
 
-/* ── PANELS ── */
+/* PANELS */
 .panel{display:none;}
 .panel.show{display:block;animation:up .4s cubic-bezier(.34,1.56,.64,1);}
 @keyframes up{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
 
-/* ── INPUT CREUSÉ (sur fond clair) ── */
-.inp{
-  width:100%;padding:13px 17px;border-radius:13px;
+/* INPUTS CREUSÉS */
+.inp{width:100%;padding:13px 17px;border-radius:13px;
   background:linear-gradient(145deg,#e8edf5,#f3f6fc);
-  border:1.5px solid rgba(0,0,0,.08);
-  color:var(--text);font-family:'Inter',sans-serif;font-size:.95rem;
+  border:1.5px solid rgba(0,0,0,.08);color:var(--text);font-family:'Inter',sans-serif;font-size:.95rem;
   outline:none;transition:all .25s;
-  /* Effet creusé neumorphique */
-  box-shadow:
-    inset 3px 3px 8px rgba(100,116,139,.2),
-    inset -2px -2px 5px rgba(255,255,255,.9);
-}
-.inp:focus{
-  border-color:rgba(37,99,235,.4);
-  background:linear-gradient(145deg,#e4eaf3,#f0f4fc);
-  box-shadow:
-    inset 3px 3px 10px rgba(100,116,139,.22),
-    inset -2px -2px 5px rgba(255,255,255,.9),
-    0 0 0 4px rgba(37,99,235,.08);
-}
+  box-shadow:inset 3px 3px 8px rgba(100,116,139,.2),inset -2px -2px 5px rgba(255,255,255,.9);}
+.inp:focus{border-color:rgba(37,99,235,.4);
+  box-shadow:inset 3px 3px 10px rgba(100,116,139,.22),inset -2px -2px 5px rgba(255,255,255,.9),
+    0 0 0 4px rgba(37,99,235,.08);}
 .inp::placeholder{color:var(--text3);}
 .inp option{background:#fff;color:var(--text);}
 .lbl{font-size:.7rem;font-weight:700;color:var(--text2);letter-spacing:.07em;text-transform:uppercase;display:block;margin-bottom:7px;}
 
-/* ── BOUTONS PRINCIPAUX ── */
-.btn-main{
-  width:100%;padding:15px 20px;border-radius:14px;border:none;
-  font-weight:800;font-size:.95rem;color:#fff;cursor:pointer;
-  letter-spacing:.03em;position:relative;overflow:hidden;
-  transition:all .25s cubic-bezier(.34,1.56,.64,1);
-}
-/* Reflet interne */
-.btn-main::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:50%;
-  background:linear-gradient(180deg,rgba(255,255,255,.22),transparent);
-  border-radius:14px 14px 0 0;pointer-events:none;
-}
-/* Brillance au survol */
-.btn-main::after{
-  content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;
-  background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);
-  transition:left .5s;pointer-events:none;
-}
+/* PIN DISPLAY 4 chiffres */
+.pin-4-wrap{display:flex;gap:10px;justify-content:center;margin-bottom:4px;}
+.pin-digit{width:58px;height:72px;border-radius:14px;
+  background:linear-gradient(145deg,#e8edf5,#f3f6fc);
+  border:2px solid rgba(0,0,0,.08);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Syne',sans-serif;font-size:2rem;font-weight:900;color:var(--text);
+  box-shadow:inset 3px 3px 8px rgba(100,116,139,.2),inset -2px -2px 5px rgba(255,255,255,.9);
+  transition:all .2s;}
+.pin-digit.active{border-color:rgba(5,150,105,.5);box-shadow:inset 3px 3px 8px rgba(100,116,139,.2),inset -2px -2px 5px rgba(255,255,255,.9),0 0 0 3px rgba(5,150,105,.12);}
+.pin-digit.filled{color:#065f46;border-color:rgba(5,150,105,.3);}
+
+/* PAVÉ NUMÉRIQUE */
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:220px;margin:0 auto;}
+.key-btn{padding:14px;border-radius:12px;border:none;cursor:pointer;font-weight:700;font-size:1.2rem;
+  background:linear-gradient(145deg,#f8faff,#eef1f8);color:var(--text);
+  box-shadow:3px 3px 8px rgba(100,116,139,.15),-2px -2px 6px rgba(255,255,255,.95),
+    inset 0 1px 0 rgba(255,255,255,.8);
+  transition:all .15s;}
+.key-btn:active{transform:scale(.93);box-shadow:inset 2px 2px 6px rgba(100,116,139,.2),inset -1px -1px 3px rgba(255,255,255,.7);}
+.key-del{background:linear-gradient(145deg,#fff1f2,#ffe4e6);color:#b91c1c;}
+.key-ok{background:linear-gradient(135deg,#10b981,#065f46);color:#fff;box-shadow:0 4px 14px rgba(16,185,129,.35);}
+.key-ok:disabled{opacity:.4;cursor:not-allowed;}
+
+/* BOUTONS PRINCIPAUX */
+.btn-main{width:100%;padding:15px 20px;border-radius:14px;border:none;font-weight:800;font-size:.95rem;
+  color:#fff;cursor:pointer;letter-spacing:.03em;position:relative;overflow:hidden;transition:all .25s;}
+.btn-main::before{content:'';position:absolute;top:0;left:0;right:0;height:50%;
+  background:linear-gradient(180deg,rgba(255,255,255,.22),transparent);border-radius:14px 14px 0 0;pointer-events:none;}
+.btn-main::after{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);transition:left .5s;pointer-events:none;}
 .btn-main:hover::after{left:100%;}
-.btn-main:hover{transform:translateY(-3px) scale(1.015);}
-.btn-main:active{transform:translateY(1px) scale(.99);}
+.btn-main:hover{transform:translateY(-3px);}
+.btn-main:active{transform:scale(.99);}
 .btn-main:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+.btn-c{background:linear-gradient(135deg,#3b82f6,#1d4ed8);box-shadow:0 6px 22px rgba(37,99,235,.4),inset 0 1px 0 rgba(255,255,255,.25);}
+.btn-f{background:linear-gradient(135deg,#ef4444,#b91c1c);box-shadow:0 6px 22px rgba(239,68,68,.4),inset 0 1px 0 rgba(255,255,255,.25);}
+.btn-s{background:linear-gradient(135deg,#10b981,#065f46);box-shadow:0 6px 22px rgba(16,185,129,.4),inset 0 1px 0 rgba(255,255,255,.25);}
 
-.btn-c{background:linear-gradient(135deg,#3b82f6,#1d4ed8);box-shadow:0 6px 22px rgba(37,99,235,.45),0 3px 8px rgba(0,0,0,.15),inset 0 1px 0 rgba(255,255,255,.25);}
-.btn-f{background:linear-gradient(135deg,#ef4444,#b91c1c);box-shadow:0 6px 22px rgba(239,68,68,.45),0 3px 8px rgba(0,0,0,.15),inset 0 1px 0 rgba(255,255,255,.25);}
-.btn-s{background:linear-gradient(135deg,#10b981,#065f46);box-shadow:0 6px 22px rgba(16,185,129,.45),0 3px 8px rgba(0,0,0,.15),inset 0 1px 0 rgba(255,255,255,.25);}
-
-/* ── BADGE RÔLE ── */
-.badge-r{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:999px;font-size:.7rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;margin-bottom:18px;
+/* BADGE RÔLE */
+.badge-r{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:999px;
+  font-size:.7rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;margin-bottom:18px;
   box-shadow:0 2px 8px rgba(0,0,0,.08),inset 0 1px 0 rgba(255,255,255,.7);}
 .badge-c{background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1.5px solid rgba(37,99,235,.2);color:#1d4ed8;}
 .badge-f{background:linear-gradient(135deg,#fff1f2,#ffe4e6);border:1.5px solid rgba(239,68,68,.2);color:#b91c1c;}
 .badge-s{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border:1.5px solid rgba(16,185,129,.2);color:#065f46;}
 
-/* ── SÉPARATEUR ── */
+/* PILLS */
+.pill{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:999px;
+  font-size:.7rem;font-weight:600;cursor:default;
+  background:rgba(255,255,255,.85);border:1.5px solid rgba(0,0,0,.07);color:var(--text2);
+  box-shadow:3px 3px 8px rgba(100,116,139,.15),-2px -2px 5px rgba(255,255,255,.9);transition:all .2s;}
+.pill:hover{transform:translateY(-2px);color:var(--text);}
+
+/* SEP */
 .sep{height:1px;background:linear-gradient(90deg,transparent,rgba(0,0,0,.08),transparent);margin:20px 0;}
 
-/* ── ERREUR ── */
-.err-box{background:linear-gradient(135deg,#fff1f2,#ffe4e6);border:1.5px solid rgba(239,68,68,.25);border-radius:12px;padding:11px 15px;font-size:.82rem;color:#b91c1c;box-shadow:inset 0 1px 0 rgba(255,255,255,.8);}
+/* ERREUR */
+.err-box{background:linear-gradient(135deg,#fff1f2,#ffe4e6);border:1.5px solid rgba(239,68,68,.25);
+  border-radius:12px;padding:11px 15px;font-size:.82rem;color:#b91c1c;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.8);}
 
-/* ── PILLS MODULES ── */
-.pill{
-  display:inline-flex;align-items:center;gap:5px;padding:6px 14px;
-  border-radius:999px;font-size:.7rem;font-weight:600;cursor:default;
-  background:rgba(255,255,255,.85);
-  border:1.5px solid rgba(0,0,0,.07);
-  color:var(--text2);
-  box-shadow:3px 3px 8px rgba(100,116,139,.15),-2px -2px 5px rgba(255,255,255,.9);
-  transition:all .2s;
-}
-.pill:hover{transform:translateY(-2px);color:var(--text);box-shadow:4px 6px 14px rgba(100,116,139,.2),-2px -2px 5px rgba(255,255,255,.9);}
+/* INFO BOX */
+.info-box{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border:1.5px solid rgba(16,185,129,.25);
+  border-radius:12px;padding:12px 16px;font-size:.82rem;color:#065f46;}
 
-/* ── LOGO ── */
-.logo-t{font-family:'Syne',sans-serif;font-weight:900;letter-spacing:-.02em;color:var(--text);}
-.logo-icon{
-  width:64px;height:64px;border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:1.9rem;
-  background:linear-gradient(145deg,#ef4444,#b91c1c);
-  box-shadow:5px 5px 20px rgba(239,68,68,.45),-3px -3px 10px rgba(255,255,255,.6),inset 0 1px 0 rgba(255,180,180,.4);
-}
-
-/* ── MODE STAGIAIRE ── */
-.mode-btn{
-  padding:11px;border-radius:12px;font-size:.78rem;font-weight:600;cursor:pointer;
-  background:linear-gradient(145deg,#e8edf5,#f3f6fc);
-  border:1.5px solid rgba(0,0,0,.07);color:var(--text2);
-  transition:all .2s;width:100%;
-  box-shadow:inset 2px 2px 6px rgba(100,116,139,.18),inset -1px -1px 4px rgba(255,255,255,.9);
-}
-.mode-btn.on{
-  background:linear-gradient(135deg,#ecfdf5,#d1fae5);
-  border-color:rgba(16,185,129,.35);color:#065f46;font-weight:700;
-  box-shadow:0 4px 14px rgba(16,185,129,.18),inset 2px 2px 6px rgba(16,185,129,.08);
-}
-
-/* ── HINT SECTION ── */
-.hint{font-size:.68rem;color:var(--text3);text-transform:uppercase;letter-spacing:.12em;text-align:center;margin-bottom:14px;}
-
-/* ── SPINNER ── */
+.logo-t{font-family:'Syne',sans-serif;font-weight:900;}
 .spin{width:18px;height:18px;border:2.5px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:sp .6s linear infinite;display:inline-block;vertical-align:middle;}
 @keyframes sp{to{transform:rotate(360deg)}}
+.section-hint{font-size:.68rem;color:var(--text3);text-transform:uppercase;letter-spacing:.12em;text-align:center;margin-bottom:14px;}
+.hidden{display:none!important;}
 </style>
 </head>
 <body>
 
-<!-- FOND -->
-<div class="bg">
-  <div class="bg-gradient"></div>
+<div class="bg-wrap">
   <div class="bg-grid"></div>
   <div class="orb orb1"></div>
   <div class="orb orb2"></div>
   <div class="orb orb3"></div>
 </div>
 
-<!-- PAGE -->
 <div class="relative z-10 min-h-screen flex flex-col items-center justify-center p-4 py-10 scene">
 
   <!-- LOGO -->
   <div class="text-center mb-10">
     <div class="inline-flex items-center gap-4 mb-6">
-      <div class="logo-icon">🛡️</div>
+      <div style="width:60px;height:60px;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:1.8rem;
+        background:linear-gradient(145deg,#ef4444,#b91c1c);
+        box-shadow:5px 5px 20px rgba(239,68,68,.45),-3px -3px 10px rgba(255,255,255,.6),inset 0 1px 0 rgba(255,180,180,.3);">🛡️</div>
       <div style="text-align:left;">
-        <div class="logo-t" style="font-size:1.9rem;line-height:1.05;">MIB Prévention</div>
+        <div class="logo-t" style="font-size:1.9rem;line-height:1.05;color:var(--text);">MIB Prévention</div>
         <div style="font-size:.7rem;color:var(--text2);letter-spacing:.14em;text-transform:uppercase;margin-top:5px;font-weight:600;">Plateforme · Formation Incendie</div>
       </div>
     </div>
-    <!-- Modules pills -->
     <div class="flex flex-wrap justify-center gap-2">
       <span class="pill">🎯 Quiz SSIAP</span>
       <span class="pill">📡 Quiz Salle</span>
@@ -288,21 +206,18 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
   <!-- CARD -->
   <div class="main-card w-full p-7" style="max-width:440px;">
 
-    <p class="hint">Sélectionnez votre profil</p>
+    <p class="section-hint">Sélectionnez votre profil</p>
 
-    <!-- 3 BOUTONS RÔLE -->
+    <!-- 3 RÔLES -->
     <div class="grid grid-cols-3 gap-4 mb-2">
       <div class="role-btn" onclick="pick('centre')" id="rb-c">
-        <span class="role-icon">🏢</span>
-        <span class="role-lbl">Centre</span>
+        <span class="role-icon">🏢</span><span class="role-lbl">Centre</span>
       </div>
       <div class="role-btn" onclick="pick('formateur')" id="rb-f">
-        <span class="role-icon">👨‍🏫</span>
-        <span class="role-lbl">Formateur</span>
+        <span class="role-icon">👨‍🏫</span><span class="role-lbl">Formateur</span>
       </div>
       <div class="role-btn" onclick="pick('stagiaire')" id="rb-s">
-        <span class="role-icon">👨‍🎓</span>
-        <span class="role-lbl">Stagiaire</span>
+        <span class="role-icon">👨‍🎓</span><span class="role-lbl">Stagiaire</span>
       </div>
     </div>
 
@@ -323,8 +238,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
         </div>
         <div>
           <label class="lbl">Clé de licence</label>
-          <input type="text" id="c-key" class="inp"
-            placeholder="XXXX-XXXX-XXXX-XXXX"
+          <input type="text" id="c-key" class="inp" placeholder="XXXX-XXXX-XXXX-XXXX"
             style="letter-spacing:.1em;text-transform:uppercase;"
             oninput="this.value=this.value.toUpperCase()">
         </div>
@@ -356,56 +270,102 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
       </div>
     </div>
 
-    <!-- ═══ STAGIAIRE ═══ -->
+    <!-- ═══ STAGIAIRE — PIN 4 chiffres ═══ -->
     <div class="panel" id="p-s">
       <span class="badge-r badge-s">👨‍🎓 Stagiaire</span>
-      <div class="space-y-4">
-        <div class="grid grid-cols-2 gap-2">
-          <button class="mode-btn on" id="m-code" onclick="setMode('code')">🔢 Code session</button>
-          <button class="mode-btn" id="m-qr" onclick="setMode('qr')">📱 QR Code</button>
-        </div>
-        <div id="z-code">
-          <label class="lbl">Code de session</label>
-          <input type="text" id="s-code" class="inp"
-            placeholder="Ex : INCENDIE-1430"
-            style="text-align:center;letter-spacing:.08em;text-transform:uppercase;"
-            oninput="this.value=this.value.toUpperCase()">
-          <p style="font-size:.68rem;color:var(--text3);margin-top:6px;text-align:center;">Code affiché par votre formateur</p>
-        </div>
-        <div id="z-qr" class="hidden" style="background:linear-gradient(145deg,#e8edf5,#f3f6fc);border:1.5px dashed rgba(16,185,129,.3);border-radius:14px;padding:28px;text-align:center;color:var(--text2);font-size:.85rem;line-height:1.8;box-shadow:inset 3px 3px 8px rgba(100,116,139,.15),inset -2px -2px 5px rgba(255,255,255,.9);">
-          📱 Scannez le QR code<br>affiché par votre formateur
-        </div>
-        <div>
-          <label class="lbl">Votre prénom et nom</label>
-          <input type="text" id="s-nom" class="inp" placeholder="Ex : Jean MARTIN">
-        </div>
-        <div id="e-s" class="err-box hidden"></div>
-        <button class="btn-main btn-s" id="b-s" onclick="doStagiaire()">Rejoindre la session →</button>
+
+      <div class="info-box mb-4">
+        📋 Votre formateur vous a remis un code PIN à 4 chiffres. Saisissez-le ci-dessous.
+      </div>
+
+      <!-- Affichage des 4 chiffres -->
+      <div class="pin-4-wrap" id="pin-display">
+        <div class="pin-digit" id="pd-0">—</div>
+        <div class="pin-digit" id="pd-1">—</div>
+        <div class="pin-digit" id="pd-2">—</div>
+        <div class="pin-digit" id="pd-3">—</div>
+      </div>
+      <p style="font-size:.7rem;color:var(--text3);text-align:center;margin-bottom:20px;margin-top:8px;">Code PIN à 4 chiffres fourni par votre formateur</p>
+
+      <!-- Pavé numérique -->
+      <div class="keypad mb-4">
+        <button class="key-btn" onclick="keyPress('1')">1</button>
+        <button class="key-btn" onclick="keyPress('2')">2</button>
+        <button class="key-btn" onclick="keyPress('3')">3</button>
+        <button class="key-btn" onclick="keyPress('4')">4</button>
+        <button class="key-btn" onclick="keyPress('5')">5</button>
+        <button class="key-btn" onclick="keyPress('6')">6</button>
+        <button class="key-btn" onclick="keyPress('7')">7</button>
+        <button class="key-btn" onclick="keyPress('8')">8</button>
+        <button class="key-btn" onclick="keyPress('9')">9</button>
+        <button class="key-btn key-del" onclick="keyDel()">⌫</button>
+        <button class="key-btn" onclick="keyPress('0')">0</button>
+        <button class="key-btn key-ok" id="key-ok" onclick="doStagiaire()" disabled>✓</button>
+      </div>
+
+      <div id="e-s" class="err-box hidden"></div>
+      <div id="s-loading" class="hidden" style="text-align:center;padding:12px;color:var(--text2);font-size:.85rem;">
+        <span class="spin" style="border-top-color:#065f46;border-color:rgba(5,150,105,.2);"></span>
+        Vérification en cours...
       </div>
     </div>
 
   </div>
 
-  <!-- FOOTER -->
-  <p style="margin-top:24px;font-size:.67rem;color:var(--text3);text-align:center;letter-spacing:.06em;font-weight:500;">
-    MIB PRÉVENTION © 2026 · FORMATION INCENDIE SSIAP 1 · 2 · 3
+  <p style="margin-top:24px;font-size:.67rem;color:var(--text2);text-align:center;letter-spacing:.06em;font-weight:500;opacity:.6;">
+    MIB PRÉVENTION © 2026 · SSIAP 1 · 2 · 3
   </p>
 </div>
 
 <script>
-let stagMode='code';
+// ============================================================
+// ÉTAT PIN STAGIAIRE
+// ============================================================
+let pinDigits=[];
 
-/* TILT 3D */
-const card=document.querySelector('.main-card');
-document.addEventListener('mousemove',e=>{
-  const r=card.getBoundingClientRect();
-  const dx=(e.clientX-(r.left+r.width/2))/r.width;
-  const dy=(e.clientY-(r.top+r.height/2))/r.height;
-  card.style.transform=`rotateX(${dy*-7}deg) rotateY(${dx*7}deg) translateZ(0)`;
+function keyPress(d){
+  if(pinDigits.length>=4)return;
+  pinDigits.push(d);
+  updatePinDisplay();
+}
+function keyDel(){
+  if(!pinDigits.length)return;
+  pinDigits.pop();
+  updatePinDisplay();
+}
+function updatePinDisplay(){
+  for(let i=0;i<4;i++){
+    const el=document.getElementById(`pd-${i}`);
+    if(pinDigits[i]!==undefined){
+      el.textContent='●';
+      el.classList.add('filled');
+      el.classList.remove('active');
+    }else{
+      el.textContent='—';
+      el.classList.remove('filled','active');
+    }
+  }
+  // Marquer le prochain à saisir
+  if(pinDigits.length<4){
+    document.getElementById(`pd-${pinDigits.length}`)?.classList.add('active');
+  }
+  // Activer/désactiver le bouton OK
+  const okBtn=document.getElementById('key-ok');
+  if(okBtn)okBtn.disabled=pinDigits.length!==4;
+}
+
+// Clavier physique pour le PIN
+document.addEventListener('keydown',e=>{
+  if(document.getElementById('p-s').classList.contains('show')){
+    if(e.key>='0'&&e.key<='9')keyPress(e.key);
+    else if(e.key==='Backspace')keyDel();
+    else if(e.key==='Enter'&&pinDigits.length===4)doStagiaire();
+  }
 });
-document.addEventListener('mouseleave',()=>{card.style.transform='';});
 
-/* RÔLE */
+// ============================================================
+// RÔLE
+// ============================================================
 function pick(r){
   document.querySelectorAll('.role-btn').forEach(b=>b.className='role-btn');
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('show'));
@@ -413,28 +373,18 @@ function pick(r){
   document.getElementById({centre:'rb-c',formateur:'rb-f',stagiaire:'rb-s'}[r]).classList.add(m[r]);
   document.getElementById({centre:'p-c',formateur:'p-f',stagiaire:'p-s'}[r]).classList.add('show');
   if(r==='formateur')loadCentres();
+  // Reset PIN si on revient sur stagiaire
+  if(r==='stagiaire'){pinDigits=[];updatePinDisplay();document.getElementById('e-s').classList.add('hidden');}
 }
 
-/* MODE STAGIAIRE */
-function setMode(m){
-  stagMode=m;
-  document.getElementById('z-code').classList.toggle('hidden',m!=='code');
-  document.getElementById('z-qr').classList.toggle('hidden',m!=='qr');
-  document.getElementById('m-code').classList.toggle('on',m==='code');
-  document.getElementById('m-qr').classList.toggle('on',m==='qr');
-}
-
-/* HELPERS */
-function showErr(id,msg){const e=document.getElementById(id);e.textContent=msg;e.classList.remove('hidden');}
-function hideErr(id){document.getElementById(id).classList.add('hidden');}
-function setLoad(id,on,txt=''){const b=document.getElementById(id);b.disabled=on;b.innerHTML=on?'<span class="spin"></span>':txt;}
-
-/* LOGIN CENTRE */
+// ============================================================
+// LOGIN CENTRE
+// ============================================================
 async function doCentre(){
-  hideErr('e-c');
   const email=document.getElementById('c-email').value.trim().toLowerCase();
   const key=document.getElementById('c-key').value.trim().toUpperCase();
-  if(!email||!key){showErr('e-c','❌ Remplissez tous les champs.');return;}
+  const errEl=document.getElementById('e-c');errEl.classList.add('hidden');
+  if(!email||!key){showErr(errEl,'❌ Remplissez tous les champs.');return;}
   setLoad('b-c',true);
   try{
     const{data,error}=await supabase.from('centers').select('*')
@@ -444,12 +394,14 @@ async function doCentre(){
     SESSION.save('centre',{center_id:data.id,center_nom:data.nom,plan:data.plan,role:'centre'});
     window.location.href='center.html';
   }catch(e){
-    showErr('e-c',e.message==='exp'?'❌ Licence expirée — contactez MIB Prévention.':'❌ Email ou clé de licence incorrects.');
+    showErr(errEl,e.message==='exp'?'❌ Licence expirée — contactez MIB Prévention.':'❌ Email ou clé de licence incorrects.');
     setLoad('b-c',false,'Accéder au tableau de bord →');
   }
 }
 
-/* LOGIN FORMATEUR */
+// ============================================================
+// LOGIN FORMATEUR
+// ============================================================
 async function loadCentres(){
   try{
     const{data}=await supabase.from('centers').select('id,nom').eq('license_status','active').order('nom');
@@ -459,11 +411,11 @@ async function loadCentres(){
   }catch(e){console.error(e);}
 }
 async function doFormateur(){
-  hideErr('e-f');
   const cid=document.getElementById('f-sel').value;
   const pin=document.getElementById('f-pin').value;
-  if(!cid){showErr('e-f','❌ Sélectionnez votre centre.');return;}
-  if(pin.length!==6){showErr('e-f','❌ Entrez votre PIN à 6 chiffres.');return;}
+  const errEl=document.getElementById('e-f');errEl.classList.add('hidden');
+  if(!cid){showErr(errEl,'❌ Sélectionnez votre centre.');return;}
+  if(pin.length!==6){showErr(errEl,'❌ Entrez votre PIN à 6 chiffres.');return;}
   setLoad('b-f',true);
   try{
     const h=await UTILS.hash(pin);
@@ -474,43 +426,91 @@ async function doFormateur(){
     SESSION.save('formateur',{formateur_id:data.id,formateur_nom:`${data.prenom} ${data.nom}`,center_id:data.center_id,center_nom:data.centers?.nom,role_formateur:data.role,modules:data.centers});
     window.location.href='formateur.html';
   }catch(e){
-    showErr('e-f','❌ PIN incorrect ou compte désactivé.');
+    showErr(errEl,'❌ PIN incorrect ou compte désactivé.');
     setLoad('b-f',false,'Accéder à mon espace →');
   }
 }
 
-/* LOGIN STAGIAIRE */
+// ============================================================
+// LOGIN STAGIAIRE — PIN 4 CHIFFRES
+// ============================================================
 async function doStagiaire(){
-  hideErr('e-s');
-  const code=document.getElementById('s-code').value.trim().toUpperCase();
-  const nom=document.getElementById('s-nom').value.trim();
-  if(!nom){showErr('e-s','❌ Entrez votre prénom et nom.');return;}
-  if(stagMode==='code'&&!code){showErr('e-s','❌ Entrez le code de session.');return;}
-  setLoad('b-s',true);
+  if(pinDigits.length!==4)return;
+  const errEl=document.getElementById('e-s');errEl.classList.add('hidden');
+  document.getElementById('s-loading').classList.remove('hidden');
+
+  const pin=pinDigits.join('');
   try{
-    const{data:qs}=await supabase.from('quiz_salle_sessions').select('id')
-      .eq('session_number',code).in('status',['attente','question','correction']).maybeSingle();
-    if(qs){
-      SESSION.save('stagiaire',{session_id:qs.id,session_type:'quiz_salle',nom_affiche:nom,role:'stagiaire'});
-      window.location.href=`quiz-salle.html?session=${qs.id}&nom=${encodeURIComponent(nom)}`;return;
-    }
-    const{data:cs}=await supabase.from('challenge_sessions').select('id')
-      .eq('session_number',code).in('status',['attente','playing']).maybeSingle();
-    if(cs){
-      SESSION.save('stagiaire',{session_id:cs.id,session_type:'challenge',nom_affiche:nom,role:'stagiaire'});
-      window.location.href=`challenge-cup.html?session=${cs.id}&nom=${encodeURIComponent(nom)}`;return;
-    }
-    throw new Error('nf');
+    const pinHash=await UTILS.hash(pin);
+    // Chercher le PIN dans session_pins (non expiré, non utilisé)
+    const{data:pins,error}=await supabase
+      .from('session_pins')
+      .select('*,stagiaires(nom,prenom,niveau,id)')
+      .eq('pin_hash',pinHash)
+      .gt('expires_at',new Date().toISOString())
+      .is('used_at',null)
+      .limit(1);
+
+    if(error||!pins?.length)throw new Error('invalid');
+
+    const pinRow=pins[0];
+    const stagiaire=pinRow.stagiaires;
+
+    // Marquer comme utilisé
+    await supabase.from('session_pins').update({used_at:new Date().toISOString()}).eq('id',pinRow.id);
+
+    // Sauvegarder la session stagiaire
+    SESSION.save('stagiaire',{
+      stagiaire_id:stagiaire.id,
+      nom_affiche:`${stagiaire.prenom} ${stagiaire.nom}`,
+      niveau:stagiaire.niveau,
+      session_id:pinRow.session_id,
+      session_type:pinRow.session_type,
+      center_id:pinRow.center_id,
+      pin_id:pinRow.id,
+      role:'stagiaire'
+    });
+
+    // Rediriger selon le type de session
+    const pages={
+      quiz_salle:`quiz-salle.html?session=${pinRow.session_id}&role=stagiaire`,
+      challenge:`challenge-cup.html?session=${pinRow.session_id}&role=stagiaire`,
+      ssi_supervise:`ssi-supervise.html?session=${pinRow.session_id}&role=stagiaire`,
+      ssi_auto:`ssi-autoformation.html?session=${pinRow.session_id}&role=stagiaire`,
+      auto_entrainement:`auto-entrainement.html?session=${pinRow.session_id}&role=stagiaire`,
+    };
+    window.location.href=pages[pinRow.session_type]||`auto-entrainement.html`;
+
   }catch(e){
-    showErr('e-s','❌ Session introuvable. Vérifiez le code affiché par votre formateur.');
-    setLoad('b-s',false,'Rejoindre la session →');
+    document.getElementById('s-loading').classList.add('hidden');
+    showErr(errEl,'❌ Code PIN invalide ou expiré. Vérifiez auprès de votre formateur.');
+    pinDigits=[];updatePinDisplay();
   }
 }
 
-/* RESTAURATION */
+// ============================================================
+// HELPERS
+// ============================================================
+function showErr(el,msg){el.textContent=msg;el.classList.remove('hidden');}
+function setLoad(id,on,txt=''){const b=document.getElementById(id);b.disabled=on;b.innerHTML=on?'<span class="spin"></span>':txt;}
+
+// TILT 3D
+const card=document.querySelector('.main-card');
+if(card){
+  document.addEventListener('mousemove',e=>{
+    const r=card.getBoundingClientRect();
+    const dx=(e.clientX-(r.left+r.width/2))/r.width;
+    const dy=(e.clientY-(r.top+r.height/2))/r.height;
+    card.style.transform=`rotateX(${dy*-7}deg) rotateY(${dx*7}deg) translateZ(0)`;
+  });
+  document.addEventListener('mouseleave',()=>{card.style.transform='';});
+}
+
+// RESTAURATION SESSION
 window.addEventListener('DOMContentLoaded',()=>{
   if(SESSION.load('centre'))    {window.location.href='center.html';return;}
   if(SESSION.load('formateur')) {window.location.href='formateur.html';return;}
+  // Stagiaire → pas de restauration auto, il doit resaisir son PIN
 });
 </script>
 </body>
