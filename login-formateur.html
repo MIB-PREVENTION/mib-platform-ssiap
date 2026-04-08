@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>MIB — Connexion Formateur</title>
+<meta name="theme-color" content="#fff1f2">
+<link rel="manifest" href="manifest.json">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="supabase.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Syne:wght@700;800;900&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;font-family:'Inter',sans-serif;background:#fff1f2;color:#111827;}
+.bg-wrap{position:fixed;inset:0;z-index:0;
+  background:radial-gradient(ellipse 70% 50% at 10% 0%,rgba(239,68,68,.12) 0%,transparent 60%),
+  radial-gradient(ellipse 50% 40% at 90% 100%,rgba(245,158,11,.1) 0%,transparent 60%),
+  linear-gradient(160deg,#fff1f2 0%,#fff5f5 50%,#ffe4e6 100%);}
+.card{background:linear-gradient(145deg,#fff,#fff8f8);border-radius:24px;border:1px solid rgba(255,255,255,.9);
+  box-shadow:20px 20px 60px rgba(239,68,68,.1),0 8px 25px rgba(239,68,68,.07),inset 0 1px 0 rgba(255,255,255,.8);}
+.inp{width:100%;padding:13px 16px;border-radius:13px;
+  background:linear-gradient(145deg,#fce8e9,#fff0f0);
+  border:1.5px solid rgba(239,68,68,.12);color:#111827;font-size:.95rem;outline:none;transition:all .2s;
+  box-shadow:inset 3px 3px 8px rgba(239,68,68,.08),inset -2px -2px 5px rgba(255,255,255,.9);}
+.inp:focus{border-color:rgba(239,68,68,.4);box-shadow:inset 3px 3px 8px rgba(239,68,68,.1),inset -2px -2px 5px rgba(255,255,255,.9),0 0 0 4px rgba(239,68,68,.08);}
+.inp::placeholder{color:#9ca3af;}
+.inp option{background:#fff;color:#111827;}
+.lbl{font-size:.7rem;font-weight:700;color:#6b7280;letter-spacing:.07em;text-transform:uppercase;display:block;margin-bottom:7px;}
+.btn-primary{width:100%;padding:15px;border-radius:13px;border:none;font-weight:800;font-size:.95rem;color:#fff;cursor:pointer;
+  background:linear-gradient(135deg,#ef4444,#b91c1c);
+  box-shadow:0 6px 22px rgba(239,68,68,.45),inset 0 1px 0 rgba(255,255,255,.25);
+  transition:all .25s;position:relative;overflow:hidden;}
+.btn-primary::before{content:'';position:absolute;top:0;left:0;right:0;height:50%;background:linear-gradient(180deg,rgba(255,255,255,.2),transparent);pointer-events:none;}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(239,68,68,.5);}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+
+/* PIN DISPLAY */
+.pin-wrap{display:flex;gap:10px;justify-content:center;margin-bottom:8px;}
+.pin-d{width:52px;height:66px;border-radius:13px;
+  background:linear-gradient(145deg,#fce8e9,#fff0f0);
+  border:2px solid rgba(239,68,68,.12);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Syne',sans-serif;font-size:2rem;font-weight:900;color:#111827;
+  box-shadow:inset 3px 3px 7px rgba(239,68,68,.1),inset -2px -2px 5px rgba(255,255,255,.9);transition:all .2s;}
+.pin-d.active{border-color:rgba(239,68,68,.5);box-shadow:inset 3px 3px 7px rgba(239,68,68,.1),inset -2px -2px 5px rgba(255,255,255,.9),0 0 0 3px rgba(239,68,68,.12);}
+.pin-d.filled{color:#b91c1c;border-color:rgba(239,68,68,.3);}
+
+/* PAVÉ NUMÉRIQUE */
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:220px;margin:0 auto;}
+.key-btn{padding:14px;border-radius:12px;border:none;cursor:pointer;font-weight:700;font-size:1.2rem;
+  background:linear-gradient(145deg,#fff8f8,#fce8e9);color:#111827;
+  box-shadow:3px 3px 8px rgba(239,68,68,.1),-2px -2px 6px rgba(255,255,255,.95),inset 0 1px 0 rgba(255,255,255,.8);
+  transition:all .15s;}
+.key-btn:active{transform:scale(.92);box-shadow:inset 2px 2px 6px rgba(239,68,68,.15),inset -1px -1px 3px rgba(255,255,255,.7);}
+.key-del{background:linear-gradient(145deg,#fff1f2,#ffe4e6);color:#b91c1c;}
+.key-ok{background:linear-gradient(135deg,#ef4444,#b91c1c);color:#fff;box-shadow:0 4px 14px rgba(239,68,68,.35);}
+.key-ok:disabled{opacity:.4;cursor:not-allowed;}
+
+.alert-err{background:#fff1f2;border:1.5px solid #fecdd3;border-radius:12px;padding:12px 16px;font-size:.82rem;color:#b91c1c;}
+.logo-t{font-family:'Syne',sans-serif;font-weight:900;}
+.sep{height:1px;background:linear-gradient(90deg,transparent,rgba(239,68,68,.12),transparent);margin:18px 0;}
+.spin{width:18px;height:18px;border:2.5px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .6s linear infinite;display:inline-block;vertical-align:middle;}
+@keyframes sp{to{transform:rotate(360deg)}}
+.hidden{display:none!important;}
+
+/* CENTRE BADGE */
+.centre-badge{background:linear-gradient(145deg,#fff1f2,#ffe4e6);border:1.5px solid rgba(239,68,68,.2);border-radius:12px;padding:10px 16px;display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+</style>
+</head>
+<body>
+<div class="bg-wrap"></div>
+
+<div class="relative z-10 min-h-screen flex flex-col items-center justify-center p-4">
+
+  <a href="index.html" style="position:absolute;top:16px;left:16px;display:flex;align-items:center;gap:6px;font-size:.82rem;font-weight:600;color:#9ca3af;text-decoration:none;transition:color .2s;" onmouseover="this.style.color='#b91c1c'" onmouseout="this.style.color='#9ca3af'">
+    ← Retour
+  </a>
+
+  <!-- LOGO -->
+  <div class="text-center mb-8">
+    <div style="width:56px;height:56px;border-radius:16px;background:linear-gradient(145deg,#ef4444,#b91c1c);display:flex;align-items:center;justify-content:center;font-size:1.6rem;margin:0 auto 12px;box-shadow:5px 5px 18px rgba(239,68,68,.4),-2px -2px 8px rgba(255,255,255,.7);">👨‍🏫</div>
+    <div class="logo-t" style="font-size:1.5rem;color:#111827;">Espace Formateur</div>
+    <div style="font-size:.75rem;color:#6b7280;margin-top:4px;">MIB Prévention — Formation Incendie</div>
+  </div>
+
+  <div class="card w-full p-7" style="max-width:400px;">
+
+    <!-- Centre pré-rempli si QR code -->
+    <div id="centre-badge-wrap" class="hidden">
+      <div class="centre-badge">
+        <span style="font-size:1.3rem;">🏢</span>
+        <div>
+          <div style="font-weight:700;font-size:.88rem;color:#111827;" id="centre-name-display">—</div>
+          <div style="font-size:.72rem;color:#6b7280;">Centre sélectionné automatiquement</div>
+        </div>
+        <button onclick="clearCentre()" style="margin-left:auto;background:none;border:none;cursor:pointer;font-size:.75rem;color:#9ca3af;text-decoration:underline;">Changer</button>
+      </div>
+    </div>
+
+    <!-- Sélection centre (si pas de QR) -->
+    <div id="centre-select-wrap">
+      <label class="lbl">Centre de formation</label>
+      <select id="centre-sel" class="inp" style="margin-bottom:20px;cursor:pointer;">
+        <option value="">— Sélectionnez votre centre —</option>
+      </select>
+    </div>
+
+    <!-- PIN 6 chiffres -->
+    <label class="lbl" style="text-align:center;display:block;">Votre PIN (6 chiffres)</label>
+    <div class="pin-wrap" id="pin-display">
+      <div class="pin-d" id="pd-0">—</div>
+      <div class="pin-d" id="pd-1">—</div>
+      <div class="pin-d" id="pd-2">—</div>
+      <div class="pin-d" id="pd-3">—</div>
+      <div class="pin-d" id="pd-4">—</div>
+      <div class="pin-d" id="pd-5">—</div>
+    </div>
+    <p style="font-size:.7rem;color:#9ca3af;text-align:center;margin-bottom:20px;">PIN fourni par votre responsable de centre</p>
+
+    <!-- Pavé numérique -->
+    <div class="keypad mb-4">
+      <button class="key-btn" onclick="kp('1')">1</button>
+      <button class="key-btn" onclick="kp('2')">2</button>
+      <button class="key-btn" onclick="kp('3')">3</button>
+      <button class="key-btn" onclick="kp('4')">4</button>
+      <button class="key-btn" onclick="kp('5')">5</button>
+      <button class="key-btn" onclick="kp('6')">6</button>
+      <button class="key-btn" onclick="kp('7')">7</button>
+      <button class="key-btn" onclick="kp('8')">8</button>
+      <button class="key-btn" onclick="kp('9')">9</button>
+      <button class="key-btn key-del" onclick="kd()">⌫</button>
+      <button class="key-btn" onclick="kp('0')">0</button>
+      <button class="key-btn key-ok" id="key-ok" onclick="doLogin()" disabled>✓</button>
+    </div>
+
+    <div id="l-err" class="alert-err hidden"></div>
+    <div id="l-loading" class="hidden" style="text-align:center;padding:10px;color:#6b7280;font-size:.85rem;">
+      <span class="spin" style="border-top-color:#ef4444;border-color:rgba(239,68,68,.2);"></span>
+      Vérification...
+    </div>
+
+  </div>
+</div>
+
+<script>
+let pin=[];
+let preCentreId=null;
+
+// ── INIT ──
+window.addEventListener('DOMContentLoaded',async()=>{
+  if(SESSION.load('formateur')){window.location.href='formateur.html';return;}
+  // Vérifier si center_id dans URL (depuis QR code)
+  const p=new URLSearchParams(window.location.search);
+  const cid=p.get('center');
+  if(cid){
+    preCentreId=cid;
+    try{
+      const{data}=await supabase.from('centers').select('id,nom').eq('id',cid).single();
+      if(data){
+        document.getElementById('centre-name-display').textContent=data.nom;
+        document.getElementById('centre-badge-wrap').classList.remove('hidden');
+        document.getElementById('centre-select-wrap').classList.add('hidden');
+      }
+    }catch(e){}
+  }else{
+    // Charger la liste des centres
+    const{data}=await supabase.from('centers').select('id,nom').eq('license_status','active').order('nom');
+    const sel=document.getElementById('centre-sel');
+    (data||[]).forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.nom;sel.appendChild(o);});
+  }
+});
+
+function clearCentre(){
+  preCentreId=null;
+  document.getElementById('centre-badge-wrap').classList.add('hidden');
+  document.getElementById('centre-select-wrap').classList.remove('hidden');
+}
+
+// ── PAVÉ NUMÉRIQUE ──
+function kp(d){if(pin.length>=6)return;pin.push(d);updatePin();}
+function kd(){if(!pin.length)return;pin.pop();updatePin();}
+function updatePin(){
+  for(let i=0;i<6;i++){
+    const el=document.getElementById(`pd-${i}`);
+    if(pin[i]!==undefined){el.textContent='●';el.classList.add('filled');el.classList.remove('active');}
+    else{el.textContent='—';el.classList.remove('filled','active');}
+  }
+  if(pin.length<6)document.getElementById(`pd-${pin.length}`)?.classList.add('active');
+  document.getElementById('key-ok').disabled=pin.length!==6;
+}
+
+// Clavier physique
+document.addEventListener('keydown',e=>{
+  if(e.key>='0'&&e.key<='9')kp(e.key);
+  else if(e.key==='Backspace')kd();
+  else if(e.key==='Enter'&&pin.length===6)doLogin();
+});
+
+// ── LOGIN ──
+async function doLogin(){
+  if(pin.length!==6)return;
+  const centreId=preCentreId||document.getElementById('centre-sel').value;
+  const errEl=document.getElementById('l-err');errEl.classList.add('hidden');
+  if(!centreId){errEl.textContent='❌ Sélectionnez votre centre.';errEl.classList.remove('hidden');return;}
+
+  document.getElementById('l-loading').classList.remove('hidden');
+  document.getElementById('key-ok').disabled=true;
+
+  try{
+    const h=await UTILS.hash(pin.join(''));
+    const{data,error}=await supabase.from('formateurs')
+      .select('*,centers(nom,plan,module_auto_entrainement,module_quiz_salle,module_challenge_cup,module_ssi_supervise,module_ssi_autoformation)')
+      .eq('center_id',centreId).eq('pin_hash',h).eq('actif',true).single();
+    if(error||!data)throw new Error('bad');
+    SESSION.save('formateur',{formateur_id:data.id,formateur_nom:`${data.prenom} ${data.nom}`,center_id:data.center_id,center_nom:data.centers?.nom,role_formateur:data.role,modules:data.centers});
+    window.location.href='formateur.html';
+  }catch(e){
+    document.getElementById('l-loading').classList.add('hidden');
+    errEl.textContent='❌ PIN incorrect ou compte désactivé.';errEl.classList.remove('hidden');
+    pin=[];updatePin();document.getElementById('key-ok').disabled=true;
+  }
+}
+</script>
+</body>
+</html>
