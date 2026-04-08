@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>MIB — Connexion Stagiaire</title>
+<meta name="theme-color" content="#ecfdf5">
+<link rel="manifest" href="manifest.json">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="supabase.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Syne:wght@700;800;900&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;font-family:'Inter',sans-serif;background:#ecfdf5;color:#111827;}
+.bg-wrap{position:fixed;inset:0;z-index:0;
+  background:radial-gradient(ellipse 70% 50% at 10% 0%,rgba(16,185,129,.12) 0%,transparent 60%),
+  radial-gradient(ellipse 50% 40% at 90% 100%,rgba(99,102,241,.1) 0%,transparent 60%),
+  linear-gradient(160deg,#ecfdf5 0%,#f0fdf4 50%,#d1fae5 100%);}
+.card{background:linear-gradient(145deg,#fff,#f8fffe);border-radius:24px;border:1px solid rgba(255,255,255,.9);
+  box-shadow:20px 20px 60px rgba(16,185,129,.1),0 8px 25px rgba(16,185,129,.07),inset 0 1px 0 rgba(255,255,255,.8);}
+
+/* PIN DISPLAY 4 chiffres */
+.pin-wrap{display:flex;gap:14px;justify-content:center;margin-bottom:8px;}
+.pin-d{width:70px;height:84px;border-radius:16px;
+  background:linear-gradient(145deg,#e0faf2,#f0fdf9);
+  border:2px solid rgba(16,185,129,.12);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Syne',sans-serif;font-size:2.5rem;font-weight:900;color:#111827;
+  box-shadow:inset 3px 3px 8px rgba(16,185,129,.1),inset -2px -2px 5px rgba(255,255,255,.9);transition:all .2s;}
+.pin-d.active{border-color:rgba(16,185,129,.5);box-shadow:inset 3px 3px 8px rgba(16,185,129,.12),inset -2px -2px 5px rgba(255,255,255,.9),0 0 0 4px rgba(16,185,129,.12);}
+.pin-d.filled{color:#065f46;border-color:rgba(16,185,129,.35);}
+
+/* PAVÉ */
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:260px;margin:0 auto;}
+.key-btn{padding:18px;border-radius:14px;border:none;cursor:pointer;font-weight:700;font-size:1.4rem;
+  background:linear-gradient(145deg,#f0fdf9,#e0faf2);color:#111827;
+  box-shadow:4px 4px 10px rgba(16,185,129,.1),-2px -2px 7px rgba(255,255,255,.95),inset 0 1px 0 rgba(255,255,255,.8);
+  transition:all .15s;}
+.key-btn:active{transform:scale(.91);box-shadow:inset 2px 2px 7px rgba(16,185,129,.15),inset -1px -1px 4px rgba(255,255,255,.7);}
+.key-del{background:linear-gradient(145deg,#fff1f2,#ffe4e6);color:#b91c1c;}
+.key-ok{background:linear-gradient(135deg,#10b981,#065f46);color:#fff;box-shadow:0 5px 16px rgba(16,185,129,.4);font-size:1.5rem;}
+.key-ok:disabled{opacity:.4;cursor:not-allowed;}
+
+.alert-err{background:#fff1f2;border:1.5px solid #fecdd3;border-radius:12px;padding:12px 16px;font-size:.82rem;color:#b91c1c;}
+.alert-ok {background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:12px;padding:12px 16px;font-size:.82rem;color:#065f46;}
+.logo-t{font-family:'Syne',sans-serif;font-weight:900;}
+.lbl{font-size:.7rem;font-weight:700;color:#6b7280;letter-spacing:.07em;text-transform:uppercase;display:block;margin-bottom:7px;}
+.spin{width:20px;height:20px;border:3px solid rgba(16,185,129,.2);border-top-color:#10b981;border-radius:50%;animation:sp .6s linear infinite;display:inline-block;vertical-align:middle;}
+@keyframes sp{to{transform:rotate(360deg)}}
+.hidden{display:none!important;}
+
+/* ANIMATIONS */
+@keyframes bounceIn{0%{transform:scale(0);opacity:0}60%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+.bounce-in{animation:bounceIn .5s cubic-bezier(.34,1.56,.64,1);}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.shake{animation:shake .4s ease-in-out;}
+</style>
+</head>
+<body>
+<div class="bg-wrap"></div>
+
+<div class="relative z-10 min-h-screen flex flex-col items-center justify-center p-4">
+
+  <a href="index.html" style="position:absolute;top:16px;left:16px;display:flex;align-items:center;gap:6px;font-size:.82rem;font-weight:600;color:#9ca3af;text-decoration:none;transition:color .2s;" onmouseover="this.style.color='#065f46'" onmouseout="this.style.color='#9ca3af'">
+    ← Retour
+  </a>
+
+  <!-- LOGO -->
+  <div class="text-center mb-8 bounce-in">
+    <div style="width:64px;height:64px;border-radius:18px;background:linear-gradient(145deg,#10b981,#065f46);display:flex;align-items:center;justify-content:center;font-size:1.9rem;margin:0 auto 12px;box-shadow:5px 5px 20px rgba(16,185,129,.4),-2px -2px 8px rgba(255,255,255,.7);">👨‍🎓</div>
+    <div class="logo-t" style="font-size:1.6rem;color:#111827;">Espace Stagiaire</div>
+    <div style="font-size:.75rem;color:#6b7280;margin-top:4px;">MIB Prévention — Formation Incendie</div>
+  </div>
+
+  <div class="card w-full p-8 bounce-in" style="max-width:380px;">
+
+    <!-- Instruction -->
+    <div style="text-align:center;margin-bottom:24px;">
+      <p style="font-size:.95rem;font-weight:700;color:#111827;margin-bottom:6px;">Saisissez votre code PIN</p>
+      <p style="font-size:.78rem;color:#6b7280;line-height:1.5;">Code à 4 chiffres fourni par votre formateur · Valable pour cette session uniquement</p>
+    </div>
+
+    <!-- Affichage 4 chiffres -->
+    <div class="pin-wrap" id="pin-display">
+      <div class="pin-d active" id="pd-0">—</div>
+      <div class="pin-d" id="pd-1">—</div>
+      <div class="pin-d" id="pd-2">—</div>
+      <div class="pin-d" id="pd-3">—</div>
+    </div>
+    <p style="font-size:.7rem;color:#9ca3af;text-align:center;margin-bottom:24px;margin-top:6px;">● = chiffre saisi</p>
+
+    <!-- Pavé numérique -->
+    <div class="keypad mb-5">
+      <button class="key-btn" onclick="kp('1')">1</button>
+      <button class="key-btn" onclick="kp('2')">2</button>
+      <button class="key-btn" onclick="kp('3')">3</button>
+      <button class="key-btn" onclick="kp('4')">4</button>
+      <button class="key-btn" onclick="kp('5')">5</button>
+      <button class="key-btn" onclick="kp('6')">6</button>
+      <button class="key-btn" onclick="kp('7')">7</button>
+      <button class="key-btn" onclick="kp('8')">8</button>
+      <button class="key-btn" onclick="kp('9')">9</button>
+      <button class="key-btn key-del" onclick="kd()">⌫</button>
+      <button class="key-btn" onclick="kp('0')">0</button>
+      <button class="key-btn key-ok" id="key-ok" onclick="doLogin()" disabled>✓</button>
+    </div>
+
+    <div id="l-err" class="alert-err hidden" style="margin-bottom:12px;"></div>
+    <div id="l-ok" class="alert-ok hidden" style="margin-bottom:12px;"></div>
+
+    <div id="l-loading" class="hidden" style="text-align:center;padding:14px;color:#065f46;font-size:.88rem;font-weight:600;">
+      <span class="spin"></span> Connexion en cours...
+    </div>
+
+  </div>
+
+  <!-- AIDE -->
+  <div style="margin-top:20px;text-align:center;">
+    <p style="font-size:.72rem;color:#9ca3af;">Vous n'avez pas de code PIN ? Contactez votre formateur.</p>
+  </div>
+
+</div>
+
+<script>
+let pin=[];
+
+// ── PAVÉ ──
+function kp(d){if(pin.length>=4)return;pin.push(d);updatePin();if(pin.length===4)setTimeout(()=>doLogin(),300);}
+function kd(){if(!pin.length)return;pin.pop();updatePin();}
+function updatePin(){
+  for(let i=0;i<4;i++){
+    const el=document.getElementById(`pd-${i}`);
+    if(pin[i]!==undefined){el.textContent='●';el.classList.add('filled');el.classList.remove('active');}
+    else{el.textContent='—';el.classList.remove('filled','active');}
+  }
+  if(pin.length<4)document.getElementById(`pd-${pin.length}`)?.classList.add('active');
+  document.getElementById('key-ok').disabled=pin.length!==4;
+}
+
+// Clavier physique
+document.addEventListener('keydown',e=>{
+  if(e.key>='0'&&e.key<='9')kp(e.key);
+  else if(e.key==='Backspace')kd();
+  else if(e.key==='Enter'&&pin.length===4)doLogin();
+});
+
+// ── LOGIN ──
+async function doLogin(){
+  if(pin.length!==4)return;
+  const errEl=document.getElementById('l-err');
+  const okEl=document.getElementById('l-ok');
+  errEl.classList.add('hidden');okEl.classList.add('hidden');
+  document.getElementById('l-loading').classList.remove('hidden');
+  document.getElementById('key-ok').disabled=true;
+
+  const pinStr=pin.join('');
+  try{
+    const pinHash=await UTILS.hash(pinStr);
+
+    // Chercher le PIN dans session_pins
+    const{data:pins,error}=await supabase
+      .from('session_pins')
+      .select('*,stagiaires(id,nom,prenom,niveau)')
+      .eq('pin_hash',pinHash)
+      .gt('expires_at',new Date().toISOString())
+      .is('used_at',null)
+      .limit(1);
+
+    if(error||!pins?.length)throw new Error('invalid');
+    const pinRow=pins[0];
+    const stag=pinRow.stagiaires;
+
+    // Marquer utilisé
+    await supabase.from('session_pins').update({used_at:new Date().toISOString()}).eq('id',pinRow.id);
+
+    // Feedback visuel
+    document.getElementById('l-loading').classList.add('hidden');
+    okEl.textContent=`✅ Bonjour ${stag.prenom} ${stag.nom} ! Redirection...`;
+    okEl.classList.remove('hidden');
+
+    // Sauvegarder
+    SESSION.save('stagiaire',{
+      stagiaire_id:stag.id,
+      nom_affiche:`${stag.prenom} ${stag.nom}`,
+      niveau:stag.niveau,
+      session_id:pinRow.session_id,
+      session_type:pinRow.session_type,
+      center_id:pinRow.center_id,
+      pin_id:pinRow.id,
+      role:'stagiaire'
+    });
+
+    // Rediriger vers le bon module
+    const pages={
+      quiz_salle:`quiz-salle.html?session=${pinRow.session_id}&role=stagiaire`,
+      challenge:`challenge-cup.html?session=${pinRow.session_id}&role=stagiaire`,
+      ssi_supervise:`ssi-supervise.html?session=${pinRow.session_id}&role=stagiaire`,
+      ssi_auto:`ssi-autoformation.html?session=${pinRow.session_id}&role=stagiaire`,
+      auto_entrainement:`auto-entrainement.html?center=${pinRow.center_id}&stagiaire=${stag.id}&niveau=${stag.niveau}`,
+    };
+    setTimeout(()=>{window.location.href=pages[pinRow.session_type]||'index.html';},1200);
+
+  }catch(e){
+    document.getElementById('l-loading').classList.add('hidden');
+    errEl.textContent='❌ Code PIN invalide ou expiré. Vérifiez auprès de votre formateur.';
+    errEl.classList.remove('hidden');
+    // Animation shake sur les PIN displays
+    document.getElementById('pin-display').classList.add('shake');
+    setTimeout(()=>document.getElementById('pin-display').classList.remove('shake'),400);
+    pin=[];updatePin();
+  }
+}
+</script>
+</body>
+</html>
