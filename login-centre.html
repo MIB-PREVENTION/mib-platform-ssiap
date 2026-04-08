@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>MIB — Connexion Centre</title>
+<meta name="theme-color" content="#eff6ff">
+<link rel="manifest" href="manifest.json">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="supabase.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Syne:wght@700;800;900&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;font-family:'Inter',sans-serif;background:#eff6ff;color:#111827;}
+.bg-wrap{position:fixed;inset:0;z-index:0;
+  background:radial-gradient(ellipse 70% 50% at 10% 0%,rgba(37,99,235,.12) 0%,transparent 60%),
+  radial-gradient(ellipse 50% 40% at 90% 100%,rgba(99,102,241,.1) 0%,transparent 60%),
+  linear-gradient(160deg,#eff6ff 0%,#f0f4ff 50%,#e0e7ff 100%);}
+.card{background:linear-gradient(145deg,#fff,#f8faff);border-radius:24px;border:1px solid rgba(255,255,255,.9);
+  box-shadow:20px 20px 60px rgba(37,99,235,.12),0 8px 25px rgba(37,99,235,.08),inset 0 1px 0 rgba(255,255,255,.8);}
+.inp{width:100%;padding:13px 16px;border-radius:13px;
+  background:linear-gradient(145deg,#e8edf5,#f3f6fc);
+  border:1.5px solid rgba(0,0,0,.07);color:#111827;font-size:.95rem;outline:none;transition:all .2s;
+  box-shadow:inset 3px 3px 8px rgba(100,116,139,.18),inset -2px -2px 5px rgba(255,255,255,.9);}
+.inp:focus{border-color:rgba(37,99,235,.4);box-shadow:inset 3px 3px 8px rgba(100,116,139,.2),inset -2px -2px 5px rgba(255,255,255,.9),0 0 0 4px rgba(37,99,235,.08);}
+.inp::placeholder{color:#9ca3af;}
+.lbl{font-size:.7rem;font-weight:700;color:#6b7280;letter-spacing:.07em;text-transform:uppercase;display:block;margin-bottom:7px;}
+.btn-primary{width:100%;padding:15px;border-radius:13px;border:none;font-weight:800;font-size:.95rem;color:#fff;cursor:pointer;
+  background:linear-gradient(135deg,#3b82f6,#1d4ed8);
+  box-shadow:0 6px 22px rgba(37,99,235,.45),inset 0 1px 0 rgba(255,255,255,.25);
+  transition:all .25s;position:relative;overflow:hidden;}
+.btn-primary::before{content:'';position:absolute;top:0;left:0;right:0;height:50%;background:linear-gradient(180deg,rgba(255,255,255,.2),transparent);pointer-events:none;}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(37,99,235,.5);}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+.btn-link{background:none;border:none;font-size:.82rem;font-weight:600;cursor:pointer;transition:opacity .2s;}
+.btn-link:hover{opacity:.7;}
+.panel{display:none;}
+.panel.show{display:block;animation:up .35s cubic-bezier(.34,1.56,.64,1);}
+@keyframes up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.alert-ok {background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:12px;padding:12px 16px;font-size:.82rem;color:#065f46;}
+.alert-err{background:#fff1f2;border:1.5px solid #fecdd3;border-radius:12px;padding:12px 16px;font-size:.82rem;color:#b91c1c;}
+.alert-info{background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:12px;padding:12px 16px;font-size:.82rem;color:#1d4ed8;}
+.logo-t{font-family:'Syne',sans-serif;font-weight:900;}
+.sep{height:1px;background:linear-gradient(90deg,transparent,rgba(0,0,0,.08),transparent);margin:18px 0;}
+.spin{width:18px;height:18px;border:2.5px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .6s linear infinite;display:inline-block;vertical-align:middle;}
+@keyframes sp{to{transform:rotate(360deg)}}
+.pwd-wrap{position:relative;}
+.pwd-eye{position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:1.1rem;color:#9ca3af;}
+.hidden{display:none!important;}
+</style>
+</head>
+<body>
+<div class="bg-wrap"></div>
+
+<div class="relative z-10 min-h-screen flex flex-col items-center justify-center p-4">
+
+  <!-- BACK -->
+  <a href="index.html" style="position:absolute;top:16px;left:16px;display:flex;align-items:center;gap:6px;font-size:.82rem;font-weight:600;color:#6b7280;text-decoration:none;transition:color .2s;" onmouseover="this.style.color='#1d4ed8'" onmouseout="this.style.color='#6b7280'">
+    ← Retour
+  </a>
+
+  <!-- LOGO -->
+  <div class="text-center mb-8">
+    <div style="width:56px;height:56px;border-radius:16px;background:linear-gradient(145deg,#3b82f6,#1d4ed8);display:flex;align-items:center;justify-content:center;font-size:1.6rem;margin:0 auto 12px;box-shadow:5px 5px 18px rgba(37,99,235,.4),-2px -2px 8px rgba(255,255,255,.7);">🏢</div>
+    <div class="logo-t" style="font-size:1.5rem;color:#111827;">Espace Centre</div>
+    <div style="font-size:.75rem;color:#6b7280;margin-top:4px;">MIB Prévention — Formation Incendie</div>
+  </div>
+
+  <div class="card w-full p-8" style="max-width:420px;">
+
+    <!-- ONGLETS -->
+    <div style="display:flex;gap:8px;margin-bottom:22px;background:linear-gradient(145deg,#e8edf5,#f3f6fc);border-radius:12px;padding:4px;">
+      <button id="tab-login" onclick="switchTab('login')" style="flex:1;padding:9px;border-radius:9px;border:none;font-weight:700;font-size:.82rem;cursor:pointer;transition:all .2s;background:#fff;color:#1d4ed8;box-shadow:2px 2px 6px rgba(100,116,139,.15);">Connexion</button>
+      <button id="tab-first" onclick="switchTab('first')" style="flex:1;padding:9px;border-radius:9px;border:none;font-weight:700;font-size:.82rem;cursor:pointer;transition:all .2s;background:transparent;color:#9ca3af;">Première fois</button>
+    </div>
+
+    <!-- ══ CONNEXION NORMALE ══ -->
+    <div class="panel show" id="p-login">
+      <div class="space-y-4">
+        <div>
+          <label class="lbl">Email du centre</label>
+          <input type="email" id="l-email" class="inp" placeholder="contact@moncentre.fr"
+            onkeydown="if(event.key==='Enter')doLogin()">
+        </div>
+        <div>
+          <label class="lbl">Mot de passe</label>
+          <div class="pwd-wrap">
+            <input type="password" id="l-pwd" class="inp" placeholder="••••••••••"
+              style="padding-right:46px;" onkeydown="if(event.key==='Enter')doLogin()">
+            <button class="pwd-eye" onclick="togglePwd('l-pwd')">👁</button>
+          </div>
+        </div>
+        <div id="l-err" class="alert-err hidden"></div>
+        <button class="btn-primary" id="btn-login" onclick="doLogin()">Se connecter →</button>
+        <div class="text-center">
+          <button class="btn-link" onclick="switchTab('reset')" style="color:#6b7280;">Mot de passe oublié ?</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PREMIÈRE CONNEXION ══ -->
+    <div class="panel" id="p-first">
+      <div class="alert-info mb-4">
+        🔑 Première connexion : saisissez votre email et la clé de licence fournie par MIB Prévention. Vous créerez ensuite votre mot de passe.
+      </div>
+      <div class="space-y-4">
+        <div>
+          <label class="lbl">Email du centre</label>
+          <input type="email" id="f-email" class="inp" placeholder="contact@moncentre.fr">
+        </div>
+        <div>
+          <label class="lbl">Clé de licence</label>
+          <input type="text" id="f-key" class="inp" placeholder="XXXX-XXXX-XXXX-XXXX"
+            style="letter-spacing:.1em;text-transform:uppercase;"
+            oninput="this.value=this.value.toUpperCase()">
+        </div>
+        <div id="f-step2" class="hidden space-y-3">
+          <div class="sep"></div>
+          <p style="font-size:.82rem;color:#374151;font-weight:600;">✅ Licence validée — Créez votre mot de passe :</p>
+          <div>
+            <label class="lbl">Nouveau mot de passe</label>
+            <div class="pwd-wrap">
+              <input type="password" id="f-pwd" class="inp" placeholder="Minimum 8 caractères" style="padding-right:46px;">
+              <button class="pwd-eye" onclick="togglePwd('f-pwd')">👁</button>
+            </div>
+          </div>
+          <div>
+            <label class="lbl">Confirmer le mot de passe</label>
+            <div class="pwd-wrap">
+              <input type="password" id="f-pwd2" class="inp" placeholder="Répétez le mot de passe" style="padding-right:46px;">
+              <button class="pwd-eye" onclick="togglePwd('f-pwd2')">👁</button>
+            </div>
+          </div>
+        </div>
+        <div id="f-err" class="alert-err hidden"></div>
+        <div id="f-ok" class="alert-ok hidden"></div>
+        <button class="btn-primary" id="btn-first" onclick="doFirst()">
+          <span id="btn-first-label">Vérifier la clé →</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ══ MOT DE PASSE OUBLIÉ ══ -->
+    <div class="panel" id="p-reset">
+      <p style="font-size:.9rem;font-weight:700;color:#111827;margin-bottom:6px;">Mot de passe oublié</p>
+      <p style="font-size:.82rem;color:#6b7280;margin-bottom:16px;line-height:1.6;">
+        Entrez votre email. Une demande de réinitialisation sera envoyée à MIB Prévention. Vous recevrez un lien de reset par email.
+      </p>
+      <div class="space-y-4">
+        <div>
+          <label class="lbl">Email du centre</label>
+          <input type="email" id="r-email" class="inp" placeholder="contact@moncentre.fr">
+        </div>
+        <div id="r-err" class="alert-err hidden"></div>
+        <div id="r-ok" class="alert-ok hidden"></div>
+        <button class="btn-primary" id="btn-reset" onclick="doReset()">Demander un reset →</button>
+        <div class="text-center">
+          <button class="btn-link" onclick="switchTab('login')" style="color:#6b7280;">← Retour à la connexion</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ RESET AVEC TOKEN ══ -->
+    <div class="panel" id="p-token">
+      <p style="font-size:.9rem;font-weight:700;color:#111827;margin-bottom:6px;">Nouveau mot de passe</p>
+      <p style="font-size:.82rem;color:#6b7280;margin-bottom:16px;">Choisissez votre nouveau mot de passe.</p>
+      <div class="space-y-4">
+        <div>
+          <label class="lbl">Nouveau mot de passe</label>
+          <div class="pwd-wrap">
+            <input type="password" id="t-pwd" class="inp" placeholder="Minimum 8 caractères" style="padding-right:46px;">
+            <button class="pwd-eye" onclick="togglePwd('t-pwd')">👁</button>
+          </div>
+        </div>
+        <div>
+          <label class="lbl">Confirmer</label>
+          <div class="pwd-wrap">
+            <input type="password" id="t-pwd2" class="inp" placeholder="Répétez" style="padding-right:46px;">
+            <button class="pwd-eye" onclick="togglePwd('t-pwd2')">👁</button>
+          </div>
+        </div>
+        <div id="t-err" class="alert-err hidden"></div>
+        <div id="t-ok" class="alert-ok hidden"></div>
+        <button class="btn-primary" id="btn-token" onclick="doTokenReset()">Enregistrer →</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+let firstStepDone=false;
+let centerDataCache=null;
+let resetToken=null;
+
+// ── ONGLETS ──
+function switchTab(t){
+  ['login','first','reset','token'].forEach(id=>{
+    document.getElementById(`p-${id}`).classList.remove('show');
+    document.getElementById(`p-${id}`).style.display='none';
+  });
+  document.getElementById(`p-${t}`).style.display='block';
+  setTimeout(()=>document.getElementById(`p-${t}`).classList.add('show'),10);
+  // Style onglets
+  ['login','first'].forEach(id=>{
+    const btn=document.getElementById(`tab-${id}`);if(!btn)return;
+    const on=(id===t)||(t==='reset'&&id==='login');
+    btn.style.background=on?'#fff':'transparent';
+    btn.style.color=on?'#1d4ed8':'#9ca3af';
+    btn.style.boxShadow=on?'2px 2px 6px rgba(100,116,139,.15)':'none';
+  });
+}
+switchTab('login');
+
+// Vérifier token dans URL
+window.addEventListener('DOMContentLoaded',()=>{
+  if(SESSION.load('centre')){window.location.href='center.html';return;}
+  const p=new URLSearchParams(window.location.search);
+  const token=p.get('reset');
+  if(token){resetToken=token;switchTab('token');}
+});
+
+// ── CONNEXION NORMALE ──
+async function doLogin(){
+  const email=document.getElementById('l-email').value.trim().toLowerCase();
+  const pwd=document.getElementById('l-pwd').value;
+  const errEl=document.getElementById('l-err');errEl.classList.add('hidden');
+  if(!email||!pwd){showErr(errEl,'❌ Remplissez tous les champs.');return;}
+  setLoad('btn-login',true);
+  try{
+    const{data,error}=await supabase.from('centers').select('*').eq('email',email).eq('license_status','active').single();
+    if(error||!data)throw new Error('notfound');
+    if(!data.password_set)throw new Error('nopwd');
+    if(data.license_expires_at&&new Date(data.license_expires_at)<new Date())throw new Error('expired');
+    const pwdHash=await UTILS.hash(pwd);
+    if(pwdHash!==data.password_hash)throw new Error('badpwd');
+    SESSION.save('centre',{center_id:data.id,center_nom:data.nom,plan:data.plan,role:'centre'});
+    window.location.href='center.html';
+  }catch(e){
+    const msgs={notfound:'❌ Email introuvable.',nopwd:'⚠️ Première connexion — utilisez l\'onglet "Première fois".',expired:'❌ Licence expirée. Contactez MIB Prévention.',badpwd:'❌ Mot de passe incorrect.'};
+    showErr(errEl,msgs[e.message]||'❌ Erreur de connexion.');
+    setLoad('btn-login',false,'Se connecter →');
+  }
+}
+
+// ── PREMIÈRE CONNEXION ──
+async function doFirst(){
+  const email=document.getElementById('f-email').value.trim().toLowerCase();
+  const key=document.getElementById('f-key').value.trim().toUpperCase();
+  const errEl=document.getElementById('f-err');
+  const okEl=document.getElementById('f-ok');
+  errEl.classList.add('hidden');okEl.classList.add('hidden');
+
+  if(!firstStepDone){
+    // Étape 1 : Vérifier email + clé
+    if(!email||!key){showErr(errEl,'❌ Remplissez tous les champs.');return;}
+    setLoad('btn-first',true,'btn-first-label');
+    try{
+      const{data,error}=await supabase.from('centers').select('*').eq('email',email).eq('license_key',key).eq('license_status','active').single();
+      if(error||!data)throw new Error('nf');
+      if(data.license_expires_at&&new Date(data.license_expires_at)<new Date())throw new Error('exp');
+      if(data.password_set)throw new Error('already');
+      centerDataCache=data;
+      firstStepDone=true;
+      document.getElementById('f-step2').classList.remove('hidden');
+      document.getElementById('f-key').disabled=true;
+      document.getElementById('f-email').disabled=true;
+      document.getElementById('btn-first-label').textContent='Créer mon mot de passe →';
+      setLoad('btn-first',false,'btn-first-label');
+    }catch(e){
+      const msgs={nf:'❌ Email ou clé de licence incorrects.',exp:'❌ Licence expirée.',already:'⚠️ Un mot de passe existe déjà — utilisez la connexion normale.'};
+      showErr(errEl,msgs[e.message]||'❌ Erreur.');
+      setLoad('btn-first',false,'btn-first-label');
+    }
+  }else{
+    // Étape 2 : Créer le mot de passe
+    const pwd=document.getElementById('f-pwd').value;
+    const pwd2=document.getElementById('f-pwd2').value;
+    if(pwd.length<8){showErr(errEl,'❌ Le mot de passe doit faire au moins 8 caractères.');return;}
+    if(pwd!==pwd2){showErr(errEl,'❌ Les mots de passe ne correspondent pas.');return;}
+    setLoad('btn-first',true,'btn-first-label');
+    try{
+      const hash=await UTILS.hash(pwd);
+      const{error}=await supabase.from('centers').update({password_hash:hash,password_set:true}).eq('id',centerDataCache.id);
+      if(error)throw error;
+      okEl.textContent='✅ Mot de passe créé ! Connexion en cours...';okEl.classList.remove('hidden');
+      SESSION.save('centre',{center_id:centerDataCache.id,center_nom:centerDataCache.nom,plan:centerDataCache.plan,role:'centre'});
+      setTimeout(()=>window.location.href='center.html',1500);
+    }catch(e){
+      showErr(errEl,'❌ Erreur lors de la création : '+e.message);
+      setLoad('btn-first',false,'btn-first-label');
+    }
+  }
+}
+
+// ── MOT DE PASSE OUBLIÉ ──
+async function doReset(){
+  const email=document.getElementById('r-email').value.trim().toLowerCase();
+  const errEl=document.getElementById('r-err');
+  const okEl=document.getElementById('r-ok');
+  errEl.classList.add('hidden');okEl.classList.add('hidden');
+  if(!email){showErr(errEl,'❌ Entrez votre email.');return;}
+  setLoad('btn-reset',true);
+  try{
+    const{data}=await supabase.from('centers').select('id,nom').eq('email',email).single();
+    if(!data)throw new Error('nf');
+    await supabase.from('password_reset_requests').insert({
+      center_id:data.id,email,status:'pending'
+    });
+    okEl.textContent='✅ Demande envoyée ! MIB Prévention va vous contacter pour réinitialiser votre mot de passe.';
+    okEl.classList.remove('hidden');
+    document.getElementById('btn-reset').disabled=true;
+  }catch(e){
+    showErr(errEl,e.message==='nf'?'❌ Email introuvable.':'❌ Erreur lors de la demande.');
+    setLoad('btn-reset',false,'Demander un reset →');
+  }
+}
+
+// ── RESET AVEC TOKEN ──
+async function doTokenReset(){
+  const pwd=document.getElementById('t-pwd').value;
+  const pwd2=document.getElementById('t-pwd2').value;
+  const errEl=document.getElementById('t-err');
+  const okEl=document.getElementById('t-ok');
+  errEl.classList.add('hidden');okEl.classList.add('hidden');
+  if(pwd.length<8){showErr(errEl,'❌ Au moins 8 caractères.');return;}
+  if(pwd!==pwd2){showErr(errEl,'❌ Les mots de passe ne correspondent pas.');return;}
+  setLoad('btn-token',true);
+  try{
+    // Vérifier le token
+    const{data:req}=await supabase.from('password_reset_requests')
+      .select('*').eq('token',resetToken).eq('status','pending')
+      .gt('expires_at',new Date().toISOString()).single();
+    if(!req)throw new Error('invalid');
+    const hash=await UTILS.hash(pwd);
+    await supabase.from('centers').update({password_hash:hash}).eq('id',req.center_id);
+    await supabase.from('password_reset_requests').update({status:'done'}).eq('id',req.id);
+    okEl.textContent='✅ Mot de passe réinitialisé ! Redirection...';okEl.classList.remove('hidden');
+    setTimeout(()=>switchTab('login'),2000);
+  }catch(e){
+    showErr(errEl,'❌ Lien invalide ou expiré. Faites une nouvelle demande.');
+    setLoad('btn-token',false,'Enregistrer →');
+  }
+}
+
+// ── HELPERS ──
+function showErr(el,msg){el.textContent=msg;el.classList.remove('hidden');}
+function togglePwd(id){const i=document.getElementById(id);i.type=i.type==='password'?'text':'password';}
+function setLoad(btnId,on,labelId){
+  const b=document.getElementById(btnId);b.disabled=on;
+  if(labelId){const l=document.getElementById(labelId);if(l)l.innerHTML=on?'<span class="spin"></span>':b.getAttribute('data-label')||l.textContent;}
+  else b.innerHTML=on?'<span class="spin"></span>':(b.getAttribute('data-label')||b.textContent);
+}
+</script>
+</body>
+</html>
