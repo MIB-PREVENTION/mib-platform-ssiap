@@ -1,1 +1,1430 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>MIB — Challenge Cup SSIAP</title>
+<meta name="theme-color" content="#eef2ff">
+<link rel="manifest" href="manifest.json">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Syne:wght@700;800;900&display=swap');
+*{font-family:'Inter',sans-serif;box-sizing:border-box;margin:0;padding:0;}
+body{min-height:100vh;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);}
 
+/* Fond animé */
+.bg-anim{position:fixed;inset:0;z-index:0;overflow:hidden;}
+.bg-anim::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 60% 50% at 20% 20%,rgba(99,102,241,.2) 0%,transparent 60%),
+  radial-gradient(ellipse 50% 40% at 80% 80%,rgba(239,68,68,.15) 0%,transparent 60%),
+  radial-gradient(ellipse 40% 40% at 50% 50%,rgba(245,158,11,.08) 0%,transparent 70%);}
+
+/* GLASS */
+.glass{background:rgba(255,255,255,.07);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border:1px solid rgba(255,255,255,.12);border-radius:24px;
+  box-shadow:0 25px 60px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.1);}
+.glass-sm{background:rgba(255,255,255,.06);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.1);border-radius:16px;}
+
+/* GRADIENT SSIAP */
+.ssiap-grad{background:linear-gradient(135deg,#1e3a8a,#3b82f6,#06b6d4);}
+.ssiap-grad-red{background:linear-gradient(135deg,#7f1d1d,#ef4444,#f97316);}
+
+/* BOUTONS */
+.btn-main{padding:14px 28px;border-radius:14px;font-weight:800;font-size:1rem;border:none;cursor:pointer;
+  color:#fff;position:relative;overflow:hidden;transition:all .25s;letter-spacing:.02em;}
+.btn-main::before{content:'';position:absolute;top:0;left:0;right:0;height:50%;
+  background:linear-gradient(180deg,rgba(255,255,255,.18),transparent);pointer-events:none;}
+.btn-main::after{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent);transition:left .5s;pointer-events:none;}
+.btn-main:hover::after{left:100%;}
+.btn-main:hover{transform:translateY(-3px);}
+.btn-main:active{transform:scale(.98);}
+.btn-main:disabled{opacity:.45;cursor:not-allowed;transform:none;}
+.btn-blue  {background:linear-gradient(135deg,#3b82f6,#1d4ed8);box-shadow:0 6px 20px rgba(37,99,235,.45);}
+.btn-green {background:linear-gradient(135deg,#10b981,#065f46);box-shadow:0 6px 20px rgba(16,185,129,.45);}
+.btn-red   {background:linear-gradient(135deg,#ef4444,#b91c1c);box-shadow:0 6px 20px rgba(239,68,68,.45);}
+.btn-orange{background:linear-gradient(135deg,#f59e0b,#b45309);box-shadow:0 6px 20px rgba(245,158,11,.45);}
+.btn-purple{background:linear-gradient(135deg,#7c3aed,#5b21b6);box-shadow:0 6px 20px rgba(124,58,237,.45);}
+.btn-gray  {background:linear-gradient(135deg,#6b7280,#374151);box-shadow:0 4px 12px rgba(0,0,0,.3);}
+.btn-sm{padding:9px 18px;font-size:.82rem;border-radius:10px;}
+.btn-xs{padding:6px 12px;font-size:.75rem;border-radius:8px;}
+
+/* RÉPONSES STAGIAIRE */
+.answer-opt{transition:all .3s;cursor:pointer;border:3px solid rgba(255,255,255,.1);border-radius:16px;
+  background:rgba(255,255,255,.06);user-select:none;padding:16px;}
+.answer-opt:hover{transform:translateY(-4px);border-color:rgba(255,255,255,.25);background:rgba(255,255,255,.1);}
+.answer-opt.selected{border-color:#3b82f6;background:rgba(59,130,246,.2);transform:scale(1.03);}
+.answer-opt.correct{border-color:#10b981;background:rgba(16,185,129,.25);}
+.answer-opt.wrong  {border-color:#ef4444;background:rgba(239,68,68,.2);}
+
+/* BOITES THÉMATIQUES */
+.box-card{border-radius:20px;padding:24px;cursor:pointer;position:relative;overflow:hidden;
+  transition:all .3s cubic-bezier(.34,1.56,.64,1);border:2px solid rgba(255,255,255,.15);}
+.box-card::before{content:'';position:absolute;top:0;left:0;right:0;height:45%;
+  background:linear-gradient(180deg,rgba(255,255,255,.15),transparent);pointer-events:none;}
+.box-card:hover{transform:translateY(-8px) scale(1.03);}
+.box-card:active{transform:scale(.98);}
+.box-card.done{opacity:.55;cursor:not-allowed;transform:none!important;}
+.bc-red   {background:linear-gradient(135deg,#7f1d1d,#dc2626);box-shadow:0 8px 25px rgba(220,38,38,.4);}
+.bc-blue  {background:linear-gradient(135deg,#1e3a8a,#2563eb);box-shadow:0 8px 25px rgba(37,99,235,.4);}
+.bc-cyan  {background:linear-gradient(135deg,#0c4a6e,#0ea5e9);box-shadow:0 8px 25px rgba(14,165,233,.4);}
+.bc-green {background:linear-gradient(135deg,#14532d,#16a34a);box-shadow:0 8px 25px rgba(22,163,74,.4);}
+
+/* CLASSEMENT */
+.rank-1{background:linear-gradient(135deg,#f59e0b,#d97706);}
+.rank-2{background:linear-gradient(135deg,#9ca3af,#6b7280);}
+.rank-3{background:linear-gradient(135deg,#d97706,#92400e);}
+.rank-other{background:linear-gradient(135deg,#3b82f6,#1d4ed8);}
+
+/* ÉQUIPES */
+.team-card{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:14px;
+  padding:14px;transition:all .2s;}
+
+/* TIMER */
+.timer-ring{width:100px;height:100px;border-radius:50%;
+  background:conic-gradient(#3b82f6 calc(var(--pct,100)*1%),rgba(255,255,255,.1) 0);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 30px rgba(59,130,246,.4);}
+.timer-inner{width:76px;height:76px;border-radius:50%;background:#0f172a;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:900;color:#fff;}
+
+/* INPUTS */
+.inp{width:100%;padding:13px 16px;border-radius:12px;background:rgba(255,255,255,.08);
+  border:1.5px solid rgba(255,255,255,.12);color:#fff;font-size:.95rem;outline:none;transition:all .2s;}
+.inp:focus{border-color:rgba(255,255,255,.35);background:rgba(255,255,255,.12);}
+.inp::placeholder{color:rgba(255,255,255,.3);}
+.inp option{background:#1e3a8a;color:#fff;}
+
+/* NIVEAU BADGES */
+.lv-btn{padding:8px 20px;border-radius:999px;font-weight:700;font-size:.82rem;border:2px solid transparent;
+  cursor:pointer;transition:all .25s;color:rgba(255,255,255,.5);background:rgba(255,255,255,.06);}
+.lv-btn.on-1{background:linear-gradient(135deg,#0ea5e9,#3b82f6);color:#fff;border-color:#0ea5e9;box-shadow:0 0 16px rgba(59,130,246,.5);}
+.lv-btn.on-2{background:linear-gradient(135deg,#7c3aed,#8b5cf6);color:#fff;border-color:#7c3aed;box-shadow:0 0 16px rgba(124,58,237,.5);}
+.lv-btn.on-3{background:linear-gradient(135deg,#0f172a,#1e3a8a);color:#fff;border-color:#1e3a8a;box-shadow:0 0 16px rgba(30,58,138,.5);}
+
+/* ANIMATIONS */
+@keyframes bounce-in{0%{transform:scale(0) rotate(-10deg);opacity:0}60%{transform:scale(1.08) rotate(3deg)}100%{transform:scale(1) rotate(0);opacity:1}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+@keyframes confetti-fall{0%{transform:translateY(-100vh) rotate(0);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
+.bounce-in{animation:bounce-in .5s cubic-bezier(.34,1.56,.64,1);}
+.float{animation:float 3s ease-in-out infinite;}
+.pulse-anim{animation:pulse 1s ease-in-out infinite;}
+.spin{width:18px;height:18px;border:2.5px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .6s linear infinite;display:inline-block;vertical-align:middle;}
+@keyframes sp{to{transform:rotate(360deg)}}
+.logo-t{font-family:'Syne',sans-serif;font-weight:900;}
+
+/* SCENARIO BOX */
+.scenario-box{background:rgba(59,130,246,.1);border-left:4px solid #3b82f6;border-radius:12px;padding:14px;}
+
+/* PROGRESS BAR */
+.prog{height:8px;border-radius:999px;background:rgba(255,255,255,.1);overflow:hidden;}
+.prog-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,#3b82f6,#0ea5e9);transition:width .3s;}
+
+/* TABS ADMIN */
+.tab-btn-a{padding:9px 16px;border-radius:9px;border:none;font-weight:600;font-size:.8rem;cursor:pointer;
+  transition:all .2s;color:rgba(255,255,255,.5);background:transparent;}
+.tab-btn-a.on{background:rgba(255,255,255,.12);color:#fff;}
+
+.hidden{display:none!important;}
+#confetti-container{position:fixed;inset:0;pointer-events:none;z-index:9999;}
+
+/* BOUTON RETOUR */
+.btn-back{position:fixed;top:14px;right:14px;z-index:100;
+  background:rgba(0,0,0,.5);color:#fff;border:1.5px solid rgba(255,255,255,.2);
+  padding:8px 16px;border-radius:10px;font-weight:700;font-size:.82rem;cursor:pointer;
+  backdrop-filter:blur(8px);transition:all .25s;}
+.btn-back:hover{background:rgba(59,130,246,.7);}
+.btn-back-left{position:fixed;top:14px;left:14px;z-index:100;
+  background:rgba(0,0,0,.5);color:#fff;border:1.5px solid rgba(255,255,255,.2);
+  padding:8px 14px;border-radius:10px;font-weight:700;font-size:.8rem;cursor:pointer;
+  backdrop-filter:blur(8px);transition:all .25s;}
+.btn-back-left:hover{background:rgba(59,130,246,.7);}
+</style>
+</head>
+<body>
+
+<div class="bg-anim"></div>
+<div id="confetti-container"></div>
+
+<div id="app" class="relative z-10 min-h-screen p-4 md:p-6">
+
+  <!-- ════════════════════════════════
+       ÉCRAN : LOGIN SUPERVISEUR
+  ════════════════════════════════ -->
+  <div id="screen-supervisor-login" class="max-w-md mx-auto pt-10">
+    <div class="text-center mb-8 bounce-in">
+      <div class="text-7xl mb-4 float">🏆</div>
+      <h1 class="logo-t text-white" style="font-size:2.5rem;">Challenge Cup</h1>
+      <p style="color:rgba(255,255,255,.55);margin-top:6px;">Formation SSIAP Interactive</p>
+    </div>
+    <div class="glass p-8 bounce-in">
+      <h2 style="font-size:1.2rem;font-weight:700;color:#fff;margin-bottom:20px;text-align:center;">Accès Formateur</h2>
+      <div class="space-y-4">
+        <div>
+          <div style="font-size:.72rem;font-weight:700;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;">Code PIN (6 chiffres)</div>
+          <input type="password" id="sup-pin" class="inp" placeholder="••••••" maxlength="6" inputmode="numeric"
+            oninput="this.value=this.value.replace(/[^0-9]/g,'')"
+            onkeydown="if(event.key==='Enter')doSupervisorLogin()"
+            style="letter-spacing:.4em;font-size:1.4rem;text-align:center;">
+        </div>
+        <div id="sup-err" class="hidden" style="background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);border-radius:10px;padding:10px;font-size:.82rem;color:#fca5a5;"></div>
+        <button class="btn-main btn-blue" style="width:100%;" onclick="doSupervisorLogin()">🔓 Accéder au dashboard</button>
+        <button onclick="goToTrainee()" style="width:100%;padding:11px;border-radius:12px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.1);color:rgba(255,255,255,.6);font-weight:600;font-size:.85rem;cursor:pointer;transition:all .2s;" onmouseover="this.style.background='rgba(255,255,255,.1)'" onmouseout="this.style.background='rgba(255,255,255,.06)'">
+          👨‍🎓 Je suis stagiaire →
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════
+       ÉCRAN : DASHBOARD SUPERVISEUR
+  ════════════════════════════════ -->
+  <div id="screen-dashboard" class="hidden max-w-5xl mx-auto">
+    <button class="btn-back" onclick="confirmBack('dashboard')">🏠 Dashboard formateur</button>
+
+    <div class="text-center mb-6 pt-2">
+      <h1 class="logo-t text-white" style="font-size:2rem;">🏆 Challenge Cup</h1>
+      <p style="color:rgba(255,255,255,.5);font-size:.82rem;margin-top:4px;">Tableau de bord superviseur</p>
+    </div>
+
+    <!-- Sélection niveau -->
+    <div class="glass p-5 mb-5">
+      <div style="font-size:.72rem;font-weight:700;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.07em;margin-bottom:12px;text-align:center;">Niveau de formation</div>
+      <div class="flex flex-wrap justify-center gap-3 mb-3">
+        <button id="lv-1" class="lv-btn on-1" onclick="selectLevel(1)">🛡️ SSIAP 1</button>
+        <button id="lv-2" class="lv-btn" onclick="selectLevel(2)">🛡️🛡️ SSIAP 2</button>
+        <button id="lv-3" class="lv-btn" onclick="selectLevel(3)">🛡️🛡️🛡️ SSIAP 3</button>
+      </div>
+      <div style="text-align:center;"><span id="lv-label" style="background:rgba(255,255,255,.1);color:#fff;padding:5px 16px;border-radius:999px;font-weight:700;font-size:.82rem;">🛡️ SSIAP 1 — Équipier</span></div>
+    </div>
+
+    <!-- QR Code connexion -->
+    <div class="glass p-6 mb-5 text-center">
+      <h3 style="font-weight:700;color:#fff;margin-bottom:14px;font-size:.95rem;">📱 Connexion des stagiaires</h3>
+      <div id="qr-container" style="display:inline-block;padding:12px;background:#fff;border-radius:14px;margin-bottom:10px;"></div>
+      <div style="font-size:.72rem;color:rgba(255,255,255,.4);margin-top:6px;">Session : <span id="session-num-display" style="font-family:monospace;color:rgba(255,255,255,.7);">—</span></div>
+    </div>
+
+    <!-- Équipes connectées -->
+    <div class="glass p-5 mb-5">
+      <h3 style="font-weight:700;color:#fff;margin-bottom:14px;">👥 Équipes (<span id="teams-count">0</span>)</h3>
+      <div id="teams-list" class="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <div style="color:rgba(255,255,255,.35);font-size:.85rem;grid-column:1/-1;text-align:center;padding:16px;">En attente des équipes...</div>
+      </div>
+    </div>
+
+    <div class="flex gap-4 flex-wrap">
+      <button class="btn-main btn-green flex-1" onclick="startGame()">🚀 Lancer le jeu</button>
+      <button class="btn-main btn-orange" onclick="showTab('admin')" style="padding:14px 20px;">⚙️ Admin</button>
+      <button class="btn-main btn-red" onclick="resetGame()" style="padding:14px 20px;">🔄 Reset</button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════
+       ÉCRAN : LOGIN STAGIAIRE
+  ════════════════════════════════ -->
+  <div id="screen-trainee-login" class="hidden max-w-sm mx-auto pt-10">
+    <div class="text-center mb-8 bounce-in">
+      <div class="text-6xl mb-4 float">🛡️</div>
+      <h1 class="logo-t text-white" style="font-size:2rem;">SSIAP Challenge</h1>
+      <div id="trainee-level-badge" style="display:inline-block;margin-top:8px;padding:5px 16px;border-radius:999px;font-weight:700;font-size:.8rem;" class="ssiap-grad text-white">🛡️ SSIAP 1</div>
+    </div>
+    <div class="glass p-7 bounce-in">
+      <h2 style="font-size:1.1rem;font-weight:700;color:#fff;margin-bottom:16px;text-align:center;">Rejoindre la session</h2>
+      <div class="space-y-4">
+        <div>
+          <div style="font-size:.7rem;font-weight:700;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;">Nom de votre équipe</div>
+          <input type="text" id="team-name-input" class="inp" placeholder="Ex : Équipe Rouge" maxlength="20" style="text-align:center;font-weight:700;font-size:1.05rem;">
+        </div>
+        <div id="trainee-err" class="hidden" style="background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);border-radius:10px;padding:10px;font-size:.82rem;color:#fca5a5;"></div>
+        <button class="btn-main btn-green" style="width:100%;" id="btn-join" onclick="joinGame()">🚀 Rejoindre</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════
+       ÉCRAN : ATTENTE STAGIAIRE
+  ════════════════════════════════ -->
+  <div id="screen-trainee-waiting" class="hidden max-w-lg mx-auto text-center pt-10">
+    <button class="btn-back-left" onclick="traineeBack()">← Retour</button>
+    <div class="glass p-10 bounce-in">
+      <div class="text-7xl mb-5">⏳</div>
+      <h1 class="logo-t text-white" style="font-size:2.5rem;margin-bottom:10px;">En attente...</h1>
+      <p style="color:rgba(255,255,255,.6);margin-bottom:24px;">Le formateur va lancer le jeu</p>
+      <div class="ssiap-grad" style="border-radius:16px;padding:20px 30px;">
+        <div class="logo-t text-white" style="font-size:1.8rem;" id="waiting-team-name">—</div>
+        <div style="color:rgba(255,255,255,.7);font-size:.85rem;margin-top:4px;">Vous êtes connecté !</div>
+      </div>
+      <div class="flex justify-center gap-2 mt-8">
+        <div style="width:10px;height:10px;border-radius:50%;background:#3b82f6;" class="pulse-anim"></div>
+        <div style="width:10px;height:10px;border-radius:50%;background:#3b82f6;animation-delay:.2s;" class="pulse-anim"></div>
+        <div style="width:10px;height:10px;border-radius:50%;background:#3b82f6;animation-delay:.4s;" class="pulse-anim"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════
+       ÉCRAN : BOÎTES (SUPERVISEUR)
+  ════════════════════════════════ -->
+  <div id="screen-boxes" class="hidden max-w-6xl mx-auto">
+    <button class="btn-back" onclick="showScreen('screen-dashboard')">🏠 Dashboard</button>
+    <div class="text-center mb-6 pt-2">
+      <h1 class="logo-t text-white" style="font-size:2rem;">🛡️ Modules SSIAP</h1>
+      <div id="boxes-level-label" style="display:inline-block;margin-top:6px;padding:4px 16px;border-radius:999px;font-weight:700;font-size:.8rem;" class="ssiap-grad text-white">SSIAP 1</div>
+    </div>
+    <div id="boxes-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6"></div>
+  </div>
+
+  <!-- ════════════════════════════════
+       ÉCRAN : PROJECTEUR QUESTION
+  ════════════════════════════════ -->
+  <div id="screen-question" class="hidden max-w-5xl mx-auto">
+    <button class="btn-back" onclick="showScreen('screen-boxes')">📦 Boîtes</button>
+    <div class="glass p-6 mb-5">
+      <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+        <div>
+          <div id="q-type-badge" style="display:inline-block;padding:4px 12px;border-radius:999px;font-size:.72rem;font-weight:700;" class="ssiap-grad text-white">Quiz</div>
+          <div class="logo-t text-white mt-2" style="font-size:.9rem;" id="q-box-title">—</div>
+        </div>
+        <div class="timer-ring" id="timer-ring" style="--pct:100;">
+          <div class="timer-inner" id="timer-display">30</div>
+        </div>
+      </div>
+      <!-- Scénario -->
+      <div id="q-scenario-box" class="scenario-box mb-4 hidden">
+        <div style="font-size:.72rem;font-weight:700;color:#93c5fd;margin-bottom:6px;">📋 Situation :</div>
+        <p style="color:#e0f2fe;font-size:.88rem;" id="q-scenario-text"></p>
+      </div>
+      <h2 class="text-white" style="font-size:1.5rem;font-weight:800;text-align:center;margin-bottom:20px;" id="q-text">Question...</h2>
+      <div id="q-options-display" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5"></div>
+      <div style="text-align:center;">
+        <div style="background:rgba(255,255,255,.08);border-radius:12px;display:inline-block;padding:10px 24px;">
+          <span class="text-white" style="font-size:1.2rem;font-weight:700;"><span id="answered-count">0</span> / <span id="total-teams">0</span></span>
+          <span style="color:rgba(255,255,255,.5);font-size:.82rem;margin-left:8px;">équipes ont répondu</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════
+       ÉCRAN : CORRECTION
+  ════════════════════════════════ -->
+  <div id="screen-correction" class="hidden max-w-5xl mx-auto">
+    <button class="btn-back" onclick="showScreen('screen-boxes')">📦 Boîtes</button>
+    <div class="glass p-6 text-center mb-5">
+      <div class="text-6xl mb-4">✅</div>
+      <h2 class="logo-t text-white" style="font-size:2rem;margin-bottom:16px;">CORRECTION</h2>
+      <div id="correction-content" class="mb-5 text-left"></div>
+      <div style="background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);border-radius:14px;padding:16px;margin-bottom:20px;">
+        <div style="font-size:.8rem;font-weight:700;color:#93c5fd;margin-bottom:6px;">💡 Explication</div>
+        <p style="color:#e0f2fe;font-size:.88rem;line-height:1.6;" id="correction-explication">—</p>
+      </div>
+      <button class="btn-main btn-blue" onclick="nextQuestion()">Question suivante →</button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════
+       ÉCRAN : JEU STAGIAIRE
+  ════════════════════════════════ -->
+  <div id="screen-trainee-game" class="hidden max-w-2xl mx-auto">
+    <button class="btn-back-left" onclick="traineeBack()">← Retour</button>
+    <div class="glass-sm p-4 mb-4 flex justify-between items-center">
+      <div class="logo-t text-white" id="game-team-name" style="font-size:1rem;">—</div>
+      <div class="logo-t" id="game-score" style="font-size:1.3rem;color:#10b981;">0 pts</div>
+    </div>
+    <div class="glass p-6 mb-4" id="game-container"></div>
+    <button class="btn-main btn-blue" style="width:100%;" id="btn-validate" onclick="validateAnswer()">✓ Valider ma réponse</button>
+  </div>
+
+  <!-- ════════════════════════════════
+       ÉCRAN : ATTENTE AUTRES
+  ════════════════════════════════ -->
+  <div id="screen-waiting-others" class="hidden max-w-lg mx-auto text-center pt-10">
+    <div class="glass p-10 bounce-in">
+      <div class="text-7xl mb-5">⏳</div>
+      <h1 class="logo-t text-white" style="font-size:2rem;margin-bottom:8px;">Réponse envoyée !</h1>
+      <p style="color:rgba(255,255,255,.55);">En attente des autres équipes...</p>
+      <div class="flex justify-center gap-2 mt-8">
+        <div style="width:10px;height:10px;border-radius:50%;background:#10b981;" class="pulse-anim"></div>
+        <div style="width:10px;height:10px;border-radius:50%;background:#10b981;animation-delay:.2s;" class="pulse-anim"></div>
+        <div style="width:10px;height:10px;border-radius:50%;background:#10b981;animation-delay:.4s;" class="pulse-anim"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════
+       ÉCRAN : RÉSULTAT STAGIAIRE
+  ════════════════════════════════ -->
+  <div id="screen-trainee-result" class="hidden max-w-sm mx-auto text-center pt-10">
+    <div class="glass p-8 bounce-in">
+      <div class="text-7xl mb-4" id="result-icon">✓</div>
+      <h2 class="logo-t" style="font-size:2rem;margin-bottom:16px;" id="result-title">Bonne réponse !</h2>
+      <div class="ssiap-grad" style="border-radius:16px;padding:24px;margin-bottom:16px;">
+        <div class="logo-t text-white" style="font-size:3rem;" id="result-points">+150</div>
+        <div style="color:rgba(255,255,255,.7);font-size:.85rem;">Points gagnés</div>
+        <div style="color:rgba(255,255,255,.6);font-size:.75rem;margin-top:4px;" id="result-bonus"></div>
+      </div>
+      <div style="background:rgba(255,255,255,.08);border-radius:12px;padding:14px;">
+        <div class="logo-t text-white" style="font-size:1.8rem;" id="result-total">0</div>
+        <div style="color:rgba(255,255,255,.5);font-size:.78rem;">Score total</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════
+       ÉCRAN : CLASSEMENT
+  ════════════════════════════════ -->
+  <div id="screen-ranking" class="hidden max-w-3xl mx-auto">
+    <div class="glass p-6 text-center">
+      <h2 class="logo-t text-white" style="font-size:2rem;margin-bottom:20px;">🏆 CLASSEMENT</h2>
+      <div id="ranking-list" class="space-y-3 mb-5"></div>
+      <p style="color:rgba(255,255,255,.4);font-size:.82rem;">En attente de la prochaine question...</p>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════
+       ÉCRAN : PAUSE ENTRE BOÎTES
+  ════════════════════════════════ -->
+  <div id="screen-pause" class="hidden max-w-3xl mx-auto text-center">
+    <button class="btn-back" onclick="showScreen('screen-boxes')">📦 Boîtes</button>
+    <div class="glass p-10 bounce-in">
+      <div class="text-6xl mb-5">⏸️</div>
+      <h1 class="logo-t text-white" style="font-size:2rem;margin-bottom:6px;">Module <span id="pause-box-num">1</span> terminé !</h1>
+      <div style="background:rgba(255,255,255,.08);border-radius:14px;padding:16px;margin:20px 0;" id="pause-ranking"></div>
+      <button class="btn-main btn-green" onclick="showScreen('screen-boxes')">▶ Continuer →</button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════
+       ÉCRAN : PODIUM SUPERVISEUR
+  ════════════════════════════════ -->
+  <div id="screen-podium" class="hidden max-w-5xl mx-auto text-center">
+    <div class="glass p-10 bounce-in">
+      <div class="text-7xl mb-5">🏆</div>
+      <h1 class="logo-t text-white" style="font-size:2.5rem;margin-bottom:24px;">CHALLENGE TERMINÉ !</h1>
+      <div id="podium-container" class="flex justify-center items-end gap-4 mb-10"></div>
+      <div style="background:rgba(255,255,255,.06);border-radius:16px;padding:20px;margin-bottom:24px;">
+        <h3 style="color:#fff;font-weight:700;margin-bottom:14px;">Classement final</h3>
+        <div id="full-ranking" class="space-y-2"></div>
+      </div>
+      <div class="flex gap-4 justify-center flex-wrap">
+        <button class="btn-main btn-gray" onclick="showScreen('screen-dashboard')">🏠 Dashboard</button>
+        <button class="btn-main btn-green" onclick="resetGame()">🔄 Nouvelle session</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════
+       ÉCRAN : PODIUM STAGIAIRE
+  ════════════════════════════════ -->
+  <div id="screen-trainee-podium" class="hidden max-w-lg mx-auto text-center pt-6">
+    <div class="glass p-8 bounce-in">
+      <div class="text-6xl mb-4">🏆</div>
+      <h1 class="logo-t text-white" style="font-size:2rem;margin-bottom:4px;">Challenge Terminé !</h1>
+      <div class="ssiap-grad" style="border-radius:16px;padding:20px;margin:16px 0;">
+        <div class="logo-t text-white" style="font-size:1.5rem;" id="tf-teamname">—</div>
+        <div class="logo-t text-white" style="font-size:2.5rem;margin:8px 0;" id="tf-score">0 pts</div>
+        <div style="color:rgba(255,255,255,.7);font-size:.9rem;" id="tf-rank">🏅</div>
+      </div>
+      <div style="background:rgba(255,255,255,.08);border-radius:14px;padding:16px;margin-bottom:16px;">
+        <h3 style="color:#fff;font-weight:700;margin-bottom:12px;font-size:.9rem;">📊 Vos statistiques</h3>
+        <div class="grid grid-cols-3 gap-3 mb-3">
+          <div><div class="logo-t text-blue-400" style="font-size:1.5rem;" id="tf-correct">0</div><div style="font-size:.65rem;color:rgba(255,255,255,.5);">✅ Correctes</div></div>
+          <div><div class="logo-t text-white" style="font-size:1.5rem;" id="tf-total">0</div><div style="font-size:.65rem;color:rgba(255,255,255,.5);">📝 Total</div></div>
+          <div><div class="logo-t" style="font-size:1.5rem;" id="tf-pct">0%</div><div style="font-size:.65rem;color:rgba(255,255,255,.5);">🎯 Réussite</div></div>
+        </div>
+        <div class="prog"><div class="prog-fill" id="tf-bar" style="width:0%;"></div></div>
+      </div>
+      <div id="tf-ranking" class="space-y-2"></div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════
+       ÉCRAN : ADMIN
+  ════════════════════════════════ -->
+  <div id="screen-admin" class="hidden max-w-4xl mx-auto">
+    <button class="btn-back" onclick="showScreen('screen-dashboard')">← Retour</button>
+    <div class="text-center mb-5 pt-2">
+      <h1 class="logo-t text-white" style="font-size:1.8rem;">⚙️ Administration</h1>
+    </div>
+    <div class="flex gap-2 mb-5 flex-wrap">
+      <button class="tab-btn-a on" id="admin-tab-settings" onclick="switchAdminTab('settings')">⏱️ Paramètres</button>
+      <button class="tab-btn-a" id="admin-tab-questions" onclick="switchAdminTab('questions')">📝 Questions</button>
+      <button class="tab-btn-a" id="admin-tab-logs" onclick="switchAdminTab('logs')">📋 Logs</button>
+    </div>
+
+    <!-- Paramètres -->
+    <div id="admin-settings" class="glass p-6">
+      <h2 style="color:#fff;font-weight:700;margin-bottom:16px;">Paramètres de la session</h2>
+      <div class="grid grid-cols-2 gap-4">
+        <div><div style="font-size:.7rem;font-weight:700;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;">Délai de réponse (sec)</div><input type="number" id="param-time" class="inp" value="30" min="10" max="120"></div>
+        <div><div style="font-size:.7rem;font-weight:700;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;">Points bonne réponse</div><input type="number" id="param-points" class="inp" value="150" min="10"></div>
+        <div><div style="font-size:.7rem;font-weight:700;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;">Bonus vitesse max</div><input type="number" id="param-bonus" class="inp" value="100" min="0"></div>
+        <div><div style="font-size:.7rem;font-weight:700;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;">Questions par boîte</div><input type="number" id="param-qbox" class="inp" value="8" min="3" max="20"></div>
+      </div>
+      <button class="btn-main btn-green btn-sm" style="margin-top:16px;" onclick="saveSettings()">💾 Enregistrer</button>
+    </div>
+
+    <!-- Questions -->
+    <div id="admin-questions" class="hidden glass p-6">
+      <div class="flex gap-2 mb-4 flex-wrap" id="admin-level-btns"></div>
+      <div class="flex gap-2 mb-4 flex-wrap" id="admin-box-btns"></div>
+      <div id="admin-q-list"></div>
+    </div>
+
+    <!-- Logs -->
+    <div id="admin-logs" class="hidden glass p-6">
+      <div class="flex justify-between items-center mb-4 flex-wrap gap-2">
+        <h3 style="color:#fff;font-weight:700;">Journal de session</h3>
+        <div class="flex gap-2">
+          <button onclick="exportLogs()" class="btn-main btn-green btn-xs">⬇️ CSV</button>
+          <button onclick="clearLogs()" class="btn-main btn-red btn-xs">🗑️ Effacer</button>
+        </div>
+      </div>
+      <div id="logs-container" style="max-height:400px;overflow-y:auto;font-size:.78rem;font-family:monospace;background:rgba(0,0,0,.3);border-radius:10px;padding:12px;"></div>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<script>
+// ============================================================
+// ═══════════ CONFIGURATION ════════════════════════════
+// ============================================================
+const SUPERVISOR_PIN_HASH='a8f5f167f44f4964e6c998dee827110c847d0b4a5d61b3e7a99ee18fc3e00b37';
+// = SHA-256('MIB2026admin') → à changer via mib-admin.html ou directement
+
+const LEVEL_LABELS={1:'🛡️ SSIAP 1 — Équipier',2:'🛡️🛡️ SSIAP 2 — Chef d\'équipe',3:'🛡️🛡️🛡️ SSIAP 3 — Chef de service'};
+const LEVEL_SHORT={1:'SSIAP 1',2:'SSIAP 2',3:'SSIAP 3'};
+const BOX_COLORS=['bc-red','bc-blue','bc-cyan','bc-green'];
+
+// Paramètres par défaut
+let PARAMS={time:30,points:150,bonus:100,qbox:8};
+let SELECTED_LEVEL=1;
+let SESSION_ID=null; // UUID Supabase de la session
+let SESSION_NUM=null; // Numéro lisible (ex: 20260407143022)
+let userRole=null;   // 'supervisor' | 'trainee'
+let teamId=null;
+let teamName=null;
+let currentBoxIdx=-1;
+let currentQIdx=0;
+let currentGames=[];
+let openedBoxes=[];
+let timerInterval=null;
+let timeLeft=30;
+let questionStart=null;
+let lastGame=null;
+let selectedAnswer=null;
+let selectedMultiple=[];
+let selectedSequence=[];
+let selectedRanking=[];
+let fillAnswers=[];
+let catAnswers={};
+let decisionPath=[];
+let matchLeft=null,matchRight=null;
+let realtimeChannel=null;
+let teamsChannel=null;
+let logs=[];
+
+// ============================================================
+// ═══════════ DONNÉES QUESTIONS (SSIAP 1 — BOX 1 EXEMPLE) ══
+// ============================================================
+// Structure identique au code original — 4 boîtes × N questions × 12 types
+// Les données complètes sont chargées depuis Supabase (table questions)
+// ou utilisées en fallback local ci-dessous
+
+const BOXES_FALLBACK={
+  1:[
+    {title:'Le Feu',subtitle:'Combustion, classes, propagation',icon:'🔥',color:0},
+    {title:'ERP & IGH',subtitle:'Réglementation, classification',icon:'🏛️',color:1},
+    {title:'Moyens de secours',subtitle:'SSI, extincteurs, RIA',icon:'🧯',color:2},
+    {title:'Évacuation',subtitle:'Dégagements, rôles, exercices',icon:'🚪',color:3},
+  ],
+  2:[
+    {title:'Management sécurité',subtitle:'Organisation, responsabilités',icon:'📋',color:0},
+    {title:'SSI avancé',subtitle:'SDI, SMSI, catégories',icon:'🔴',color:1},
+    {title:'Désenfumage',subtitle:'Principes, réglementation',icon:'💨',color:2},
+    {title:'Gestion de crise',subtitle:'Commandement, coordination',icon:'🚨',color:3},
+  ],
+  3:[
+    {title:'Direction sécurité',subtitle:'Rôle chef de service',icon:'⭐',color:0},
+    {title:'Réglementation avancée',subtitle:'IGH, ERP complexes',icon:'📖',color:1},
+    {title:'Audit et contrôle',subtitle:'Vérifications, registres',icon:'🔍',color:2},
+    {title:'Gestion RH sécurité',subtitle:'Formation équipes',icon:'👥',color:3},
+  ]
+};
+
+let BOXES_DATA=BOXES_FALLBACK[1];
+let QUESTIONS_DATA={1:{},2:{},3:{}}; // chargé depuis Supabase
+
+// ============================================================
+// ═══════════ INIT ══════════════════════════════════════════
+// ============================================================
+window.addEventListener('DOMContentLoaded',async()=>{
+  loadSettings();
+  const params=new URLSearchParams(window.location.search);
+  const sessionParam=params.get('session');
+  const roleParam=params.get('role');
+  const nomParam=params.get('nom');
+
+  if(sessionParam&&roleParam==='formateur'){
+    // Arrivée depuis formateur.html
+    SESSION_ID=sessionParam;
+    userRole='supervisor';
+    await loadSessionFromDB();
+    showScreen('screen-dashboard');
+    initSupervisorSession();
+  } else if(sessionParam&&nomParam){
+    // Arrivée depuis index.html (stagiaire)
+    SESSION_ID=sessionParam;
+    teamName=decodeURIComponent(nomParam);
+    userRole='trainee';
+    await joinAsTrainee();
+  } else {
+    // Accès direct → login
+    showScreen('screen-supervisor-login');
+  }
+
+  await loadQuestionsFromSupabase();
+});
+
+async function loadSessionFromDB(){
+  try{
+    const{data}=await supabase.from('challenge_sessions').select('*').eq('id',SESSION_ID).single();
+    if(data){
+      SESSION_NUM=data.session_number;
+      SELECTED_LEVEL=data.niveau==='SSIAP1'?1:data.niveau==='SSIAP2'?2:3;
+      BOXES_DATA=BOXES_FALLBACK[SELECTED_LEVEL];
+      if(data.temps_par_question)PARAMS.time=data.temps_par_question;
+      if(data.points_bonne_reponse)PARAMS.points=data.points_bonne_reponse;
+      if(data.bonus_vitesse_max)PARAMS.bonus=data.bonus_vitesse_max;
+      if(data.questions_par_boite)PARAMS.qbox=data.questions_par_boite;
+    }
+  }catch(e){console.error(e);}
+}
+
+async function loadQuestionsFromSupabase(){
+  try{
+    const{data}=await supabase.from('questions').select('*').eq('actif',true);
+    if(data&&data.length){
+      // Organiser par niveau et boîte
+      data.forEach(q=>{
+        const lvl=q.niveau==='SSIAP1'?1:q.niveau==='SSIAP2'?2:3;
+        if(!QUESTIONS_DATA[lvl][q.boite_id])QUESTIONS_DATA[lvl][q.boite_id]=[];
+        QUESTIONS_DATA[lvl][q.boite_id].push({
+          type:q.type,titre:q.titre,question:q.question,
+          scenario:q.scenario,explication:q.explication,
+          imageKey:q.image_key,imageDesc:q.image_desc,
+          ...q.data
+        });
+      });
+      fireLog('info','DB',`${data.length} questions chargées depuis Supabase`);
+    }
+  }catch(e){fireLog('warn','DB','Questions Supabase non disponibles, utilisation des données locales');}
+}
+
+// ============================================================
+// ═══════════ LOGIN SUPERVISEUR ═════════════════════════════
+// ============================================================
+async function doSupervisorLogin(){
+  const pin=document.getElementById('sup-pin').value;
+  const errEl=document.getElementById('sup-err');
+  errEl.classList.add('hidden');
+  if(!pin){return;}
+
+  // Vérifier le PIN via le formateur connecté
+  const fSession=SESSION.load('formateur');
+  if(fSession){
+    // Arrivée depuis formateur.html — pas besoin de PIN
+    userRole='supervisor';
+    await createNewSession();
+    showScreen('screen-dashboard');
+    initSupervisorSession();
+    return;
+  }
+
+  // PIN direct
+  const h=await UTILS.hash(pin);
+  if(h!==SUPERVISOR_PIN_HASH){
+    errEl.textContent='❌ PIN incorrect.';errEl.classList.remove('hidden');return;
+  }
+  userRole='supervisor';
+  await createNewSession();
+  showScreen('screen-dashboard');
+  initSupervisorSession();
+}
+
+async function createNewSession(){
+  SESSION_NUM=UTILS.sessionNumber();
+  const fSession=SESSION.load('formateur');
+  try{
+    const{data,error}=await supabase.from('challenge_sessions').insert({
+      center_id:fSession?.center_id||null,
+      formateur_id:fSession?.formateur_id||null,
+      niveau:`SSIAP${SELECTED_LEVEL}`,
+      session_number:SESSION_NUM,
+      status:'attente',
+      temps_par_question:PARAMS.time,
+      points_bonne_reponse:PARAMS.points,
+      bonus_vitesse_max:PARAMS.bonus,
+      questions_par_boite:PARAMS.qbox,
+    }).select().single();
+    if(error)throw error;
+    SESSION_ID=data.id;
+    fireLog('info','SESSION',`Session créée : ${SESSION_NUM}`,{sessionId:SESSION_ID});
+  }catch(e){
+    fireLog('error','SESSION',`Erreur création : ${e.message}`);
+    SESSION_NUM=SESSION_NUM||UTILS.sessionNumber();
+    SESSION_ID=UTILS.uuid(); // fallback local
+  }
+}
+
+function initSupervisorSession(){
+  document.getElementById('session-num-display').textContent=SESSION_NUM||'—';
+  document.getElementById('qr-container').innerHTML='';
+  const url=window.location.origin+window.location.pathname.replace(/[^/]*$/,'')+'index.html';
+  new QRCode(document.getElementById('qr-container'),{text:url,width:180,height:180,colorDark:'#1d4ed8',colorLight:'#ffffff'});
+  subscribeToTeams();
+  updateLevelUI();
+}
+
+// ============================================================
+// ═══════════ REALTIME SUPABASE (remplace Firebase) ══════════
+// ============================================================
+function subscribeToTeams(){
+  // Écoute les nouvelles équipes via postgres_changes
+  if(teamsChannel){supabase.removeChannel(teamsChannel);}
+  teamsChannel=supabase.channel(`teams-${SESSION_ID}`)
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'challenge_equipes',
+      filter:`session_id=eq.${SESSION_ID}`},(payload)=>{
+      updateTeamsList();
+      fireLog('success','EQUIPE',`"${payload.new.nom}" a rejoint`,{teamId:payload.new.id});
+    })
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'challenge_equipes',
+      filter:`session_id=eq.${SESSION_ID}`},(payload)=>{
+      updateTeamsList();
+    })
+    .subscribe();
+  updateTeamsList();
+}
+
+function subscribeGameChannel(){
+  // Canal Broadcast pour les événements de jeu (rapide, sans écriture DB)
+  if(realtimeChannel){supabase.removeChannel(realtimeChannel);}
+  realtimeChannel=supabase.channel(`game-${SESSION_ID}`,{config:{broadcast:{self:false}}})
+    .on('broadcast',{event:'game_event'},(payload)=>{
+      handleGameEvent(payload.payload);
+    })
+    .subscribe();
+}
+
+async function broadcastEvent(type,data={}){
+  if(!realtimeChannel)subscribeGameChannel();
+  await realtimeChannel.send({type:'broadcast',event:'game_event',payload:{type,...data}});
+}
+
+function handleGameEvent(evt){
+  fireLog('debug','EVENT',evt.type,evt);
+  if(userRole==='trainee'){
+    switch(evt.type){
+      case 'question': showTraineeGame(evt.game); break;
+      case 'correction': showTraineeResult(evt); break;
+      case 'ranking': showRankingTrainee(); break;
+      case 'pause': showRankingTrainee(); break;
+      case 'boxes': showScreen('screen-ranking'); break;
+      case 'finished': showPodiumTrainee(); break;
+    }
+  }
+}
+
+// ============================================================
+// ═══════════ STAGIAIRE ══════════════════════════════════════
+// ============================================================
+function goToTrainee(){showScreen('screen-trainee-login');}
+function traineeBack(){
+  if(confirm('Quitter la session ?')){
+    if(teamId)supabase.from('challenge_equipes').update({online:false}).eq('id',teamId).then(()=>{});
+    supabase.removeAllChannels();
+    showScreen('screen-supervisor-login');
+  }
+}
+
+async function joinAsTrainee(){
+  // Vérifier que la session existe
+  try{
+    const{data}=await supabase.from('challenge_sessions').select('niveau,session_number').eq('id',SESSION_ID).single();
+    if(data){
+      SESSION_NUM=data.session_number;
+      const lvl=data.niveau==='SSIAP1'?1:data.niveau==='SSIAP2'?2:3;
+      document.getElementById('trainee-level-badge').textContent=`🛡️ ${LEVEL_SHORT[lvl]}`;
+    }
+  }catch(e){}
+  userRole='trainee';
+  showScreen('screen-trainee-login');
+}
+
+async function joinGame(){
+  const name=document.getElementById('team-name-input').value.trim();
+  const errEl=document.getElementById('trainee-err');
+  errEl.classList.add('hidden');
+  if(!name){errEl.textContent='❌ Entrez un nom d\'équipe.';errEl.classList.remove('hidden');return;}
+  if(!SESSION_ID){errEl.textContent='❌ Session introuvable.';errEl.classList.remove('hidden');return;}
+
+  const btnEl=document.getElementById('btn-join');
+  btnEl.disabled=true;btnEl.innerHTML='<span class="spin"></span>';
+  teamName=name;
+
+  try{
+    const{data,error}=await supabase.from('challenge_equipes').insert({
+      session_id:SESSION_ID,nom:name,score:0,nb_correctes:0,nb_reponses:0,online:true
+    }).select().single();
+    if(error)throw error;
+    teamId=data.id;
+    SESSION.save('stag_challenge',{teamId,teamName:name,sessionId:SESSION_ID});
+    document.getElementById('waiting-team-name').textContent=name;
+    subscribeGameChannel();
+    showScreen('screen-trainee-waiting');
+    fireLog('success','JOIN',`"${name}" a rejoint`,{teamId});
+  }catch(e){
+    errEl.textContent='❌ Erreur de connexion. Réessayez.';errEl.classList.remove('hidden');
+    btnEl.disabled=false;btnEl.textContent='🚀 Rejoindre';
+  }
+}
+
+async function updateTeamsList(){
+  try{
+    const{data}=await supabase.from('challenge_equipes').select('*').eq('session_id',SESSION_ID);
+    const teams=data||[];
+    document.getElementById('teams-count').textContent=teams.length;
+    const list=document.getElementById('teams-list');
+    if(!teams.length){list.innerHTML='<div style="color:rgba(255,255,255,.35);font-size:.85rem;grid-column:1/-1;text-align:center;padding:16px;">En attente des équipes...</div>';return;}
+    list.innerHTML=teams.map((t,i)=>`
+      <div class="team-card">
+        <div style="font-size:1.5rem;margin-bottom:4px;">${getEmoji(i)}</div>
+        <div style="font-weight:700;color:#fff;font-size:.88rem;">${t.nom}</div>
+        <div style="font-size:.72rem;color:rgba(255,255,255,.4);">${t.score} pts</div>
+        ${!t.online?'<div style="font-size:.65rem;color:#f97316;margin-top:2px;">⚠️ Déconnecté</div>':''}
+      </div>`).join('');
+  }catch(e){console.error(e);}
+}
+
+// ============================================================
+// ═══════════ SÉLECTION NIVEAU ═══════════════════════════════
+// ============================================================
+function selectLevel(l){
+  SELECTED_LEVEL=l;
+  BOXES_DATA=BOXES_FALLBACK[l];
+  [1,2,3].forEach(n=>{
+    const btn=document.getElementById(`lv-${n}`);
+    btn.className=`lv-btn${n===l?` on-${n}`:''}`;
+  });
+  updateLevelUI();
+  if(SESSION_ID)supabase.from('challenge_sessions').update({niveau:`SSIAP${l}`}).eq('id',SESSION_ID).then(()=>{});
+  fireLog('info','NIVEAU',LEVEL_LABELS[l]);
+}
+
+function updateLevelUI(){
+  document.getElementById('lv-label').textContent=LEVEL_LABELS[SELECTED_LEVEL];
+  document.getElementById('boxes-level-label').textContent=LEVEL_SHORT[SELECTED_LEVEL];
+}
+
+// ============================================================
+// ═══════════ LANCEMENT DU JEU ══════════════════════════════
+// ============================================================
+async function startGame(){
+  const{count}=await supabase.from('challenge_equipes').select('*',{count:'exact',head:true}).eq('session_id',SESSION_ID);
+  if(!count){alert('Aucune équipe connectée !');return;}
+  await supabase.from('challenge_sessions').update({status:'playing'}).eq('id',SESSION_ID);
+  subscribeGameChannel();
+  openedBoxes=[];
+  showBoxesScreen();
+}
+
+function showBoxesScreen(){
+  showScreen('screen-boxes');
+  renderBoxes();
+  broadcastEvent('boxes');
+}
+
+function renderBoxes(){
+  const grid=document.getElementById('boxes-grid');
+  grid.innerHTML=BOXES_DATA.map((box,i)=>{
+    const done=openedBoxes.includes(i);
+    return`<div class="box-card ${BOX_COLORS[box.color]} ${done?'done':''}" onclick="${done?'':` openBox(${i})`}">
+      <div style="font-size:3.5rem;margin-bottom:12px;" class="${done?'':'float'}">${box.icon}</div>
+      <h3 style="color:#fff;font-weight:800;font-size:1.1rem;margin-bottom:4px;">${box.title}</h3>
+      <p style="color:rgba(255,255,255,.7);font-size:.75rem;">${box.subtitle}</p>
+      <div style="margin-top:12px;display:inline-block;padding:5px 14px;border-radius:999px;background:rgba(255,255,255,.15);color:#fff;font-weight:700;font-size:.78rem;">
+        ${done?'✅ Terminé':`${PARAMS.qbox} questions`}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function openBox(idx){
+  currentBoxIdx=idx;
+  currentQIdx=0;
+  // Charger les questions pour cette boîte
+  const boxData=BOXES_DATA[idx];
+  // Essayer depuis Supabase d'abord
+  let games=[];
+  try{
+    const{data}=await supabase.from('challenge_questions_session').select('*,questions(*)').eq('session_id',SESSION_ID).eq('boite_index',idx).order('ordre');
+    if(data&&data.length){
+      games=data.map(d=>d.questions).filter(Boolean);
+    }
+  }catch(e){}
+
+  // Si pas de questions en DB, utiliser des questions locales de demo
+  if(!games.length){
+    games=generateDemoQuestions(idx);
+  }
+
+  // Mélanger et limiter
+  currentGames=UTILS.shuffle(games).slice(0,Math.min(PARAMS.qbox,games.length)).map(g=>prepareGame(g));
+
+  // Sauvegarder dans challenge_questions_session
+  try{
+    await supabase.from('challenge_questions_session').delete().eq('session_id',SESSION_ID).eq('boite_index',idx);
+    await supabase.from('challenge_questions_session').insert(currentGames.map((g,i)=>({
+      session_id:SESSION_ID,boite_index:idx,ordre:i,data_shuffled:g
+    })));
+  }catch(e){fireLog('warn','DB','Sauvegarde questions session échouée');}
+
+  fireLog('info','BOX',`Boîte ${idx+1} "${boxData.title}" — ${currentGames.length} questions`);
+  loadQuestion();
+}
+
+// ============================================================
+// ═══════════ QUESTIONS ══════════════════════════════════════
+// ============================================================
+function prepareGame(g){
+  const game={...g};
+  if(['quiz','true-false','find-intruder','scenario','image-identify'].includes(g.type)){
+    const arr=(g.options||[]).map((o,i)=>({text:o,orig:i}));
+    game.optsMixed=g.type==='true-false'?arr:UTILS.shuffle(arr);
+    game.options=game.optsMixed.map(o=>o.text);
+  }
+  if(['sequence','ranking'].includes(g.type)){
+    const arr=(g.items||[]).map((item,i)=>({text:item,orig:i}));
+    game.itemsMixed=UTILS.shuffle(arr);
+    game.items=game.itemsMixed.map(x=>x.text);
+  }
+  if(g.type==='matching'&&g.pairs){
+    game.pairsLeft=UTILS.shuffle(g.pairs.map((p,i)=>({text:p.left,orig:i})));
+    game.pairsRight=UTILS.shuffle(g.pairs.map((p,i)=>({text:p.right,orig:i})));
+  }
+  if(g.type==='fill-blank'){game.wordBankMixed=UTILS.shuffle([...(g.wordBank||[])]);}
+  if(g.type==='categories'){game.itemsMixed=UTILS.shuffle([...(g.items||[])]);}
+  return game;
+}
+
+async function loadQuestion(){
+  if(currentQIdx>=currentGames.length){finishBox();return;}
+  const game=currentGames[currentQIdx];
+  lastGame=game;
+
+  // Reset réponses équipes
+  await supabase.from('challenge_equipes').update({has_answered:false,last_answer:null,last_correct:false,last_points:0}).eq('session_id',SESSION_ID);
+  await supabase.from('challenge_sessions').update({realtime_state:{status:'question',boxIdx:currentBoxIdx,qIdx:currentQIdx,game,timestamp:Date.now()}}).eq('id',SESSION_ID);
+
+  // Broadcaster la question aux stagiaires
+  await broadcastEvent('question',{game});
+
+  showQuestion(game);
+  startTimer();
+  listenForAnswers();
+}
+
+function showQuestion(game){
+  showScreen('screen-question');
+  document.getElementById('q-box-title').textContent=`Module ${currentBoxIdx+1} — Question ${currentQIdx+1}/${currentGames.length}`;
+  document.getElementById('q-type-badge').textContent=getTypeLabel(game.type);
+  document.getElementById('q-text').textContent=game.question;
+
+  const sb=document.getElementById('q-scenario-box');
+  if(game.scenario){document.getElementById('q-scenario-text').textContent=game.scenario;sb.classList.remove('hidden');}
+  else sb.classList.add('hidden');
+
+  document.getElementById('q-options-display').innerHTML=renderOptionsProjector(game);
+  updateAnswerCount();
+}
+
+function renderOptionsProjector(game){
+  const colors=['from-blue-600 to-indigo-700','from-purple-600 to-indigo-700','from-cyan-600 to-blue-700','from-teal-600 to-emerald-700'];
+  if(['quiz','true-false','find-intruder','scenario','image-identify'].includes(game.type)){
+    return(game.optsMixed||[]).map((o,i)=>`
+      <div style="background:linear-gradient(135deg,${['#1d4ed8,#4338ca','#6d28d9,#7c3aed','#0e7490,#0369a1','#065f46,#059669'][i%4]});border-radius:14px;padding:16px;color:#fff;font-weight:700;font-size:1rem;">
+        ${String.fromCharCode(65+i)}. ${o.text}
+      </div>`).join('');
+  }
+  if(game.type==='multiple-select'){
+    return`<div style="grid-column:1/-1;background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3);border-radius:10px;padding:10px;text-align:center;color:#fcd34d;font-weight:700;font-size:.85rem;margin-bottom:8px;">☑️ Plusieurs bonnes réponses possibles</div>`+
+    (game.optsMixed||[]).map((o,i)=>`<div style="background:linear-gradient(135deg,#4338ca,#6d28d9);border-radius:14px;padding:14px;color:#fff;font-weight:700;">${String.fromCharCode(65+i)}. ${o.text}</div>`).join('');
+  }
+  if(['sequence','ranking'].includes(game.type)){
+    return(game.itemsMixed||[]).map((item,i)=>`<div style="background:linear-gradient(135deg,#0e7490,#0369a1);border-radius:14px;padding:14px;color:#fff;font-weight:700;">${i+1}. ${item.text}</div>`).join('');
+  }
+  if(game.type==='matching'){
+    return`<div style="grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <div>${(game.pairsLeft||[]).map(p=>`<div style="background:linear-gradient(135deg,#1d4ed8,#4338ca);border-radius:10px;padding:10px;color:#fff;font-weight:600;font-size:.85rem;margin-bottom:6px;">${p.text}</div>`).join('')}</div>
+      <div>${(game.pairsRight||[]).map(p=>`<div style="background:linear-gradient(135deg,#0e7490,#0369a1);border-radius:10px;padding:10px;color:#fff;font-weight:600;font-size:.85rem;margin-bottom:6px;">${p.text}</div>`).join('')}</div>
+    </div>`;
+  }
+  return'';
+}
+
+// ── TIMER ──
+function startTimer(){
+  timeLeft=PARAMS.time;questionStart=Date.now();
+  clearInterval(timerInterval);
+  updateTimerUI();
+  timerInterval=setInterval(()=>{
+    timeLeft--;
+    updateTimerUI();
+    if(timeLeft<=0){clearInterval(timerInterval);handleTimeUp();}
+  },1000);
+}
+
+function updateTimerUI(){
+  const el=document.getElementById('timer-display');
+  const ring=document.getElementById('timer-ring');
+  if(el)el.textContent=timeLeft;
+  const pct=Math.round((timeLeft/PARAMS.time)*100);
+  if(ring)ring.style.setProperty('--pct',pct);
+  if(el){el.style.color=timeLeft<=5?'#ef4444':timeLeft<=10?'#f97316':'#fff';}
+}
+
+function handleTimeUp(){
+  fireLog('info','TIMER','Temps écoulé — correction automatique');
+  showCorrectionScreen();
+}
+
+// ── ÉCOUTE RÉPONSES ──
+function listenForAnswers(){
+  const answerChannel=supabase.channel(`answers-${SESSION_ID}-${currentQIdx}`)
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'challenge_equipes',
+      filter:`session_id=eq.${SESSION_ID}`},(payload)=>{
+      updateAnswerCount();
+    }).subscribe();
+  setTimeout(()=>supabase.removeChannel(answerChannel),PARAMS.time*1000+2000);
+}
+
+async function updateAnswerCount(){
+  const{data}=await supabase.from('challenge_equipes').select('has_answered').eq('session_id',SESSION_ID);
+  const answered=(data||[]).filter(t=>t.has_answered).length;
+  const total=(data||[]).length;
+  const el=document.getElementById('answered-count');
+  if(el)el.textContent=answered;
+  const tel=document.getElementById('total-teams');
+  if(tel)tel.textContent=total;
+  if(answered>=total&&total>0){clearInterval(timerInterval);showCorrectionScreen();}
+}
+
+async function showCorrectionScreen(){
+  clearInterval(timerInterval);
+  const game=lastGame;
+  // Calculer et mettre à jour les scores
+  await calculateScores(game);
+  await broadcastEvent('correction',{game,explication:game.explication});
+  await supabase.from('challenge_sessions').update({realtime_state:{status:'correction'}}).eq('id',SESSION_ID);
+
+  showScreen('screen-correction');
+  document.getElementById('correction-content').innerHTML=renderCorrection(game);
+  document.getElementById('correction-explication').textContent=game.explication||'—';
+}
+
+async function calculateScores(game){
+  const{data:teams}=await supabase.from('challenge_equipes').select('*').eq('session_id',SESSION_ID);
+  if(!teams)return;
+  const updates=teams.map(async team=>{
+    const pts=team.last_correct?calcPoints(team.last_answer_time||PARAMS.time):{base:0,bonus:0,total:0};
+    await supabase.from('challenge_equipes').update({
+      score:(team.score||0)+pts.total,
+      last_points:pts.total,
+      nb_correctes:(team.nb_correctes||0)+(team.last_correct?1:0),
+      nb_reponses:(team.nb_reponses||0)+(team.has_answered?1:0),
+    }).eq('id',team.id);
+    // Insérer dans challenge_reponses
+    await supabase.from('challenge_reponses').insert({
+      session_id:SESSION_ID,equipe_id:team.id,
+      reponse:team.last_answer,est_correcte:team.last_correct||false,
+      temps_secondes:team.last_answer_time,
+      points_base:pts.base,points_bonus_vitesse:pts.bonus,points_total:pts.total
+    }).catch(()=>{});
+  });
+  await Promise.all(updates);
+  fireLog('info','SCORES','Scores calculés et mis à jour');
+}
+
+function calcPoints(elapsed){
+  const base=PARAMS.points;
+  const end=PARAMS.time-5;
+  const bonus=elapsed<end?Math.max(0,Math.round(PARAMS.bonus*(1-elapsed/end))):0;
+  return{base,bonus,total:base+bonus};
+}
+
+function renderCorrection(game){
+  if(['quiz','true-false','find-intruder','scenario','image-identify'].includes(game.type)){
+    return(game.optsMixed||[]).map((o,i)=>{
+      const ok=o.orig===game.correctAnswer;
+      return`<div style="padding:12px 16px;border-radius:12px;margin-bottom:8px;font-weight:600;font-size:.88rem;${ok?'background:rgba(16,185,129,.2);border:1px solid rgba(16,185,129,.4);color:#6ee7b7;':'background:rgba(255,255,255,.05);color:rgba(255,255,255,.5);'}">
+        ${ok?'✅ ':''}${String.fromCharCode(65+i)}. ${o.text}
+      </div>`;}).join('');
+  }
+  if(game.type==='multiple-select'){
+    return(game.optsMixed||[]).map((o,i)=>{
+      const ok=(game.correctAnswers||[]).includes(o.orig);
+      return`<div style="padding:12px 16px;border-radius:12px;margin-bottom:8px;font-weight:600;font-size:.88rem;${ok?'background:rgba(16,185,129,.2);border:1px solid rgba(16,185,129,.4);color:#6ee7b7;':'background:rgba(255,255,255,.05);color:rgba(255,255,255,.5);'}">
+        ${ok?'☑️':'☐'} ${String.fromCharCode(65+i)}. ${o.text}
+      </div>`;}).join('');
+  }
+  if(['sequence','ranking'].includes(game.type)){
+    const getT=idx=>(game.itemsMixed||[]).find(x=>x.orig===idx)?.text||'?';
+    return(game.correctOrder||[]).map((idx,i)=>`<div style="padding:12px 16px;border-radius:12px;margin-bottom:8px;background:rgba(16,185,129,.2);border:1px solid rgba(16,185,129,.4);color:#6ee7b7;font-weight:600;font-size:.88rem;display:flex;align-items:center;gap:10px;">
+      <span style="width:26px;height:26px;border-radius:50%;background:#10b981;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.8rem;flex-shrink:0;">${i+1}</span>${getT(idx)}</div>`).join('');
+  }
+  if(game.type==='matching'){
+    return(game.pairs||[]).map(p=>`<div style="padding:12px 16px;border-radius:12px;margin-bottom:8px;background:rgba(16,185,129,.2);border:1px solid rgba(16,185,129,.4);color:#6ee7b7;font-weight:600;font-size:.88rem;">✅ ${p.left} <span style="color:#93c5fd;">→</span> ${p.right}</div>`).join('');
+  }
+  if(game.type==='fill-blank'){
+    let s=game.sentence;(game.correctBlanks||[]).forEach((b,i)=>{s=s.replace(`%${i+1}%`,`<span style="color:#6ee7b7;font-weight:800;text-decoration:underline;">${b}</span>`);});
+    return`<div style="padding:16px;border-radius:12px;background:rgba(255,255,255,.06);color:#fff;font-size:.9rem;line-height:1.7;">${s}</div>`;
+  }
+  return'';
+}
+
+async function nextQuestion(){
+  currentQIdx++;
+  if(currentQIdx>=currentGames.length){finishBox();}
+  else{loadQuestion();}
+}
+
+async function finishBox(){
+  openedBoxes.push(currentBoxIdx);
+  const allDone=openedBoxes.length>=BOXES_DATA.length;
+  if(allDone){
+    await showPodiumSupervisor();
+  }else{
+    await broadcastEvent('pause');
+    await supabase.from('challenge_sessions').update({boites_terminees:openedBoxes,realtime_state:{status:'pause'}}).eq('id',SESSION_ID);
+    showScreen('screen-pause');
+    document.getElementById('pause-box-num').textContent=currentBoxIdx+1;
+    await showRankingSupervisor('pause-ranking');
+    renderBoxes();
+  }
+}
+
+// ============================================================
+// ═══════════ JEU STAGIAIRE ══════════════════════════════════
+// ============================================================
+function showTraineeGame(game){
+  lastGame=game;
+  selectedAnswer=null;selectedMultiple=[];selectedSequence=[];selectedRanking=[];
+  fillAnswers=[];catAnswers={};decisionPath=[];matchLeft=null;matchRight=null;
+  showScreen('screen-trainee-game');
+  document.getElementById('game-team-name').textContent=teamName||'—';
+  // Score depuis DB
+  supabase.from('challenge_equipes').select('score').eq('id',teamId).single().then(({data})=>{
+    if(data)document.getElementById('game-score').textContent=`${data.score} pts`;
+  });
+  document.getElementById('game-container').innerHTML=renderGameTrainee(game);
+  const btn=document.getElementById('btn-validate');
+  btn.disabled=false;btn.textContent='✓ Valider ma réponse';
+}
+
+function renderGameTrainee(game){
+  const qHtml=`<p style="font-size:1.2rem;font-weight:800;color:#fff;text-align:center;line-height:1.4;margin-bottom:20px;">${game.question}</p>`;
+  const scen=game.scenario?`<div class="scenario-box mb-4"><div style="font-size:.7rem;font-weight:700;color:#93c5fd;margin-bottom:6px;">📋 Situation :</div><p style="color:#e0f2fe;font-size:.85rem;">${game.scenario}</p></div>`:'';
+  const badge=`<div style="text-align:center;margin-bottom:14px;"><span style="background:rgba(255,255,255,.1);color:rgba(255,255,255,.7);padding:4px 12px;border-radius:999px;font-size:.72rem;font-weight:700;">${getTypeLabel(game.type)}</span></div>`;
+
+  if(['quiz','true-false','find-intruder','scenario','image-identify'].includes(game.type)){
+    return badge+scen+qHtml+`<div class="space-y-3">${(game.optsMixed||[]).map((o,i)=>`
+      <div class="answer-opt flex items-center gap-3" onclick="selectOne(${o.orig})" data-orig="${o.orig}">
+        <span style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.85rem;flex-shrink:0;color:#fff;">${String.fromCharCode(65+i)}</span>
+        <span style="font-size:.95rem;font-weight:600;color:#fff;">${o.text}</span>
+      </div>`).join('')}</div>`;
+  }
+  if(game.type==='multiple-select'){
+    return badge+`<div style="background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);border-radius:10px;padding:10px;text-align:center;color:#fcd34d;font-weight:700;font-size:.8rem;margin-bottom:12px;">☑️ Cochez TOUTES les bonnes réponses</div>`+qHtml+`<div class="space-y-3">${(game.optsMixed||[]).map((o,i)=>`
+      <div class="answer-opt flex items-center gap-3" onclick="selectMulti(${o.orig})" data-orig="${o.orig}" id="multi-${o.orig}">
+        <div style="width:26px;height:26px;border-radius:50%;border:2.5px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-size:.8rem;flex-shrink:0;transition:all .2s;" id="check-${o.orig}"></div>
+        <span style="font-size:.9rem;font-weight:600;color:#fff;">${o.text}</span>
+      </div>`).join('')}</div>`;
+  }
+  if(['sequence','ranking'].includes(game.type)){
+    return badge+(game.type==='ranking'?`<div style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.25);border-radius:10px;padding:10px;text-align:center;color:#93c5fd;font-weight:700;font-size:.8rem;margin-bottom:12px;">🏅 1er clic = priorité 1</div>`:'')+qHtml+`<div class="space-y-3">${(game.itemsMixed||[]).map((item)=>`
+      <div class="answer-opt text-center" onclick="${game.type==='sequence'?`selectSeq(${item.orig})`:`selectRank(${item.orig})`}" data-orig="${item.orig}" id="${game.type}-${item.orig}">
+        <span style="font-size:.9rem;font-weight:600;color:#fff;">${item.text}</span>
+      </div>`).join('')}</div><div style="margin-top:12px;padding:12px;background:rgba(255,255,255,.06);border-radius:10px;font-size:.78rem;color:rgba(255,255,255,.5);" id="order-display">Cliquez dans l'ordre...</div>`;
+  }
+  return badge+scen+qHtml+`<div style="padding:20px;border-radius:14px;background:rgba(255,255,255,.06);text-align:center;color:rgba(255,255,255,.5);">${getTypeLabel(game.type)} — répondez</div>`;
+}
+
+// ── SÉLECTIONS ──
+function selectOne(orig){
+  document.querySelectorAll('.answer-opt').forEach(el=>el.classList.remove('selected'));
+  document.querySelector(`.answer-opt[data-orig="${orig}"]`)?.classList.add('selected');
+  selectedAnswer=orig;
+}
+function selectMulti(orig){
+  const idx=selectedMultiple.indexOf(orig);
+  if(idx===-1){selectedMultiple.push(orig);document.getElementById(`multi-${orig}`)?.classList.add('selected');document.getElementById(`check-${orig}`).textContent='✓';document.getElementById(`check-${orig}`).style.background='#3b82f6';document.getElementById(`check-${orig}`).style.borderColor='#3b82f6';}
+  else{selectedMultiple.splice(idx,1);document.getElementById(`multi-${orig}`)?.classList.remove('selected');document.getElementById(`check-${orig}`).textContent='';document.getElementById(`check-${orig}`).style.background='transparent';document.getElementById(`check-${orig}`).style.borderColor='rgba(255,255,255,.3)';}
+}
+function selectSeq(orig){
+  const pos=selectedSequence.indexOf(orig);
+  if(pos!==-1)selectedSequence.splice(pos,1);
+  else selectedSequence.push(orig);
+  document.querySelectorAll('.answer-opt').forEach(el=>el.classList.remove('selected'));
+  selectedSequence.forEach((o,i)=>{const el=document.getElementById(`sequence-${o}`);if(el){el.classList.add('selected');const txt=el.querySelector('span');if(txt)txt.textContent=`${i+1}. ${lastGame.itemsMixed.find(x=>x.orig===o)?.text}`;}});
+  const od=document.getElementById('order-display');
+  if(od)od.textContent=selectedSequence.map((o,i)=>`${i+1}. ${lastGame.itemsMixed.find(x=>x.orig===o)?.text||'?'}`).join(' → ')||'Cliquez dans l\'ordre...';
+}
+function selectRank(orig){
+  const pos=selectedRanking.indexOf(orig);
+  if(pos!==-1)selectedRanking.splice(pos,1);
+  else selectedRanking.push(orig);
+  document.querySelectorAll('.answer-opt').forEach(el=>el.classList.remove('selected'));
+  selectedRanking.forEach((o,i)=>{const el=document.getElementById(`ranking-${o}`);if(el){el.classList.add('selected');}});
+  const od=document.getElementById('order-display');
+  if(od)od.textContent=selectedRanking.map((o,i)=>`${i+1}. ${lastGame.itemsMixed.find(x=>x.orig===o)?.text||'?'}`).join(' | ')||'Cliquez pour classer...';
+}
+
+// ── VALIDATION ──
+async function validateAnswer(){
+  const btn=document.getElementById('btn-validate');
+  if(btn.disabled)return;
+  btn.disabled=true;btn.innerHTML='<span class="spin"></span>';
+  const elapsed=Math.round((Date.now()-questionStart)/1000);
+  const game=lastGame;
+  let answer=null,correct=false;
+
+  if(['quiz','true-false','find-intruder','scenario','image-identify'].includes(game.type)){
+    answer=selectedAnswer;correct=selectedAnswer===game.correctAnswer;
+  }else if(game.type==='multiple-select'){
+    answer=[...selectedMultiple].sort();correct=JSON.stringify(answer)===JSON.stringify([...(game.correctAnswers||[])].sort());
+  }else if(['sequence','ranking'].includes(game.type)){
+    answer=game.type==='ranking'?selectedRanking:selectedSequence;
+    correct=JSON.stringify(answer)===JSON.stringify(game.correctOrder);
+  }else{correct=false;answer=null;}
+
+  try{
+    await supabase.from('challenge_equipes').update({
+      has_answered:true,last_answer:answer,last_correct:correct,last_answer_time:elapsed
+    }).eq('id',teamId);
+    fireLog(correct?'success':'warn','REPONSE',`"${teamName}" — ${correct?'✅':'❌'} en ${elapsed}s`);
+    showScreen('screen-waiting-others');
+  }catch(e){
+    btn.disabled=false;btn.textContent='✓ Valider ma réponse';
+    alert('Erreur envoi. Réessayez.');
+  }
+}
+
+function showTraineeResult(evt){
+  supabase.from('challenge_equipes').select('score,last_points,last_bonus_vitesse,last_correct,has_answered').eq('id',teamId).single().then(({data:team})=>{
+    if(!team)return;
+    showScreen('screen-trainee-result');
+    const ok=team.last_correct&&team.has_answered;
+    const noAns=!team.has_answered;
+    document.getElementById('result-icon').textContent=noAns?'⏰':ok?'✓':'✗';
+    document.getElementById('result-title').textContent=noAns?'Temps écoulé !':ok?'Bonne réponse !':'Mauvaise réponse';
+    document.getElementById('result-title').style.color=noAns?'#f97316':ok?'#10b981':'#ef4444';
+    document.getElementById('result-points').textContent=ok?`+${team.last_points||0}`:'0';
+    document.getElementById('result-bonus').textContent=(team.last_bonus_vitesse>0)?`⚡ Bonus vitesse : +${team.last_bonus_vitesse} pts`:'';
+    document.getElementById('result-total').textContent=`${team.score||0} pts`;
+  });
+}
+
+// ============================================================
+// ═══════════ CLASSEMENT ═════════════════════════════════════
+// ============================================================
+async function showRankingSupervisor(containerId){
+  const{data}=await supabase.from('challenge_equipes').select('*').eq('session_id',SESSION_ID).order('score',{ascending:false});
+  const teams=data||[];
+  const el=document.getElementById(containerId);
+  if(!el)return;
+  el.innerHTML=teams.map((t,i)=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-radius:12px;background:rgba(255,255,255,.06);margin-bottom:6px;${i<3?'border:1px solid rgba(255,255,255,.15);':''}">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.9rem;color:#fff;" class="${i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'rank-other'}">${i+1}</div>
+        <span style="font-weight:700;color:#fff;">${t.nom}</span>
+      </div>
+      <span style="font-family:'Syne',sans-serif;font-weight:800;color:#3b82f6;font-size:1.1rem;">${t.score} pts</span>
+    </div>`).join('');
+}
+
+async function showRankingTrainee(){
+  showScreen('screen-ranking');
+  await showRankingSupervisor('ranking-list');
+}
+
+// ── PODIUM ──
+async function showPodiumSupervisor(){
+  await broadcastEvent('finished');
+  await supabase.from('challenge_sessions').update({status:'finished',ended_at:new Date().toISOString()}).eq('id',SESSION_ID);
+  const{data}=await supabase.from('challenge_equipes').select('*').eq('session_id',SESSION_ID).order('score',{ascending:false});
+  const teams=data||[];
+  showScreen('screen-podium');
+  createConfetti();
+  const pc=document.getElementById('podium-container');
+  const heights=['280px','220px','180px'];
+  const icons=['🥇','🥈','🥉'];
+  const gradients=['ssiap-grad','rank-2','rank-3'];
+  pc.innerHTML=[1,0,2].filter(i=>teams[i]).map(i=>`
+    <div style="text-align:center;">
+      <div style="font-size:${i===0?'4rem':'3rem'};margin-bottom:6px;">${icons[i]}</div>
+      <div style="height:${heights[i]};display:flex;flex-direction:column;justify-content:flex-end;padding:16px;border-radius:16px 16px 0 0;min-width:140px;" class="${gradients[i]}">
+        <div style="font-family:'Syne',sans-serif;font-weight:900;color:#fff;font-size:1rem;">${teams[i].nom}</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:900;color:rgba(255,255,255,.9);font-size:1.5rem;">${teams[i].score} pts</div>
+      </div>
+    </div>`).join('');
+  await showRankingSupervisor('full-ranking');
+}
+
+async function showPodiumTrainee(){
+  const{data}=await supabase.from('challenge_equipes').select('*').eq('session_id',SESSION_ID).order('score',{ascending:false});
+  const teams=data||[];
+  const myTeam=teams.find(t=>t.id===teamId)||{score:0,nb_correctes:0,nb_reponses:0};
+  const myRank=teams.findIndex(t=>t.id===teamId)+1;
+  const pct=myTeam.nb_reponses>0?Math.round((myTeam.nb_correctes/myTeam.nb_reponses)*100):0;
+  showScreen('screen-trainee-podium');
+  createConfetti();
+  document.getElementById('tf-teamname').textContent=teamName||'—';
+  document.getElementById('tf-score').textContent=`${myTeam.score||0} pts`;
+  document.getElementById('tf-rank').textContent=myRank<=3?['🥇 1ère place !','🥈 2ème place !','🥉 3ème place !'][myRank-1]:`${myRank}ème place`;
+  document.getElementById('tf-correct').textContent=myTeam.nb_correctes||0;
+  document.getElementById('tf-total').textContent=myTeam.nb_reponses||0;
+  const pctEl=document.getElementById('tf-pct');
+  pctEl.textContent=pct+'%';pctEl.style.color=pct>=60?'#10b981':'#ef4444';
+  setTimeout(()=>{const bar=document.getElementById('tf-bar');if(bar)bar.style.width=pct+'%';},300);
+  document.getElementById('tf-ranking').innerHTML=teams.map((t,i)=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:10px;margin-bottom:5px;background:${t.id===teamId?'rgba(59,130,246,.2)':'rgba(255,255,255,.05)'};border:${t.id===teamId?'1px solid rgba(59,130,246,.4)':'none'};">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:.9rem;">${i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1+'.'}</span>
+        <span style="font-weight:700;color:#fff;font-size:.85rem;">${t.nom}${t.id===teamId?' 👈':''}</span>
+      </div>
+      <span style="font-weight:800;color:#3b82f6;">${t.score} pts</span>
+    </div>`).join('');
+}
+
+// ============================================================
+// ═══════════ ADMIN ══════════════════════════════════════════
+// ============================================================
+function showTab(tab){
+  showScreen('screen-'+tab);
+  if(tab==='admin')switchAdminTab('settings');
+}
+
+function switchAdminTab(tab){
+  ['settings','questions','logs'].forEach(t=>{
+    document.getElementById(`admin-${t}`).classList.toggle('hidden',t!==tab);
+    document.getElementById(`admin-tab-${t}`).classList.toggle('on',t===tab);
+  });
+  if(tab==='logs')renderLogs();
+}
+
+function saveSettings(){
+  PARAMS.time=parseInt(document.getElementById('param-time').value)||30;
+  PARAMS.points=parseInt(document.getElementById('param-points').value)||150;
+  PARAMS.bonus=parseInt(document.getElementById('param-bonus').value)||100;
+  PARAMS.qbox=parseInt(document.getElementById('param-qbox').value)||8;
+  localStorage.setItem('cup_params',JSON.stringify(PARAMS));
+  if(SESSION_ID)supabase.from('challenge_sessions').update({temps_par_question:PARAMS.time,points_bonne_reponse:PARAMS.points,bonus_vitesse_max:PARAMS.bonus,questions_par_boite:PARAMS.qbox}).eq('id',SESSION_ID).then(()=>{});
+  alert('✅ Paramètres sauvegardés !');
+}
+
+function loadSettings(){
+  const saved=localStorage.getItem('cup_params');
+  if(saved){PARAMS={...PARAMS,...JSON.parse(saved)};}
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v;};
+  set('param-time',PARAMS.time);set('param-points',PARAMS.points);set('param-bonus',PARAMS.bonus);set('param-qbox',PARAMS.qbox);
+}
+
+async function resetGame(){
+  if(!confirm('Réinitialiser la session ?'))return;
+  if(SESSION_ID){
+    await supabase.from('challenge_sessions').update({status:'finished'}).eq('id',SESSION_ID);
+    supabase.removeAllChannels();
+  }
+  location.reload();
+}
+
+// ============================================================
+// ═══════════ LOGS ═══════════════════════════════════════════
+// ============================================================
+function fireLog(level,cat,msg,data={}){
+  const entry={ts:Date.now(),time:new Date().toLocaleTimeString('fr-FR'),level,cat,msg,...data};
+  logs.push(entry);if(logs.length>300)logs.shift();
+  const colors={info:'#3b82f6',success:'#10b981',warn:'#f97316',error:'#ef4444',debug:'#8b5cf6'};
+  console.log(`%c[${level.toUpperCase()}] [${cat}] ${msg}`,`color:${colors[level]||'gray'};font-weight:bold`,data);
+}
+
+function renderLogs(){
+  const c=document.getElementById('logs-container');if(!c)return;
+  const colors={info:'#3b82f6',success:'#10b981',warn:'#f97316',error:'#ef4444',debug:'#6b7280'};
+  c.innerHTML=[...logs].reverse().map(l=>`<div style="border-left:3px solid ${colors[l.level]||'#6b7280'};padding:4px 8px;margin-bottom:3px;background:rgba(255,255,255,.03);border-radius:0 4px 4px 0;">
+    <span style="color:${colors[l.level]};font-weight:700;">[${l.level.toUpperCase()}]</span>
+    <span style="color:rgba(255,255,255,.4);margin:0 6px;">${l.time}</span>
+    <span style="color:rgba(255,255,255,.6);">[${l.cat}]</span>
+    <span style="color:rgba(255,255,255,.85);"> ${l.msg}</span>
+  </div>`).join('')||'<div style="color:rgba(255,255,255,.3);">Aucun log</div>';
+}
+
+function exportLogs(){
+  const csv=['time,level,cat,msg',...logs.map(l=>`"${l.time}","${l.level}","${l.cat}","${l.msg}"`)].join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
+  a.download=`logs_challenge_${SESSION_NUM||'unknown'}.csv`;a.click();
+}
+
+function clearLogs(){logs=[];renderLogs();}
+
+// ============================================================
+// ═══════════ HELPERS ════════════════════════════════════════
+// ============================================================
+const SCREENS=['screen-supervisor-login','screen-dashboard','screen-trainee-login','screen-trainee-waiting','screen-boxes','screen-question','screen-correction','screen-trainee-game','screen-waiting-others','screen-trainee-result','screen-ranking','screen-pause','screen-podium','screen-trainee-podium','screen-admin'];
+
+function showScreen(id){
+  SCREENS.forEach(s=>{const el=document.getElementById(s);if(el)el.classList.toggle('hidden',s!==id);});
+  document.getElementById('app').scrollTop=0;
+  clearInterval(timerInterval);
+}
+
+function getTypeLabel(t){const m={'quiz':'❓ Quiz','true-false':'✓✗ Vrai / Faux','sequence':'🔢 Ordre','matching':'🔗 Association','find-intruder':'🔍 Intrus','multiple-select':'☑️ Plusieurs réponses','scenario':'🎭 Mise en situation','ranking':'🏅 Classement','fill-blank':'✍️ Texte à trous','categories':'📂 Catégories','decision':'🌳 Décision','image-identify':'🖼️ Identifier'};return m[t]||'🎯 Question';}
+
+const EMOJIS=['🛡️','🚒','🧯','🔔','💡','🔍','🏃','🚪','⭐','🎯','🔴','🟡'];
+function getEmoji(i){return EMOJIS[i%EMOJIS.length];}
+
+function createConfetti(){
+  const colors=['#3b82f6','#ef4444','#f59e0b','#10b981','#8b5cf6'];
+  for(let i=0;i<60;i++){
+    const c=document.createElement('div');
+    c.style.cssText=`position:fixed;width:${6+Math.random()*8}px;height:${6+Math.random()*8}px;background:${colors[Math.floor(Math.random()*colors.length)]};left:${Math.random()*100}vw;top:-10px;z-index:9999;border-radius:${Math.random()>.5?'50%':'2px'};animation:confetti-fall ${2+Math.random()*2}s linear forwards;`;
+    document.getElementById('confetti-container').appendChild(c);
+    setTimeout(()=>c.remove(),4000);
+  }
+}
+
+function confirmBack(from){
+  if(from==='dashboard'){window.location.href='formateur.html';}
+}
+
+function generateDemoQuestions(boxIdx){
+  // Questions de démonstration si aucune question en base
+  return[{
+    type:'quiz',titre:'Question démo',question:`Question de démonstration — Boîte ${boxIdx+1}`,
+    options:['Réponse A','Réponse B','Réponse C','Réponse D'],correctAnswer:0,
+    explication:'Ceci est une question de démonstration. Ajoutez de vraies questions via le panneau admin.'
+  },{
+    type:'true-false',titre:'Vrai ou faux démo',question:'Cette plateforme est une plateforme de formation SSIAP.',
+    options:['Vrai','Faux'],correctAnswer:0,explication:'Oui, MIB Prévention est une plateforme de formation SSIAP.'
+  }];
+}
+</script>
+</body>
+</html>
