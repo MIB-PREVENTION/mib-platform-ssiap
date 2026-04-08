@@ -9,89 +9,44 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="supabase.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Syne:wght@700;800;900&display=swap');
-
-:root{
-  --bg:#eef2ff;--card:#fff;--text:#111827;--text2:#6b7280;--text3:#9ca3af;
-  --blue:#2563eb;--red:#e63946;--green:#059669;--orange:#d97706;--purple:#7c3aed;
-}
+:root{--bg:#eef2ff;--card:#fff;--text:#111827;--text2:#6b7280;--text3:#9ca3af;--blue:#2563eb;--red:#e63946;--green:#059669;}
 *{box-sizing:border-box;margin:0;padding:0;}
 html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);}
-
-.bg-wrap{position:fixed;inset:0;z-index:0;
-  background:radial-gradient(ellipse 60% 40% at 15% 0%,rgba(230,57,70,.09) 0%,transparent 60%),
-  radial-gradient(ellipse 50% 40% at 85% 100%,rgba(37,99,235,.09) 0%,transparent 60%),
-  linear-gradient(160deg,#eef2ff 0%,#f5f7ff 100%);}
-
-/* SIDEBAR */
-.sidebar{width:220px;min-height:100vh;background:linear-gradient(180deg,#fff,#f8faff);
-  border-right:1px solid rgba(0,0,0,.06);padding:18px 12px;flex-shrink:0;
-  box-shadow:4px 0 20px rgba(100,116,139,.06);}
-.nav-item{display:flex;align-items:center;gap:9px;padding:10px 12px;border-radius:11px;cursor:pointer;
-  font-size:.83rem;font-weight:600;color:var(--text2);transition:all .2s;margin-bottom:3px;}
+.bg-wrap{position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse 60% 40% at 15% 0%,rgba(230,57,70,.09) 0%,transparent 60%),radial-gradient(ellipse 50% 40% at 85% 100%,rgba(37,99,235,.09) 0%,transparent 60%),linear-gradient(160deg,#eef2ff 0%,#f5f7ff 100%);}
+.sidebar{width:220px;min-height:100vh;background:linear-gradient(180deg,#fff,#f8faff);border-right:1px solid rgba(0,0,0,.06);padding:18px 12px;flex-shrink:0;box-shadow:4px 0 20px rgba(100,116,139,.06);}
+.nav-item{display:flex;align-items:center;gap:9px;padding:10px 12px;border-radius:11px;cursor:pointer;font-size:.83rem;font-weight:600;color:var(--text2);transition:all .2s;margin-bottom:3px;}
 .nav-item:hover{background:linear-gradient(145deg,#f8faff,#eef1f8);color:var(--text);}
-.nav-item.on{background:linear-gradient(135deg,#fff1f2,#ffe4e6);color:#b91c1c;
-  box-shadow:3px 3px 10px rgba(230,57,70,.12);}
+.nav-item.on{background:linear-gradient(135deg,#fff1f2,#ffe4e6);color:#b91c1c;box-shadow:3px 3px 10px rgba(230,57,70,.12);}
 .nav-icon{font-size:.95rem;width:18px;text-align:center;}
-.nav-sep{height:1px;background:rgba(0,0,0,.05);margin:8px 0;}
-
-/* TOPBAR */
-.topbar{background:#fff;border-bottom:1px solid rgba(0,0,0,.06);padding:13px 22px;
-  display:flex;align-items:center;justify-content:space-between;
-  box-shadow:0 2px 10px rgba(100,116,139,.06);}
-
-/* CARDS */
-.card{background:#fff;border-radius:18px;border:1px solid rgba(255,255,255,.9);
-  box-shadow:5px 5px 18px rgba(100,116,139,.1),-3px -3px 10px rgba(255,255,255,.9),inset 0 1px 0 rgba(255,255,255,.8);}
-
-/* MODULE LAUNCH CARD — l'élément central de ce dashboard */
-.launch-card{
-  border-radius:20px;padding:24px;cursor:pointer;
-  border:2px solid rgba(255,255,255,.8);
-  transition:all .3s cubic-bezier(.34,1.56,.64,1);
-  position:relative;overflow:hidden;
-}
-.launch-card::before{content:'';position:absolute;top:0;left:0;right:0;height:45%;
-  background:linear-gradient(180deg,rgba(255,255,255,.25),transparent);pointer-events:none;}
+.topbar{background:#fff;border-bottom:1px solid rgba(0,0,0,.06);padding:13px 22px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 10px rgba(100,116,139,.06);}
+.card{background:#fff;border-radius:18px;border:1px solid rgba(255,255,255,.9);box-shadow:5px 5px 18px rgba(100,116,139,.1),-3px -3px 10px rgba(255,255,255,.9),inset 0 1px 0 rgba(255,255,255,.8);}
+.card-inner{background:linear-gradient(145deg,#f8faff,#eef1f8);border-radius:14px;border:1.5px solid rgba(255,255,255,.9);box-shadow:3px 3px 10px rgba(100,116,139,.1),-2px -2px 6px rgba(255,255,255,.95);}
+.launch-card{border-radius:20px;padding:22px;cursor:pointer;border:2px solid rgba(255,255,255,.8);transition:all .3s cubic-bezier(.34,1.56,.64,1);position:relative;overflow:hidden;}
+.launch-card::before{content:'';position:absolute;top:0;left:0;right:0;height:45%;background:linear-gradient(180deg,rgba(255,255,255,.25),transparent);pointer-events:none;}
 .launch-card:hover{transform:translateY(-6px) scale(1.02);}
-.launch-card:active{transform:translateY(0) scale(.99);}
 .launch-card.disabled{opacity:.5;cursor:not-allowed;transform:none!important;}
 .lc-blue  {background:linear-gradient(135deg,#3b82f6,#1d4ed8);box-shadow:0 8px 25px rgba(37,99,235,.4);}
 .lc-purple{background:linear-gradient(135deg,#7c3aed,#5b21b6);box-shadow:0 8px 25px rgba(124,58,237,.4);}
 .lc-orange{background:linear-gradient(135deg,#f59e0b,#b45309);box-shadow:0 8px 25px rgba(245,158,11,.4);}
 .lc-red   {background:linear-gradient(135deg,#ef4444,#b91c1c);box-shadow:0 8px 25px rgba(239,68,68,.4);}
 .lc-teal  {background:linear-gradient(135deg,#0d9488,#0f766e);box-shadow:0 8px 25px rgba(13,148,136,.4);}
-.lc-icon{font-size:2.8rem;margin-bottom:12px;filter:drop-shadow(0 3px 8px rgba(0,0,0,.2));}
-.lc-title{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800;color:#fff;margin-bottom:4px;}
-.lc-desc{font-size:.75rem;color:rgba(255,255,255,.75);line-height:1.5;}
-.lc-badge{display:inline-block;margin-top:10px;padding:4px 10px;border-radius:999px;
-  font-size:.68rem;font-weight:700;background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.3);}
-.lc-locked{position:absolute;top:12px;right:12px;font-size:1.2rem;}
-
-/* KPI */
-.kpi{background:linear-gradient(145deg,#f8faff,#eef1f8);border-radius:14px;padding:16px;
-  border:1.5px solid rgba(255,255,255,.9);
-  box-shadow:4px 4px 12px rgba(100,116,139,.12),-3px -3px 8px rgba(255,255,255,.95);}
+.lc-icon{font-size:2.5rem;margin-bottom:10px;filter:drop-shadow(0 3px 8px rgba(0,0,0,.2));}
+.lc-title{font-family:'Syne',sans-serif;font-size:1rem;font-weight:800;color:#fff;margin-bottom:4px;}
+.lc-desc{font-size:.73rem;color:rgba(255,255,255,.75);line-height:1.5;}
+.lc-badge{display:inline-block;margin-top:8px;padding:4px 10px;border-radius:999px;font-size:.68rem;font-weight:700;background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.3);}
+.lc-locked{position:absolute;top:12px;right:12px;font-size:1.1rem;}
+.kpi{background:linear-gradient(145deg,#f8faff,#eef1f8);border-radius:14px;padding:16px;border:1.5px solid rgba(255,255,255,.9);box-shadow:4px 4px 12px rgba(100,116,139,.12),-3px -3px 8px rgba(255,255,255,.95);}
 .kpi-val{font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:800;line-height:1;}
 .kpi-lbl{font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-top:4px;}
-
-/* INPUTS */
-.inp{width:100%;padding:11px 15px;border-radius:12px;
-  background:linear-gradient(145deg,#e8edf5,#f3f6fc);
-  border:1.5px solid rgba(0,0,0,.07);color:var(--text);font-family:'Inter',sans-serif;font-size:.88rem;
-  outline:none;transition:all .2s;
-  box-shadow:inset 3px 3px 7px rgba(100,116,139,.16),inset -2px -2px 5px rgba(255,255,255,.9);}
+.inp{width:100%;padding:11px 15px;border-radius:12px;background:linear-gradient(145deg,#e8edf5,#f3f6fc);border:1.5px solid rgba(0,0,0,.07);color:var(--text);font-family:'Inter',sans-serif;font-size:.88rem;outline:none;transition:all .2s;box-shadow:inset 3px 3px 7px rgba(100,116,139,.16),inset -2px -2px 5px rgba(255,255,255,.9);}
 .inp:focus{border-color:rgba(37,99,235,.35);box-shadow:inset 3px 3px 7px rgba(100,116,139,.18),inset -2px -2px 5px rgba(255,255,255,.9),0 0 0 3px rgba(37,99,235,.08);}
 .inp::placeholder{color:var(--text3);}
 .inp option{background:#fff;color:var(--text);}
 .lbl{font-size:.68rem;font-weight:700;color:var(--text2);letter-spacing:.07em;text-transform:uppercase;display:block;margin-bottom:6px;}
-
-/* BOUTONS */
-.btn{padding:10px 18px;border-radius:11px;border:none;font-weight:700;font-size:.82rem;cursor:pointer;
-  transition:all .2s;letter-spacing:.02em;position:relative;overflow:hidden;}
-.btn::before{content:'';position:absolute;top:0;left:0;right:0;height:45%;background:linear-gradient(180deg,rgba(255,255,255,.18),transparent);border-radius:11px 11px 0 0;pointer-events:none;}
+.btn{padding:10px 18px;border-radius:11px;border:none;font-weight:700;font-size:.82rem;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;}
+.btn::before{content:'';position:absolute;top:0;left:0;right:0;height:45%;background:linear-gradient(180deg,rgba(255,255,255,.18),transparent);pointer-events:none;}
 .btn:hover{transform:translateY(-2px);}
 .btn:active{transform:translateY(1px);}
 .btn:disabled{opacity:.45;cursor:not-allowed;transform:none;}
@@ -103,62 +58,48 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
 .btn-purple{background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;box-shadow:0 4px 14px rgba(124,58,237,.35);}
 .btn-sm{padding:7px 13px;font-size:.75rem;border-radius:9px;}
 .btn-xs{padding:5px 10px;font-size:.7rem;border-radius:8px;}
-
-/* TABLE */
+.badge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:.67rem;font-weight:700;}
+.b-green{background:#f0fdf4;color:#065f46;border:1px solid #bbf7d0;}
+.b-blue {background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;}
+.b-orange{background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;}
+.b-red  {background:#fff1f2;color:#b91c1c;border:1px solid #fecdd3;}
+.b-gray {background:#f9fafb;color:#6b7280;border:1px solid #e5e7eb;}
 .tbl{width:100%;border-collapse:separate;border-spacing:0;}
 .tbl th{background:linear-gradient(145deg,#f8faff,#eef1f8);padding:10px 14px;font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);text-align:left;}
 .tbl th:first-child{border-radius:10px 0 0 0;}.tbl th:last-child{border-radius:0 10px 0 0;}
 .tbl td{padding:11px 14px;font-size:.83rem;border-bottom:1px solid rgba(0,0,0,.04);background:#fff;vertical-align:middle;}
 .tbl tr:hover td{background:#fafbff;}
 .tbl tr:last-child td{border-bottom:none;}
-
-/* BADGE */
-.badge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:.67rem;font-weight:700;}
-.b-green {background:#f0fdf4;color:#065f46;border:1px solid #bbf7d0;}
-.b-blue  {background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;}
-.b-orange{background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;}
-.b-red   {background:#fff1f2;color:#b91c1c;border:1px solid #fecdd3;}
-.b-gray  {background:#f9fafb;color:#6b7280;border:1px solid #e5e7eb;}
-.b-purple{background:#fdf4ff;color:#7e22ce;border:1px solid #e9d5ff;}
-
-/* SESSION EN COURS */
-.session-live{
-  background:linear-gradient(135deg,#f0fdf4,#dcfce7);
-  border:2px solid #86efac;border-radius:16px;padding:18px 22px;
-  animation:pulse-border 2s ease-in-out infinite;
-}
-@keyframes pulse-border{0%,100%{border-color:#86efac;}50%{border-color:#22c55e;}}
-.live-dot{width:10px;height:10px;border-radius:50%;background:#22c55e;animation:blink 1s infinite;}
-@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
-
+/* SESSION CARDS */
+.session-card{border-radius:16px;padding:18px;border:2px solid;transition:all .2s;}
+.session-card:hover{transform:translateY(-2px);}
+.sc-attente {background:linear-gradient(145deg,#fff7ed,#ffedd5);border-color:#fed7aa;}
+.sc-active  {background:linear-gradient(145deg,#ecfdf5,#d1fae5);border-color:#86efac;animation:pb 2s ease-in-out infinite;}
+.sc-terminee{background:linear-gradient(145deg,#f9fafb,#f3f4f6);border-color:#e5e7eb;opacity:.8;}
+@keyframes pb{0%,100%{border-color:#86efac;}50%{border-color:#22c55e;}}
+/* STAG CHECKBOX */
+.stag-check{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;cursor:pointer;transition:all .2s;border:1.5px solid rgba(0,0,0,.06);background:#fff;}
+.stag-check:hover{background:#f8faff;border-color:rgba(99,102,241,.2);}
+.stag-check.checked{background:linear-gradient(145deg,#f0f0ff,#e8eaff);border-color:rgba(99,102,241,.35);}
+.stag-check-box{width:22px;height:22px;border-radius:6px;border:2px solid #d1d5db;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s;font-size:.8rem;color:#fff;}
+.stag-check.checked .stag-check-box{background:#6366f1;border-color:#6366f1;}
+/* PIN ROW */
+.pin-row{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:10px;background:#fff;border:1px solid rgba(0,0,0,.05);margin-bottom:6px;box-shadow:2px 2px 6px rgba(100,116,139,.08);}
+.pin-code{font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:900;letter-spacing:.2em;color:#6366f1;background:linear-gradient(145deg,#e8edf5,#f3f6fc);padding:5px 14px;border-radius:10px;box-shadow:inset 2px 2px 5px rgba(100,116,139,.15),inset -1px -1px 3px rgba(255,255,255,.9);}
 /* MODAL */
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.25);backdrop-filter:blur(6px);z-index:50;
-  display:flex;align-items:center;justify-content:center;padding:16px;}
-.modal-box{background:#fff;border-radius:20px;padding:26px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto;
-  box-shadow:0 30px 70px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.8);}
-
-/* QR CODE */
-.qr-wrap{display:flex;justify-content:center;padding:14px;background:#fff;border-radius:14px;
-  box-shadow:inset 3px 3px 8px rgba(100,116,139,.15),inset -2px -2px 5px rgba(255,255,255,.9);}
-
-/* CODE SESSION */
-.session-code{
-  font-family:'Syne',sans-serif;font-size:2rem;font-weight:900;
-  text-align:center;letter-spacing:.12em;color:var(--blue);
-  background:linear-gradient(145deg,#e8edf5,#f3f6fc);
-  border-radius:14px;padding:14px;
-  box-shadow:inset 3px 3px 8px rgba(100,116,139,.18),inset -2px -2px 5px rgba(255,255,255,.9);
-}
-
-/* ALERT */
-.alert-ok {background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:10px;padding:10px 14px;font-size:.82rem;color:#065f46;}
-.alert-err{background:#fff1f2;border:1.5px solid #fecdd3;border-radius:10px;padding:10px 14px;font-size:.82rem;color:#b91c1c;}
-.alert-info{background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:10px;padding:10px 14px;font-size:.82rem;color:#1d4ed8;}
-
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.25);backdrop-filter:blur(6px);z-index:50;display:flex;align-items:center;justify-content:center;padding:16px;}
+.modal-box{background:#fff;border-radius:20px;padding:26px;width:100%;max-width:560px;max-height:92vh;overflow-y:auto;box-shadow:0 30px 70px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.8);}
+/* PRINT */
+@media print{.no-print{display:none!important;}.print-zone{display:block!important;}body{background:#fff;}}
+.print-zone{display:none;}
 .sep{height:1px;background:linear-gradient(90deg,transparent,rgba(0,0,0,.07),transparent);margin:14px 0;}
 .logo-t{font-family:'Syne',sans-serif;font-weight:800;}
 .spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .6s linear infinite;display:inline-block;vertical-align:middle;}
 @keyframes sp{to{transform:rotate(360deg)}}
+.alert-ok{background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:10px;padding:10px 14px;font-size:.82rem;color:#065f46;}
+.alert-err{background:#fff1f2;border:1.5px solid #fecdd3;border-radius:10px;padding:10px 14px;font-size:.82rem;color:#b91c1c;}
+.live-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;animation:blink 1s infinite;flex-shrink:0;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
 .hidden{display:none!important;}
 </style>
 </head>
@@ -176,99 +117,112 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
         <div style="font-size:.65rem;color:var(--text3);" id="sb-centre">—</div>
       </div>
     </div>
-
     <nav>
-      <div class="nav-item on" onclick="showTab('accueil')"    id="nav-accueil">   <span class="nav-icon">🏠</span>Accueil</div>
-      <div class="nav-item" onclick="showTab('lancer')"        id="nav-lancer">    <span class="nav-icon">🚀</span>Lancer une session</div>
-      <div class="nav-item" onclick="showTab('stagiaires')"    id="nav-stagiaires"><span class="nav-icon">👨‍🎓</span>Mes stagiaires</div>
-      <div class="nav-item" onclick="showTab('historique')"    id="nav-historique"><span class="nav-icon">📊</span>Historique</div>
-      <div class="nav-item" onclick="showTab('qualiopi')"      id="nav-qualiopi">  <span class="nav-icon">📋</span>Qualiopi</div>
+      <div class="nav-item on" onclick="showTab('accueil')"   id="nav-accueil">   <span class="nav-icon">🏠</span>Accueil</div>
+      <div class="nav-item" onclick="showTab('sessions')"     id="nav-sessions">  <span class="nav-icon">📋</span>Mes sessions</div>
+      <div class="nav-item" onclick="showTab('lancer')"       id="nav-lancer">    <span class="nav-icon">🚀</span>Nouvelle session</div>
+      <div class="nav-item" onclick="showTab('stagiaires')"   id="nav-stagiaires"><span class="nav-icon">👨‍🎓</span>Mes stagiaires</div>
+      <div class="nav-item" onclick="showTab('historique')"   id="nav-historique"><span class="nav-icon">📊</span>Historique</div>
     </nav>
-
-    <div style="margin-top:auto;padding-top:30px;">
-      <div class="nav-sep"></div>
+    <div style="margin-top:auto;padding-top:30px;"><div class="sep"></div>
       <button onclick="logout()" class="btn btn-gray btn-sm" style="width:100%;">🚪 Déconnexion</button>
     </div>
   </div>
 
   <!-- MAIN -->
   <div class="flex-1 flex flex-col" style="max-height:100vh;overflow:hidden;">
-
-    <!-- TOPBAR -->
     <div class="topbar">
       <div>
         <h1 class="logo-t" style="font-size:1.05rem;" id="top-title">Accueil</h1>
-        <p style="font-size:.72rem;color:var(--text3);" id="top-sub">Bienvenue sur votre espace formateur</p>
+        <p style="font-size:.72rem;color:var(--text3);" id="top-sub">Bienvenue</p>
       </div>
-      <div id="session-live-indicator" class="hidden flex items-center gap-2 px-3 py-2 rounded-xl" style="background:#f0fdf4;border:1px solid #bbf7d0;">
+      <div id="session-live-bar" class="hidden flex items-center gap-2 px-3 py-2 rounded-xl" style="background:#f0fdf4;border:1px solid #bbf7d0;">
         <div class="live-dot"></div>
         <span style="font-size:.78rem;font-weight:700;color:#065f46;">Session active</span>
-        <button onclick="showTab('lancer')" class="btn btn-green btn-xs">Voir →</button>
+        <button onclick="goToCurrentSession()" class="btn btn-green btn-xs">▶ Rejoindre</button>
+        <button onclick="showTab('sessions')" class="btn btn-gray btn-xs">Gérer</button>
       </div>
     </div>
 
-    <!-- CONTENU -->
     <div class="flex-1 p-5 overflow-y-auto">
 
-      <!-- ── ACCUEIL ── -->
+      <!-- ACCUEIL -->
       <div id="tab-accueil">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-          <div class="kpi"><div style="font-size:1.5rem;margin-bottom:6px;">👨‍🎓</div><div class="kpi-val text-blue-600" id="kpi-stag">—</div><div class="kpi-lbl">Stagiaires</div></div>
-          <div class="kpi"><div style="font-size:1.5rem;margin-bottom:6px;">📡</div><div class="kpi-val text-purple-600" id="kpi-quiz">—</div><div class="kpi-lbl">Quiz lancés</div></div>
-          <div class="kpi"><div style="font-size:1.5rem;margin-bottom:6px;">🏆</div><div class="kpi-val text-orange-600" id="kpi-cup">—</div><div class="kpi-lbl">Challenge Cup</div></div>
-          <div class="kpi"><div style="font-size:1.5rem;margin-bottom:6px;">🔴</div><div class="kpi-val text-red-600" id="kpi-ssi">—</div><div class="kpi-lbl">Sessions SSI</div></div>
+          <div class="kpi"><div style="font-size:1.4rem;margin-bottom:5px;">👨‍🎓</div><div class="kpi-val text-blue-600" id="kpi-stag">—</div><div class="kpi-lbl">Stagiaires</div></div>
+          <div class="kpi"><div style="font-size:1.4rem;margin-bottom:5px;">📋</div><div class="kpi-val text-green-600" id="kpi-ses">—</div><div class="kpi-lbl">Sessions</div></div>
+          <div class="kpi"><div style="font-size:1.4rem;margin-bottom:5px;">🔑</div><div class="kpi-val text-purple-600" id="kpi-pins">—</div><div class="kpi-lbl">PINs actifs</div></div>
+          <div class="kpi"><div style="font-size:1.4rem;margin-bottom:5px;">📡</div><div class="kpi-val text-orange-600" id="kpi-mois">—</div><div class="kpi-lbl">Ce mois</div></div>
         </div>
-
-        <!-- RACCOURCIS MODULES -->
         <h2 style="font-size:.9rem;font-weight:700;margin-bottom:12px;">Lancer rapidement</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-5" id="grid-raccourcis"></div>
-
-        <!-- DERNIÈRE ACTIVITÉ -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-5" id="grid-modules"></div>
         <div class="card p-5">
-          <h3 style="font-size:.9rem;font-weight:700;margin-bottom:14px;">Activité récente</h3>
-          <table class="tbl" id="tbl-activite">
-            <thead><tr><th>Module</th><th>Niveau</th><th>Participants</th><th>Date</th><th>Statut</th></tr></thead>
-            <tbody id="body-activite"><tr><td colspan="5" style="text-align:center;color:var(--text3);padding:18px;">Chargement...</td></tr></tbody>
-          </table>
+          <div class="flex justify-between items-center mb-3">
+            <h3 style="font-size:.88rem;font-weight:700;">Sessions récentes</h3>
+            <button onclick="showTab('sessions')" class="btn btn-blue btn-xs">Toutes →</button>
+          </div>
+          <div id="recent-sessions"></div>
         </div>
       </div>
 
-      <!-- ── LANCER UNE SESSION ── -->
+      <!-- SESSIONS -->
+      <div id="tab-sessions" class="hidden">
+        <div class="flex justify-between items-center mb-4">
+          <h2 style="font-size:.95rem;font-weight:700;">Mes sessions</h2>
+          <button onclick="showTab('lancer')" class="btn btn-green btn-sm">+ Nouvelle session</button>
+        </div>
+        <div id="sessions-list" class="space-y-3"></div>
+      </div>
+
+      <!-- NOUVELLE SESSION -->
       <div id="tab-lancer" class="hidden">
-        <!-- Session en cours -->
-        <div id="current-session-panel" class="hidden mb-5">
-          <div class="session-live">
-            <div class="flex items-center justify-between flex-wrap gap-3">
-              <div class="flex items-center gap-3">
-                <div class="live-dot"></div>
-                <div>
-                  <div style="font-weight:700;font-size:.9rem;color:#065f46;">Session en cours</div>
-                  <div style="font-size:.78rem;color:#16a34a;" id="live-type-lbl">—</div>
-                </div>
-              </div>
-              <div style="text-align:right;">
-                <div class="session-code" id="live-code" style="font-size:1.3rem;padding:8px 14px;display:inline-block;">—</div>
-              </div>
-              <div class="flex gap-2">
-                <button onclick="goToSession()" class="btn btn-green btn-sm">▶ Rejoindre</button>
-                <button onclick="endCurrentSession()" class="btn btn-red btn-sm">⏹ Terminer</button>
-              </div>
+        <h2 style="font-size:.95rem;font-weight:700;margin-bottom:16px;">Créer une session</h2>
+        <div class="card p-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+            <div>
+              <label class="lbl">Module</label>
+              <select id="new-module" class="inp" onchange="onModuleChange()">
+                <option value="quiz_salle">📡 Quiz Salle</option>
+                <option value="challenge">🏆 Challenge Cup</option>
+                <option value="ssi_supervise">🔴 SSI Supervisé</option>
+                <option value="auto_entrainement">🎯 Quiz Auto-entraînement</option>
+                <option value="ssi_auto">🟡 SSI Auto-formation</option>
+              </select>
+            </div>
+            <div>
+              <label class="lbl">Niveau SSIAP</label>
+              <select id="new-niveau" class="inp">
+                <option value="SSIAP1">🛡️ SSIAP 1 — Équipier</option>
+                <option value="SSIAP2">🛡️🛡️ SSIAP 2 — Chef d'équipe</option>
+                <option value="SSIAP3">🛡️🛡️🛡️ SSIAP 3 — Chef de service</option>
+              </select>
+            </div>
+            <div>
+              <label class="lbl">Date</label>
+              <input type="date" id="new-date" class="inp">
+            </div>
+            <div>
+              <label class="lbl">Durée prévue (heures)</label>
+              <input type="number" id="new-duree" class="inp" value="4" min="1" max="8" step=".5">
             </div>
           </div>
+          <div id="params-avances" class="hidden card-inner p-4 mb-5">
+            <h4 style="font-size:.82rem;font-weight:700;margin-bottom:10px;color:var(--text2);">Paramètres avancés</h4>
+            <div class="grid grid-cols-2 gap-3" id="params-grid"></div>
+          </div>
+          <div id="new-msg" class="hidden mb-4"></div>
+          <button onclick="createSession()" class="btn btn-green" style="width:100%;padding:14px;" id="btn-create-ses">✓ Créer la session →</button>
         </div>
-
-        <h2 style="font-size:.95rem;font-weight:700;margin-bottom:14px;">Choisissez un module à lancer</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="grid-modules-launch"></div>
       </div>
 
-      <!-- ── STAGIAIRES ── -->
+      <!-- STAGIAIRES -->
       <div id="tab-stagiaires" class="hidden">
         <div class="flex justify-between items-center mb-4">
           <h2 style="font-size:.95rem;font-weight:700;">Mes stagiaires</h2>
           <div class="flex gap-2">
-            <input type="text" id="stag-search" class="inp" style="max-width:200px;" placeholder="🔍 Rechercher..." oninput="filterStag()">
-            <select id="stag-niveau" class="inp" style="max-width:130px;" onchange="filterStag()">
-              <option value="">Tous niveaux</option>
+            <input type="text" id="stag-search" class="inp" style="max-width:180px;" placeholder="🔍 Rechercher..." oninput="filterStag()">
+            <select id="stag-niveau" class="inp" style="max-width:120px;" onchange="filterStag()">
+              <option value="">Tous</option>
               <option value="SSIAP1">SSIAP 1</option>
               <option value="SSIAP2">SSIAP 2</option>
               <option value="SSIAP3">SSIAP 3</option>
@@ -277,108 +231,90 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
         </div>
         <div class="card p-5">
           <table class="tbl">
-            <thead><tr><th>Nom</th><th>Prénom</th><th>Niveau</th><th>Sessions</th><th>Dernière activité</th><th>Progression</th></tr></thead>
+            <thead><tr><th>Nom</th><th>Prénom</th><th>Niveau</th><th>Sessions</th><th>Score moy.</th><th>Actions</th></tr></thead>
             <tbody id="body-stag"><tr><td colspan="6" style="text-align:center;color:var(--text3);padding:18px;">Chargement...</td></tr></tbody>
           </table>
         </div>
       </div>
 
-      <!-- ── HISTORIQUE ── -->
+      <!-- HISTORIQUE -->
       <div id="tab-historique" class="hidden">
-        <h2 style="font-size:.95rem;font-weight:700;margin-bottom:16px;">Historique de mes sessions</h2>
+        <h2 style="font-size:.95rem;font-weight:700;margin-bottom:16px;">Historique</h2>
         <div class="card p-5">
           <table class="tbl">
-            <thead><tr><th>Module</th><th>Niveau</th><th>Participants</th><th>Date</th><th>Durée</th><th>Statut</th></tr></thead>
+            <thead><tr><th>Module</th><th>Niveau</th><th>Date</th><th>Participants</th><th>Statut</th><th>Actions</th></tr></thead>
             <tbody id="body-histo"><tr><td colspan="6" style="text-align:center;color:var(--text3);padding:18px;">Chargement...</td></tr></tbody>
           </table>
         </div>
       </div>
 
-      <!-- ── QUALIOPI ── -->
-      <div id="tab-qualiopi" class="hidden">
-        <h2 style="font-size:.95rem;font-weight:700;margin-bottom:6px;">Documents Qualiopi</h2>
-        <p style="font-size:.78rem;color:var(--text2);margin-bottom:16px;">Feuilles d'émargement numériques de vos sessions</p>
-        <div class="alert-info mb-4">
-          ℹ️ Les émargements sont générés automatiquement à la fin de chaque session de formation officielle.
-          Les stagiaires signent numériquement depuis leur écran.
-        </div>
-        <div class="card p-5">
-          <table class="tbl">
-            <thead><tr><th>Formation</th><th>Date</th><th>Participants</th><th>Signés</th><th>PDF</th></tr></thead>
-            <tbody id="body-qualiopi"><tr><td colspan="5" style="text-align:center;color:var(--text3);padding:18px;">Aucun émargement</td></tr></tbody>
-          </table>
-        </div>
-      </div>
-
     </div>
   </div>
 </div>
 
-<!-- ═══ MODALE LANCER SESSION ═══ -->
-<div id="modal-launch" class="modal-bg hidden">
-  <div class="modal-box">
-    <div class="flex justify-between items-center mb-5">
-      <h3 style="font-size:1.05rem;font-weight:800;" id="launch-title">Lancer une session</h3>
-      <button onclick="closeModal('modal-launch')" style="width:32px;height:32px;border-radius:50%;background:#f3f4f6;border:none;cursor:pointer;">✕</button>
-    </div>
-
-    <div class="space-y-4">
-      <div>
-        <label class="lbl">Niveau SSIAP</label>
-        <select id="launch-niveau" class="inp">
-          <option value="SSIAP1">🛡️ SSIAP 1 — Équipier</option>
-          <option value="SSIAP2">🛡️🛡️ SSIAP 2 — Chef d'équipe</option>
-          <option value="SSIAP3">🛡️🛡️🛡️ SSIAP 3 — Chef de service</option>
-        </select>
-      </div>
-
-      <!-- Paramètres Quiz Salle -->
-      <div id="params-quiz" class="hidden space-y-3">
-        <div class="sep"></div>
-        <div class="grid grid-cols-2 gap-3">
-          <div><label class="lbl">Temps par question (sec)</label><input type="number" id="quiz-temps" class="inp" value="30" min="10" max="120"></div>
-          <div><label class="lbl">Points par bonne réponse</label><input type="number" id="quiz-points" class="inp" value="100" min="10"></div>
-        </div>
-      </div>
-
-      <!-- Paramètres Challenge Cup -->
-      <div id="params-cup" class="hidden space-y-3">
-        <div class="sep"></div>
-        <div class="grid grid-cols-2 gap-3">
-          <div><label class="lbl">Temps par question (sec)</label><input type="number" id="cup-temps" class="inp" value="30" min="10"></div>
-          <div><label class="lbl">Questions par boîte</label><input type="number" id="cup-qbox" class="inp" value="8" min="3" max="20"></div>
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div><label class="lbl">Points bonne réponse</label><input type="number" id="cup-points" class="inp" value="150" min="10"></div>
-          <div><label class="lbl">Bonus vitesse max</label><input type="number" id="cup-bonus" class="inp" value="100" min="0"></div>
-        </div>
-      </div>
-
-      <!-- Résultat après création -->
-      <div id="launch-result" class="hidden">
-        <div class="sep"></div>
-        <div class="alert-ok mb-4">✅ Session créée ! Partagez le code ci-dessous avec vos stagiaires.</div>
-        <div class="session-code mb-4" id="launch-code-display">—</div>
-        <div class="qr-wrap mb-3"><div id="launch-qr"></div></div>
-        <p style="font-size:.72rem;color:var(--text3);text-align:center;margin-bottom:12px;">
-          Les stagiaires entrent ce code sur la page de connexion<br>ou scannent le QR code
-        </p>
-        <button onclick="goToSession()" class="btn btn-green" style="width:100%;">▶ Accéder à la session →</button>
-      </div>
-
-      <div id="launch-msg" class="hidden"></div>
-
-      <div id="launch-actions" class="flex gap-3">
-        <button onclick="closeModal('modal-launch')" class="btn btn-gray flex-1">Annuler</button>
-        <button onclick="createSession()" class="btn flex-1" id="btn-launch" style="background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;">🚀 Lancer</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ MODALE FICHE STAGIAIRE ═══ -->
-<div id="modal-fiche" class="modal-bg hidden">
+<!-- MODALE PARTICIPANTS + PINs -->
+<div id="modal-participants" class="modal-bg hidden">
   <div class="modal-box" style="max-width:600px;">
+    <div class="flex justify-between items-center mb-5">
+      <div>
+        <h3 style="font-size:1.05rem;font-weight:800;" id="modal-p-title">Participants</h3>
+        <p style="font-size:.75rem;color:var(--text2);margin-top:2px;" id="modal-p-sub">Sélectionnez les stagiaires</p>
+      </div>
+      <button onclick="closeModal('modal-participants')" style="width:32px;height:32px;border-radius:50%;background:#f3f4f6;border:none;cursor:pointer;">✕</button>
+    </div>
+
+    <!-- PHASE 1 : Sélection -->
+    <div id="phase-select">
+      <div class="flex items-center justify-between mb-3">
+        <span style="font-size:.8rem;font-weight:700;color:var(--text2);">Choisissez les stagiaires à inclure</span>
+        <div class="flex gap-2">
+          <button onclick="selectAll(true)" class="btn btn-blue btn-xs">Tout ✓</button>
+          <button onclick="selectAll(false)" class="btn btn-gray btn-xs">Tout ✗</button>
+        </div>
+      </div>
+      <input type="text" id="stag-filter-modal" class="inp" placeholder="🔍 Filtrer..." style="margin-bottom:10px;" oninput="filterModalStag()">
+      <div id="stag-checkboxes" class="space-y-2" style="max-height:280px;overflow-y:auto;"></div>
+      <div style="margin-top:10px;padding:10px 14px;border-radius:10px;background:linear-gradient(145deg,#f8faff,#eef1f8);font-size:.8rem;color:var(--text2);">
+        <span id="selected-count" style="font-weight:700;color:#6366f1;">0</span> stagiaire(s) sélectionné(s)
+      </div>
+      <div class="sep"></div>
+      <div class="grid grid-cols-2 gap-3 mb-4">
+        <div>
+          <label class="lbl">Validité des PINs</label>
+          <select id="pin-validite" class="inp">
+            <option value="4">4 heures</option>
+            <option value="8" selected>8 heures</option>
+            <option value="12">12 heures</option>
+            <option value="24">24 heures</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:flex-end;">
+          <p style="font-size:.72rem;color:var(--text3);line-height:1.5;">Les PINs expirent automatiquement en fin de session.</p>
+        </div>
+      </div>
+      <div id="p-msg" class="hidden mb-3"></div>
+      <button onclick="generatePins()" class="btn btn-purple" style="width:100%;padding:13px;" id="btn-gen-pins">🔑 Générer les PINs d'accès</button>
+    </div>
+
+    <!-- PHASE 2 : PINs générés -->
+    <div id="phase-pins" class="hidden">
+      <div class="alert-ok mb-4">✅ PINs générés ! Distribuez chaque code à son stagiaire.<br>
+        <span style="font-size:.75rem;opacity:.8;">Validité : <span id="pins-duree">8h</span> · Les PINs expirent automatiquement.</span>
+      </div>
+      <div id="pins-list" class="space-y-2 mb-4" style="max-height:340px;overflow-y:auto;"></div>
+      <div class="flex gap-2 flex-wrap mb-3">
+        <button onclick="printPins()" class="btn btn-blue btn-sm no-print">🖨️ Imprimer la liste</button>
+        <button onclick="exportPinsCsv()" class="btn btn-gray btn-sm no-print">📤 Export CSV</button>
+      </div>
+      <button onclick="goToSession()" class="btn btn-green" style="width:100%;padding:13px;">▶ Lancer la session →</button>
+      <div class="print-zone" id="print-zone"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODALE FICHE STAGIAIRE -->
+<div id="modal-fiche" class="modal-bg hidden">
+  <div class="modal-box">
     <div class="flex justify-between items-center mb-5">
       <h3 style="font-size:1.05rem;font-weight:800;" id="fiche-title">Fiche stagiaire</h3>
       <button onclick="closeModal('modal-fiche')" style="width:32px;height:32px;border-radius:50%;background:#f3f4f6;border:none;cursor:pointer;">✕</button>
@@ -388,402 +324,414 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
 </div>
 
 <script>
-// ============================================================
+// ================================================================
 // ÉTAT
-// ============================================================
-let FORMATEUR=null;
-let CENTER_DATA=null;
-let currentModule=null;
-let currentSessionId=null;
-let currentSessionType=null;
+// ================================================================
+let FORMATEUR=null, CENTER_DATA=null;
 let allStagiaires=[];
+let generatedPins=[];
+let modalSessionId=null, modalSessionType=null, modalSessionNum=null;
 
 const MODULE_DEFS={
-  auto_entrainement:{
-    key:'module_auto_entrainement',icon:'🎯',title:'Quiz auto-entraînement',
-    desc:'Les stagiaires s\'entraînent seuls à la maison. Suivi en temps réel.',
-    color:'lc-blue',page:'auto-entrainement.html',hasParams:false,
-    badge:'Solo · Suivi temps réel'
-  },
-  quiz_salle:{
-    key:'module_quiz_salle',icon:'📡',title:'Quiz Salle',
-    desc:'Lancez un quiz interactif en salle. Les stagiaires répondent en direct.',
-    color:'lc-purple',page:'quiz-salle.html',hasParams:true,paramPanel:'params-quiz',
-    badge:'Temps réel · Classement'
-  },
-  challenge_cup:{
-    key:'module_challenge_cup',icon:'🏆',title:'Challenge Cup',
-    desc:'Jeu gamifié avec boîtes, équipes, bonus vitesse et podium.',
-    color:'lc-orange',page:'challenge-cup.html',hasParams:true,paramPanel:'params-cup',
-    badge:'Gamification · 12 types'
-  },
-  ssi_supervise:{
-    key:'module_ssi_supervise',icon:'🔴',title:'SSI Supervisé',
-    desc:'Simulation panneau SSI. Vous guidez le stagiaire en temps réel.',
-    color:'lc-red',page:'ssi-supervise.html',hasParams:false,
-    badge:'Simulation · Temps réel'
-  },
-  ssi_autoformation:{
-    key:'module_ssi_autoformation',icon:'🟡',title:'SSI Auto-formation',
-    desc:'Scénarios SSI guidés. Le stagiaire progresse seul à la maison.',
-    color:'lc-teal',page:'ssi-autoformation.html',hasParams:false,
-    badge:'Solo · Scénarios guidés'
-  }
+  auto_entrainement:{key:'module_auto_entrainement',icon:'🎯',title:'Quiz Auto-entraîn.',desc:'Stagiaires s\'entraînent seuls. Suivi temps réel.',color:'lc-blue',page:'auto-entrainement.html',badge:'Solo · Suivi'},
+  quiz_salle:{key:'module_quiz_salle',icon:'📡',title:'Quiz Salle',desc:'Quiz interactif en salle, réponses en direct.',color:'lc-purple',page:'quiz-salle.html',badge:'Temps réel'},
+  challenge:{key:'module_challenge_cup',icon:'🏆',title:'Challenge Cup',desc:'Jeu gamifié avec boîtes et podium.',color:'lc-orange',page:'challenge-cup.html',badge:'Gamification'},
+  ssi_supervise:{key:'module_ssi_supervise',icon:'🔴',title:'SSI Supervisé',desc:'Simulation panneau SSI guidée.',color:'lc-red',page:'ssi-supervise.html',badge:'Simulation'},
+  ssi_auto:{key:'module_ssi_autoformation',icon:'🟡',title:'SSI Auto-formation',desc:'Scénarios SSI guidés en autonomie.',color:'lc-teal',page:'ssi-autoformation.html',badge:'Solo'}
 };
 
-// ============================================================
+// ================================================================
 // INIT
-// ============================================================
+// ================================================================
 window.addEventListener('DOMContentLoaded',async()=>{
-  const session=SESSION.load('formateur');
-  if(!session){window.location.href='index.html';return;}
-  FORMATEUR=session;
-  document.getElementById('sb-nom').textContent=session.formateur_nom||'Formateur';
-  document.getElementById('sb-centre').textContent=session.center_nom||'—';
-  try{
-    CENTER_DATA=await DB.getById('centers',session.center_id);
-  }catch(e){console.error(e);}
-  renderRaccourcis();
-  renderModulesLaunch();
+  const sess=SESSION.load('formateur');
+  if(!sess){window.location.href='index.html';return;}
+  FORMATEUR=sess;
+  document.getElementById('sb-nom').textContent=sess.formateur_nom||'Formateur';
+  document.getElementById('sb-centre').textContent=sess.center_nom||'—';
+  document.getElementById('new-date').value=new Date().toISOString().slice(0,10);
+  try{CENTER_DATA=await DB.getById('centers',sess.center_id);}catch(e){}
+  renderModules();
+  await loadStagiaires();
   loadAll();
-  checkCurrentSession();
+  checkLiveSession();
 });
 
 function logout(){SESSION.clear('formateur');window.location.href='index.html';}
+function isOn(key){return CENTER_DATA&&CENTER_DATA[key];}
 
-// ============================================================
+// ================================================================
 // NAVIGATION
-// ============================================================
-const TABS=['accueil','lancer','stagiaires','historique','qualiopi'];
-const TAB_TITLES={
-  accueil:['Accueil','Bienvenue sur votre espace formateur'],
-  lancer:['Lancer une session','Choisissez un module et démarrez'],
-  stagiaires:['Mes stagiaires','Suivi individuel et progression'],
-  historique:['Historique','Toutes vos sessions passées'],
-  qualiopi:['Qualiopi','Émargements et bilans pédagogiques']
-};
+// ================================================================
+const TABS=['accueil','sessions','lancer','stagiaires','historique'];
+const TT={accueil:['Accueil','Votre espace formateur'],sessions:['Mes sessions','Gérez sessions et participants'],lancer:['Nouvelle session','Créez une session'],stagiaires:['Mes stagiaires','Suivi individuel'],historique:['Historique','Toutes vos sessions']};
 function showTab(t){
-  TABS.forEach(id=>{
-    document.getElementById(`tab-${id}`).classList.toggle('hidden',id!==t);
-    document.getElementById(`nav-${id}`).classList.toggle('on',id===t);
-  });
-  const[title,sub]=TAB_TITLES[t]||['',''];
+  TABS.forEach(id=>{document.getElementById(`tab-${id}`).classList.toggle('hidden',id!==t);document.getElementById(`nav-${id}`).classList.toggle('on',id===t);});
+  const[title,sub]=TT[t]||['',''];
   document.getElementById('top-title').textContent=title;
   document.getElementById('top-sub').textContent=sub;
-  if(t==='stagiaires')loadStagiaires();
+  if(t==='sessions')loadSessions();
+  if(t==='stagiaires')renderStagiaires(allStagiaires);
   if(t==='historique')loadHistorique();
 }
 
-// ============================================================
-// LOAD ALL
-// ============================================================
+// ================================================================
+// ACCUEIL KPIs
+// ================================================================
 async function loadAll(){
-  if(!FORMATEUR)return;
-  const cid=FORMATEUR.center_id;
-  const fid=FORMATEUR.formateur_id;
+  const cid=FORMATEUR.center_id, fid=FORMATEUR.formateur_id;
   const debut=new Date(new Date().setDate(1)).toISOString();
   try{
-    const[{count:ns},{count:nq},{count:nc},{count:nssi}]=await Promise.all([
+    const[{count:ns},{count:nses},{count:npins},{count:nm}]=await Promise.all([
       supabase.from('stagiaires').select('*',{count:'exact',head:true}).eq('center_id',cid).eq('actif',true),
+      supabase.from('quiz_salle_sessions').select('*',{count:'exact',head:true}).eq('formateur_id',fid),
+      supabase.from('session_pins').select('*',{count:'exact',head:true}).eq('center_id',cid).is('used_at',null).gt('expires_at',new Date().toISOString()),
       supabase.from('quiz_salle_sessions').select('*',{count:'exact',head:true}).eq('formateur_id',fid).gte('created_at',debut),
-      supabase.from('challenge_sessions').select('*',{count:'exact',head:true}).eq('formateur_id',fid).gte('created_at',debut),
-      supabase.from('ssi_sessions').select('*',{count:'exact',head:true}).eq('formateur_id',fid).gte('created_at',debut),
     ]);
     document.getElementById('kpi-stag').textContent=ns??0;
-    document.getElementById('kpi-quiz').textContent=nq??0;
-    document.getElementById('kpi-cup').textContent=nc??0;
-    document.getElementById('kpi-ssi').textContent=nssi??0;
-  }catch(e){console.error(e);}
-
-  // Activité récente
+    document.getElementById('kpi-ses').textContent=nses??0;
+    document.getElementById('kpi-pins').textContent=npins??0;
+    document.getElementById('kpi-mois').textContent=nm??0;
+  }catch(e){}
+  // Sessions récentes
   try{
-    const{data:qs}=await supabase.from('quiz_salle_sessions').select('*').eq('formateur_id',FORMATEUR.formateur_id).order('created_at',{ascending:false}).limit(5);
-    const tbody=document.getElementById('body-activite');
-    if(!qs||!qs.length){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:18px;">Aucune activité</td></tr>';return;}
-    tbody.innerHTML=qs.map(s=>`<tr>
-      <td><span class="badge b-purple">📡 Quiz Salle</span></td>
-      <td><span class="badge b-gray" style="font-size:.67rem;">${s.niveau||'—'}</span></td>
-      <td style="text-align:center;">—</td>
-      <td style="font-size:.8rem;">${UTILS.dateStr(s.created_at)}</td>
-      <td>${statusBadge(s.status)}</td>
-    </tr>`).join('');
-  }catch(e){console.error(e);}
+    const{data}=await supabase.from('quiz_salle_sessions').select('*').eq('formateur_id',fid).order('created_at',{ascending:false}).limit(4);
+    const el=document.getElementById('recent-sessions');
+    if(!data?.length){el.innerHTML='<div style="text-align:center;color:var(--text3);padding:16px;font-size:.85rem;">Aucune session — créez-en une !</div>';return;}
+    el.innerHTML=data.map(s=>miniCard(s,'quiz_salle')).join('');
+  }catch(e){}
 }
 
-// ============================================================
-// RACCOURCIS & MODULES
-// ============================================================
-function isModuleOn(key){return CENTER_DATA&&CENTER_DATA[key];}
+function miniCard(s,type){
+  const icons={quiz_salle:'📡',challenge:'🏆',ssi_supervise:'🔴',auto_entrainement:'🎯',ssi_auto:'🟡'};
+  const sc={attente:'b-orange',question:'b-blue',terminee:'b-gray',finished:'b-gray',playing:'b-blue'};
+  return`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:10px;background:linear-gradient(145deg,#f8faff,#eef1f8);margin-bottom:6px;">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span style="font-size:1.2rem;">${icons[type]||'📋'}</span>
+      <div>
+        <div style="font-weight:700;font-size:.85rem;color:var(--text);">${s.titre||s.session_number||'Session'}</div>
+        <div style="font-size:.72rem;color:var(--text3);">${UTILS.dateStr(s.created_at)} · ${s.niveau||'—'}</div>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="badge ${sc[s.status]||'b-gray'}" style="font-size:.65rem;">${s.status}</span>
+      <button onclick="openParticipants('${s.id}','${type}','${s.session_number}')" class="btn btn-blue btn-xs">👥 PINs</button>
+    </div>
+  </div>`;
+}
 
-function renderRaccourcis(){
-  const grid=document.getElementById('grid-raccourcis');
+// ================================================================
+// MODULES
+// ================================================================
+function renderModules(){
+  const grid=document.getElementById('grid-modules');if(!grid)return;
   grid.innerHTML=Object.entries(MODULE_DEFS).map(([id,m])=>{
-    const on=isModuleOn(m.key);
+    const on=isOn(m.key);
     return`<div class="launch-card ${m.color} ${on?'':'disabled'}" onclick="${on?`openLaunch('${id}')`:''}">
       ${!on?'<span class="lc-locked">🔒</span>':''}
       <div class="lc-icon">${m.icon}</div>
       <div class="lc-title">${m.title}</div>
       <div class="lc-desc">${m.desc}</div>
-      <span class="lc-badge">${on?m.badge:'Non inclus dans votre plan'}</span>
+      <span class="lc-badge">${on?m.badge:'Non inclus'}</span>
     </div>`;
   }).join('');
 }
 
-function renderModulesLaunch(){
-  const grid=document.getElementById('grid-modules-launch');
-  grid.innerHTML=Object.entries(MODULE_DEFS).map(([id,m])=>{
-    const on=isModuleOn(m.key);
-    return`<div class="launch-card ${m.color} ${on?'':'disabled'}" onclick="${on?`openLaunch('${id}')`:''}">
-      ${!on?'<span class="lc-locked">🔒</span>':''}
-      <div class="lc-icon">${m.icon}</div>
-      <div class="lc-title">${m.title}</div>
-      <div class="lc-desc">${m.desc}</div>
-      <span class="lc-badge">${on?m.badge:'Non inclus dans votre plan'}</span>
-    </div>`;
-  }).join('');
+function openLaunch(id){document.getElementById('new-module').value=id;onModuleChange();showTab('lancer');}
+
+function onModuleChange(){
+  const mod=document.getElementById('new-module').value;
+  const pg=document.getElementById('params-grid');
+  const pw=document.getElementById('params-avances');
+  const p={quiz_salle:`<div><label class="lbl">Temps/question (sec)</label><input type="number" id="p-temps" class="inp" value="30" min="10" max="120"></div><div><label class="lbl">Points bonne réponse</label><input type="number" id="p-points" class="inp" value="100"></div>`,
+    challenge:`<div><label class="lbl">Temps/question (sec)</label><input type="number" id="p-temps" class="inp" value="30"></div><div><label class="lbl">Questions/boîte</label><input type="number" id="p-qbox" class="inp" value="8"></div><div><label class="lbl">Points</label><input type="number" id="p-points" class="inp" value="150"></div><div><label class="lbl">Bonus vitesse</label><input type="number" id="p-bonus" class="inp" value="100"></div>`};
+  if(p[mod]){pg.innerHTML=p[mod];pw.classList.remove('hidden');}else{pg.innerHTML='';pw.classList.add('hidden');}
 }
 
-// ============================================================
-// LANCER SESSION
-// ============================================================
-function openLaunch(moduleId){
-  currentModule=moduleId;
-  const m=MODULE_DEFS[moduleId];
-  document.getElementById('launch-title').textContent=`🚀 ${m.title}`;
-  // Reset
-  document.getElementById('launch-result').classList.add('hidden');
-  document.getElementById('launch-msg').classList.add('hidden');
-  document.getElementById('launch-actions').classList.remove('hidden');
-  document.getElementById('launch-qr').innerHTML='';
-  // Afficher les bons paramètres
-  ['params-quiz','params-cup'].forEach(id=>document.getElementById(id).classList.add('hidden'));
-  if(m.paramPanel)document.getElementById(m.paramPanel).classList.remove('hidden');
-  // Couleur du bouton
-  const colors={auto_entrainement:'btn-blue',quiz_salle:'btn-purple',challenge_cup:'btn-orange',ssi_supervise:'btn-red',ssi_autoformation:'btn-teal'};
-  const btnEl=document.getElementById('btn-launch');
-  btnEl.className=`btn flex-1 ${colors[moduleId]||'btn-blue'}`;
-  btnEl.textContent='🚀 Lancer';
-  openModal('modal-launch');
-}
-
+// ================================================================
+// CRÉER SESSION
+// ================================================================
 async function createSession(){
-  const niveau=document.getElementById('launch-niveau').value;
-  const m=MODULE_DEFS[currentModule];
-  const msgEl=document.getElementById('launch-msg');
-  msgEl.classList.add('hidden');
-  const btnEl=document.getElementById('btn-launch');
-  btnEl.disabled=true;btnEl.innerHTML='<span class="spin"></span>';
-
+  const mod=document.getElementById('new-module').value;
+  const niveau=document.getElementById('new-niveau').value;
+  const date=document.getElementById('new-date').value;
+  const msgEl=document.getElementById('new-msg');msgEl.classList.add('hidden');
+  const btn=document.getElementById('btn-create-ses');btn.disabled=true;btn.innerHTML='<span class="spin"></span>';
   try{
-    const sessionNum=UTILS.sessionNumber();
-    let sessionId=null;
-    let targetPage=m.page;
+    const num=UTILS.sessionNumber();
+    const base={center_id:FORMATEUR.center_id,formateur_id:FORMATEUR.formateur_id,niveau,session_number:num,status:'attente',titre:`${MODULE_DEFS[mod]?.title||mod} — ${niveau} — ${date}`};
+    let sesId=null;
+    if(mod==='quiz_salle'){const{data,error}=await supabase.from('quiz_salle_sessions').insert({...base,temps_par_question:parseInt(document.getElementById('p-temps')?.value)||30,points_bonne_reponse:parseInt(document.getElementById('p-points')?.value)||100}).select().single();if(error)throw error;sesId=data.id;}
+    else if(mod==='challenge'){const{data,error}=await supabase.from('challenge_sessions').insert({...base,temps_par_question:parseInt(document.getElementById('p-temps')?.value)||30,questions_par_boite:parseInt(document.getElementById('p-qbox')?.value)||8,points_bonne_reponse:parseInt(document.getElementById('p-points')?.value)||150,bonus_vitesse_max:parseInt(document.getElementById('p-bonus')?.value)||100}).select().single();if(error)throw error;sesId=data.id;}
+    else if(mod==='ssi_supervise'){const{data,error}=await supabase.from('ssi_sessions').insert(base).select().single();if(error)throw error;sesId=data.id;}
+    else{const{data,error}=await supabase.from('quiz_salle_sessions').insert(base).select().single();if(error)throw error;sesId=data.id;}
+    SESSION.save('session_courante',{id:sesId,type:mod,num,page:MODULE_DEFS[mod]?.page});
+    checkLiveSession();loadAll();
+    msgEl.innerHTML='<div class="alert-ok">✅ Session créée ! Ajoutez les participants.</div>';msgEl.classList.remove('hidden');
+    setTimeout(()=>openParticipants(sesId,mod,num),700);
+  }catch(e){msgEl.innerHTML=`<div class="alert-err">❌ ${e.message}</div>`;msgEl.classList.remove('hidden');}
+  finally{btn.disabled=false;btn.textContent='✓ Créer la session →';}
+}
 
-    if(currentModule==='quiz_salle'){
-      const temps=parseInt(document.getElementById('quiz-temps').value)||30;
-      const points=parseInt(document.getElementById('quiz-points').value)||100;
-      const{data,error}=await supabase.from('quiz_salle_sessions').insert({
-        center_id:FORMATEUR.center_id,formateur_id:FORMATEUR.formateur_id,
-        niveau,session_number:sessionNum,status:'attente',
-        temps_par_question:temps,points_bonne_reponse:points,
-        titre:`Quiz Salle ${niveau} — ${new Date().toLocaleDateString('fr-FR')}`
-      }).select().single();
-      if(error)throw error;
-      sessionId=data.id;
-    }else if(currentModule==='challenge_cup'){
-      const temps=parseInt(document.getElementById('cup-temps').value)||30;
-      const qbox=parseInt(document.getElementById('cup-qbox').value)||8;
-      const points=parseInt(document.getElementById('cup-points').value)||150;
-      const bonus=parseInt(document.getElementById('cup-bonus').value)||100;
-      const{data,error}=await supabase.from('challenge_sessions').insert({
-        center_id:FORMATEUR.center_id,formateur_id:FORMATEUR.formateur_id,
-        niveau,session_number:sessionNum,status:'attente',
-        temps_par_question:temps,questions_par_boite:qbox,
-        points_bonne_reponse:points,bonus_vitesse_max:bonus
-      }).select().single();
-      if(error)throw error;
-      sessionId=data.id;
-    }else if(currentModule==='ssi_supervise'){
-      const{data,error}=await supabase.from('ssi_sessions').insert({
-        center_id:FORMATEUR.center_id,formateur_id:FORMATEUR.formateur_id,
-        niveau,session_number:sessionNum,status:'attente'
-      }).select().single();
-      if(error)throw error;
-      sessionId=data.id;
-    }else{
-      // Auto-entraînement & SSI auto-formation → pas de session temps réel
-      // Redirection directe
-      window.location.href=`${targetPage}?center=${FORMATEUR.center_id}&niveau=${niveau}`;
-      return;
+// ================================================================
+// PARTICIPANTS + GÉNÉRATION PINs
+// ================================================================
+async function openParticipants(sesId,sesType,sesNum){
+  modalSessionId=sesId;modalSessionType=sesType;modalSessionNum=sesNum;
+  generatedPins=[];
+  document.getElementById('modal-p-title').textContent=`Participants — ${sesNum||sesId.slice(0,8)}`;
+  document.getElementById('modal-p-sub').textContent=`Module : ${MODULE_DEFS[sesType]?.title||sesType}`;
+  document.getElementById('phase-select').classList.remove('hidden');
+  document.getElementById('phase-pins').classList.add('hidden');
+  document.getElementById('p-msg').classList.add('hidden');
+  renderStagCheckboxes(allStagiaires);
+  // Pré-cocher les stagiaires déjà dans la session
+  try{
+    const{data}=await supabase.from('session_pins').select('stagiaire_id').eq('session_id',sesId);
+    (data||[]).forEach(p=>{const el=document.getElementById(`schk-${p.stagiaire_id}`);if(el){el.classList.add('checked');updateBox(el,true);}});
+    updateCount();
+  }catch(e){}
+  openModal('modal-participants');
+}
+
+function renderStagCheckboxes(data){
+  const el=document.getElementById('stag-checkboxes');
+  if(!data.length){el.innerHTML='<div style="text-align:center;color:var(--text3);padding:16px;font-size:.85rem;">Aucun stagiaire dans ce centre.<br>Ajoutez des stagiaires depuis le tableau de bord centre.</div>';return;}
+  el.innerHTML=data.map(s=>`
+    <div class="stag-check" id="schk-${s.id}" onclick="toggleStag('${s.id}')">
+      <div class="stag-check-box" id="schk-box-${s.id}"></div>
+      <div style="flex:1;"><div style="font-weight:700;font-size:.85rem;color:var(--text);">${s.prenom} ${s.nom}</div><div style="font-size:.72rem;color:var(--text3);">${s.niveau}</div></div>
+      <span class="badge ${s.niveau==='SSIAP1'?'b-blue':s.niveau==='SSIAP2'?'b-orange':'b-red'}" style="font-size:.65rem;">${s.niveau}</span>
+    </div>`).join('');
+  updateCount();
+}
+
+function filterModalStag(){
+  const q=document.getElementById('stag-filter-modal').value.toLowerCase();
+  renderStagCheckboxes(allStagiaires.filter(s=>(s.nom+' '+s.prenom).toLowerCase().includes(q)));
+}
+
+function toggleStag(id){
+  const el=document.getElementById(`schk-${id}`);if(!el)return;
+  const on=el.classList.toggle('checked');updateBox(el,on);updateCount();
+}
+
+function updateBox(el,on){const b=el.querySelector('.stag-check-box');if(b){b.textContent=on?'✓':'';b.style.background=on?'#6366f1':'transparent';b.style.borderColor=on?'#6366f1':'#d1d5db';}}
+
+function selectAll(on){document.querySelectorAll('.stag-check').forEach(el=>{on?el.classList.add('checked'):el.classList.remove('checked');updateBox(el,on);});updateCount();}
+
+function updateCount(){document.getElementById('selected-count').textContent=document.querySelectorAll('.stag-check.checked').length;}
+
+function getSelected(){
+  const out=[];
+  document.querySelectorAll('.stag-check.checked').forEach(el=>{
+    const id=el.id.replace('schk-','');
+    const s=allStagiaires.find(x=>x.id===id);if(s)out.push(s);
+  });
+  return out;
+}
+
+async function generatePins(){
+  const selected=getSelected();
+  const msgEl=document.getElementById('p-msg');msgEl.classList.add('hidden');
+  if(!selected.length){msgEl.innerHTML='<div class="alert-err">❌ Sélectionnez au moins un stagiaire.</div>';msgEl.classList.remove('hidden');return;}
+  const dureeH=parseInt(document.getElementById('pin-validite').value)||8;
+  const expires=new Date(Date.now()+dureeH*3600*1000).toISOString();
+  const btn=document.getElementById('btn-gen-pins');btn.disabled=true;btn.innerHTML='<span class="spin" style="border-top-color:#6366f1;border-color:rgba(99,102,241,.2);"></span> Génération...';
+  try{
+    // Supprimer anciens PINs non utilisés
+    await supabase.from('session_pins').delete().eq('session_id',modalSessionId).is('used_at',null);
+    generatedPins=[];
+    const toInsert=[];
+    for(const stag of selected){
+      let pin,pinHash,ok=false,tries=0;
+      while(!ok&&tries<20){
+        pin=String(Math.floor(1000+Math.random()*9000));
+        pinHash=await UTILS.hash(pin);
+        ok=!generatedPins.find(p=>p.pinHash===pinHash);
+        tries++;
+      }
+      generatedPins.push({stagiaire:stag,pin,pinHash});
+      toInsert.push({stagiaire_id:stag.id,center_id:FORMATEUR.center_id,session_id:modalSessionId,session_type:modalSessionType,pin_hash:pinHash,pin_clair:pin,expires_at:expires});
     }
-
-    // Sauvegarder la session courante
-    currentSessionId=sessionId;
-    currentSessionType=currentModule;
-    SESSION.save('session_courante',{id:sessionId,type:currentModule,num:sessionNum,niveau,page:targetPage});
-
-    // Afficher le code + QR
-    document.getElementById('launch-result').classList.remove('hidden');
-    document.getElementById('launch-actions').classList.add('hidden');
-    document.getElementById('launch-code-display').textContent=sessionNum;
-
-    const baseUrl=window.location.origin+window.location.pathname.replace(/[^/]*$/,'');
-    const url=`${baseUrl}index.html`;
-    document.getElementById('launch-qr').innerHTML='';
-    new QRCode(document.getElementById('launch-qr'),{text:url,width:160,height:160,colorDark:'#1d4ed8',colorLight:'#ffffff'});
-
-    updateLiveIndicator(true,currentModule,sessionNum);
+    const{error}=await supabase.from('session_pins').insert(toInsert);
+    if(error)throw error;
+    document.getElementById('pins-duree').textContent=`${dureeH}h`;
+    renderPinsList();
+    document.getElementById('phase-select').classList.add('hidden');
+    document.getElementById('phase-pins').classList.remove('hidden');
     loadAll();
+  }catch(e){msgEl.innerHTML=`<div class="alert-err">❌ ${e.message}</div>`;msgEl.classList.remove('hidden');}
+  finally{btn.disabled=false;btn.textContent='🔑 Générer les PINs d\'accès';}
+}
 
-  }catch(e){
-    msgEl.innerHTML=`<div class="alert-err">❌ Erreur : ${e.message}</div>`;
-    msgEl.classList.remove('hidden');
-    btnEl.disabled=false;btnEl.textContent='🚀 Lancer';
-  }
+function renderPinsList(){
+  document.getElementById('pins-list').innerHTML=generatedPins.map(p=>`
+    <div class="pin-row">
+      <div><div style="font-weight:700;font-size:.88rem;color:var(--text);">${p.stagiaire.prenom} ${p.stagiaire.nom}</div><div style="font-size:.72rem;color:var(--text3);">${p.stagiaire.niveau}</div></div>
+      <div class="pin-code">${p.pin}</div>
+    </div>`).join('');
+
+  // Zone impression
+  document.getElementById('print-zone').innerHTML=`
+    <div style="font-family:sans-serif;padding:20px;">
+      <h2 style="margin-bottom:4px;">MIB Prévention — Codes d'accès</h2>
+      <p style="color:#6b7280;margin-bottom:16px;font-size:14px;">Session ${modalSessionNum} · ${new Date().toLocaleDateString('fr-FR')} · Module : ${MODULE_DEFS[modalSessionType]?.title||modalSessionType}</p>
+      <p style="font-size:13px;margin-bottom:12px;color:#374151;">Connectez-vous sur : <strong>${window.location.origin}${window.location.pathname.replace(/[^/]*$/,'')}index.html</strong> → Stagiaire → Saisir votre PIN</p>
+      <table style="width:100%;border-collapse:collapse;">
+        <thead><tr style="background:#f3f4f6;">
+          <th style="padding:10px;text-align:left;border:1px solid #e5e7eb;font-size:13px;">Prénom</th>
+          <th style="padding:10px;text-align:left;border:1px solid #e5e7eb;font-size:13px;">Nom</th>
+          <th style="padding:10px;text-align:left;border:1px solid #e5e7eb;font-size:13px;">Niveau</th>
+          <th style="padding:10px;text-align:center;border:1px solid #e5e7eb;font-size:13px;">Code PIN</th>
+          <th style="padding:10px;text-align:center;border:1px solid #e5e7eb;font-size:13px;">Signature</th>
+        </tr></thead>
+        <tbody>
+          ${generatedPins.map(p=>`<tr>
+            <td style="padding:10px;border:1px solid #e5e7eb;">${p.stagiaire.prenom}</td>
+            <td style="padding:10px;border:1px solid #e5e7eb;">${p.stagiaire.nom}</td>
+            <td style="padding:10px;border:1px solid #e5e7eb;">${p.stagiaire.niveau}</td>
+            <td style="padding:10px;border:1px solid #e5e7eb;text-align:center;font-size:24px;font-weight:900;letter-spacing:8px;color:#6366f1;">${p.pin}</td>
+            <td style="padding:10px;border:1px solid #e5e7eb;min-width:100px;"></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+      <p style="color:#9ca3af;margin-top:12px;font-size:11px;">PIN valide pendant ${document.getElementById('pins-duree').textContent} — À usage unique · MIB Prévention</p>
+    </div>`;
+}
+
+function printPins(){window.print();}
+
+function exportPinsCsv(){
+  const rows=[['Prenom','Nom','Niveau','PIN','Session','Validite'],...generatedPins.map(p=>[p.stagiaire.prenom,p.stagiaire.nom,p.stagiaire.niveau,p.pin,modalSessionNum,document.getElementById('pins-duree').textContent])];
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(rows.map(r=>r.join(';')).join('\n'));
+  a.download=`pins_${modalSessionNum}.csv`;a.click();
 }
 
 function goToSession(){
+  closeModal('modal-participants');
   const s=SESSION.load('session_courante');
-  if(!s)return;
-  window.location.href=`${s.page}?session=${s.id}&role=formateur`;
+  if(s)window.location.href=`${MODULE_DEFS[s.type]?.page||'quiz-salle.html'}?session=${s.id}&role=formateur`;
 }
 
-async function endCurrentSession(){
-  if(!confirm('Terminer la session en cours ?'))return;
-  const s=SESSION.load('session_courante');
-  if(!s)return;
+// ================================================================
+// SESSIONS
+// ================================================================
+async function loadSessions(){
+  const fid=FORMATEUR.formateur_id;
   try{
-    const table=s.type==='quiz_salle'?'quiz_salle_sessions':'challenge_sessions';
-    await supabase.from(table).update({status:'terminee',ended_at:new Date().toISOString()}).eq('id',s.id);
-    SESSION.clear('session_courante');
-    currentSessionId=null;
-    updateLiveIndicator(false);
-    document.getElementById('current-session-panel').classList.add('hidden');
-    loadAll();
-  }catch(e){alert('Erreur : '+e.message);}
-}
-
-function checkCurrentSession(){
-  const s=SESSION.load('session_courante');
-  if(s){currentSessionId=s.id;currentSessionType=s.type;updateLiveIndicator(true,s.type,s.num);}
-}
-
-function updateLiveIndicator(on,type,num){
-  const ind=document.getElementById('session-live-indicator');
-  const panel=document.getElementById('current-session-panel');
-  ind.classList.toggle('hidden',!on);
-  panel.classList.toggle('hidden',!on);
-  if(on){
-    const labels={quiz_salle:'📡 Quiz Salle',challenge_cup:'🏆 Challenge Cup',ssi_supervise:'🔴 SSI Supervisé'};
-    document.getElementById('live-type-lbl').textContent=labels[type]||type;
-    document.getElementById('live-code').textContent=num||'—';
-  }
-}
-
-// ============================================================
-// STAGIAIRES
-// ============================================================
-async function loadStagiaires(){
-  try{
-    const{data}=await supabase.from('stagiaires').select('*').eq('center_id',FORMATEUR.center_id).eq('actif',true).order('nom');
-    allStagiaires=data||[];
-    renderStagiaires(allStagiaires);
+    const[{data:qs},{data:cs},{data:ssi}]=await Promise.all([
+      supabase.from('quiz_salle_sessions').select('*').eq('formateur_id',fid).order('created_at',{ascending:false}).limit(20),
+      supabase.from('challenge_sessions').select('*').eq('formateur_id',fid).order('created_at',{ascending:false}).limit(10),
+      supabase.from('ssi_sessions').select('*').eq('formateur_id',fid).order('created_at',{ascending:false}).limit(10),
+    ]);
+    const all=[...(qs||[]).map(s=>({...s,_t:'quiz_salle'})),...(cs||[]).map(s=>({...s,_t:'challenge'})),...(ssi||[]).map(s=>({...s,_t:'ssi_supervise'}))].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+    const el=document.getElementById('sessions-list');
+    if(!all.length){el.innerHTML='<div style="text-align:center;color:var(--text3);padding:24px;font-size:.85rem;">Aucune session</div>';return;}
+    const icons={quiz_salle:'📡',challenge:'🏆',ssi_supervise:'🔴',auto_entrainement:'🎯',ssi_auto:'🟡'};
+    const sc={attente:'sc-attente',question:'sc-active',playing:'sc-active',terminee:'sc-terminee',finished:'sc-terminee'};
+    el.innerHTML=all.map(s=>`
+      <div class="session-card ${sc[s.status]||'sc-attente'}">
+        <div class="flex items-center justify-between flex-wrap gap-3">
+          <div class="flex items-center gap-3">
+            <span style="font-size:1.8rem;">${icons[s._t]||'📋'}</span>
+            <div>
+              <div style="font-weight:700;font-size:.9rem;color:var(--text);">${s.titre||s.session_number||'Session'}</div>
+              <div style="font-size:.72rem;color:var(--text2);margin-top:2px;">${UTILS.dateStr(s.created_at)} · ${s.niveau||'—'}</div>
+            </div>
+          </div>
+          <div class="flex gap-2 flex-wrap">
+            <button onclick="openParticipants('${s.id}','${s._t}','${s.session_number}')" class="btn btn-blue btn-xs">👥 Participants / PINs</button>
+            ${s.status!=='terminee'&&s.status!=='finished'?`<button onclick="goToModule('${s.id}','${s._t}')" class="btn btn-green btn-xs">▶ Lancer</button>`:''}
+          </div>
+        </div>
+      </div>`).join('');
   }catch(e){console.error(e);}
 }
 
+function goToModule(sesId,sesType){
+  SESSION.save('session_courante',{id:sesId,type:sesType,num:sesId.slice(0,8),page:MODULE_DEFS[sesType]?.page});
+  checkLiveSession();
+  window.location.href=`${MODULE_DEFS[sesType]?.page||'quiz-salle.html'}?session=${sesId}&role=formateur`;
+}
+
+function goToCurrentSession(){
+  const s=SESSION.load('session_courante');
+  if(s)window.location.href=`${MODULE_DEFS[s.type]?.page||'quiz-salle.html'}?session=${s.id}&role=formateur`;
+}
+
+function checkLiveSession(){
+  const s=SESSION.load('session_courante');
+  document.getElementById('session-live-bar').classList.toggle('hidden',!s);
+}
+
+// ================================================================
+// STAGIAIRES
+// ================================================================
+async function loadStagiaires(){
+  const{data}=await supabase.from('stagiaires').select('*').eq('center_id',FORMATEUR.center_id).eq('actif',true).order('nom');
+  allStagiaires=data||[];
+}
+
 function renderStagiaires(data){
-  const tbody=document.getElementById('body-stag');
+  const tbody=document.getElementById('body-stag');if(!tbody)return;
   if(!data.length){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:18px;">Aucun stagiaire</td></tr>';return;}
   tbody.innerHTML=data.map(s=>`<tr>
-    <td><strong>${s.nom}</strong></td>
-    <td>${s.prenom}</td>
+    <td><strong>${s.nom}</strong></td><td>${s.prenom}</td>
     <td><span class="badge ${s.niveau==='SSIAP1'?'b-blue':s.niveau==='SSIAP2'?'b-orange':'b-red'}">${s.niveau}</span></td>
-    <td style="text-align:center;font-size:.8rem;">—</td>
-    <td style="font-size:.8rem;color:var(--text3);">—</td>
-    <td>
-      <button onclick="openFiche('${s.id}')" class="btn btn-blue btn-xs">📊 Fiche</button>
-    </td>
+    <td style="text-align:center;color:var(--text3);font-size:.8rem;">—</td>
+    <td style="text-align:center;color:var(--text3);font-size:.8rem;">—</td>
+    <td><button onclick="openFiche('${s.id}')" class="btn btn-blue btn-xs">📊 Fiche</button></td>
   </tr>`).join('');
 }
 
 function filterStag(){
   const q=document.getElementById('stag-search').value.toLowerCase();
   const niv=document.getElementById('stag-niveau').value;
-  renderStagiaires(allStagiaires.filter(s=>
-    (!q||(s.nom+' '+s.prenom).toLowerCase().includes(q))&&(!niv||s.niveau===niv)
-  ));
+  renderStagiaires(allStagiaires.filter(s=>(!q||(s.nom+' '+s.prenom).toLowerCase().includes(q))&&(!niv||s.niveau===niv)));
 }
 
 async function openFiche(id){
   const s=allStagiaires.find(x=>x.id===id);if(!s)return;
   document.getElementById('fiche-title').textContent=`📊 ${s.prenom} ${s.nom}`;
-
-  // Charger les résultats
-  const[{data:qs},{data:auto}]=await Promise.all([
-    supabase.from('quiz_salle_reponses').select('*,quiz_salle_participants!inner(stagiaire_id)').eq('quiz_salle_participants.stagiaire_id',id).limit(50),
-    supabase.from('entrainement_sessions').select('*').eq('stagiaire_id',id).order('created_at',{ascending:false}).limit(10),
-  ]);
-
-  const scoreAuto=auto?Math.round(auto.reduce((a,s)=>a+(s.max_score>0?s.score/s.max_score*100:0),0)/(auto.length||1)):0;
-
+  const{data:sessions}=await supabase.from('entrainement_sessions').select('*').eq('stagiaire_id',id).order('started_at',{ascending:false}).limit(10);
+  const moy=sessions?.filter(s=>s.max_score>0).length?Math.round(sessions.filter(s=>s.max_score>0).reduce((a,s)=>a+s.score/s.max_score*100,0)/sessions.filter(s=>s.max_score>0).length):0;
   document.getElementById('fiche-content').innerHTML=`
     <div class="grid grid-cols-3 gap-3 mb-4">
-      <div class="kpi"><div style="font-size:1.4rem;margin-bottom:4px;">🎓</div><div class="kpi-val text-blue-600">${s.niveau}</div><div class="kpi-lbl">Niveau</div></div>
-      <div class="kpi"><div style="font-size:1.4rem;margin-bottom:4px;">🎯</div><div class="kpi-val text-green-600">${auto?.length||0}</div><div class="kpi-lbl">Entraînements</div></div>
-      <div class="kpi"><div style="font-size:1.4rem;margin-bottom:4px;">📈</div><div class="kpi-val text-purple-600">${scoreAuto}%</div><div class="kpi-lbl">Moy. score</div></div>
+      <div class="kpi"><div style="font-size:1.3rem;margin-bottom:4px;">🎓</div><div class="kpi-val text-blue-600">${s.niveau}</div><div class="kpi-lbl">Niveau</div></div>
+      <div class="kpi"><div style="font-size:1.3rem;margin-bottom:4px;">🎯</div><div class="kpi-val text-green-600">${sessions?.length||0}</div><div class="kpi-lbl">Sessions</div></div>
+      <div class="kpi"><div style="font-size:1.3rem;margin-bottom:4px;">📈</div><div class="kpi-val text-purple-600">${moy}%</div><div class="kpi-lbl">Moy.</div></div>
     </div>
-    <div style="font-size:.82rem;color:var(--text2);text-align:center;padding:12px;">
-      ${auto?.length?`Dernière activité : ${UTILS.dateStr(auto[0].created_at)}`:'Aucune activité enregistrée'}
-    </div>
-    <div class="sep"></div>
-    <div style="text-align:right;">
-      <button onclick="exportFichePDF('${id}')" class="btn btn-blue btn-sm">📄 Exporter fiche PDF</button>
-    </div>
-  `;
+    ${sessions?.length?`<div style="font-size:.8rem;color:var(--text2);text-align:center;">Dernière activité : ${UTILS.dateStr(sessions[0].started_at)}</div>`:'<div style="text-align:center;color:var(--text3);padding:12px;font-size:.85rem;">Aucune activité enregistrée</div>'}`;
   openModal('modal-fiche');
 }
 
-function exportFichePDF(id){
-  alert('La génération PDF sera disponible prochainement.');
-}
-
-// ============================================================
+// ================================================================
 // HISTORIQUE
-// ============================================================
+// ================================================================
 async function loadHistorique(){
-  try{
-    const fid=FORMATEUR.formateur_id;
-    const[{data:qs},{data:cs},{data:ssi}]=await Promise.all([
-      supabase.from('quiz_salle_sessions').select('*').eq('formateur_id',fid).order('created_at',{ascending:false}).limit(15),
-      supabase.from('challenge_sessions').select('*').eq('formateur_id',fid).order('created_at',{ascending:false}).limit(10),
-      supabase.from('ssi_sessions').select('*').eq('formateur_id',fid).order('created_at',{ascending:false}).limit(10),
-    ]);
-    const all=[
-      ...(qs||[]).map(s=>({...s,typeLabel:'📡 Quiz Salle',badgeCls:'b-purple'})),
-      ...(cs||[]).map(s=>({...s,typeLabel:'🏆 Challenge Cup',badgeCls:'b-orange'})),
-      ...(ssi||[]).map(s=>({...s,typeLabel:'🔴 SSI',badgeCls:'b-red'})),
-    ].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
-    const tbody=document.getElementById('body-histo');
-    if(!all.length){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:18px;">Aucune session</td></tr>';return;}
-    tbody.innerHTML=all.map(s=>`<tr>
-      <td><span class="badge ${s.badgeCls}" style="font-size:.68rem;">${s.typeLabel}</span></td>
-      <td><span class="badge b-gray" style="font-size:.67rem;">${s.niveau||'—'}</span></td>
-      <td style="text-align:center;font-size:.8rem;">—</td>
-      <td style="font-size:.8rem;">${UTILS.dateStr(s.created_at)}</td>
-      <td style="font-size:.8rem;">—</td>
-      <td>${statusBadge(s.status)}</td>
-    </tr>`).join('');
-  }catch(e){console.error(e);}
+  const fid=FORMATEUR.formateur_id;
+  const[{data:qs},{data:cs}]=await Promise.all([
+    supabase.from('quiz_salle_sessions').select('*').eq('formateur_id',fid).order('created_at',{ascending:false}).limit(20),
+    supabase.from('challenge_sessions').select('*').eq('formateur_id',fid).order('created_at',{ascending:false}).limit(10),
+  ]);
+  const icons={quiz_salle:'📡',challenge:'🏆'};
+  const all=[...(qs||[]).map(s=>({...s,_t:'quiz_salle'})),...(cs||[]).map(s=>({...s,_t:'challenge'}))].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+  const tbody=document.getElementById('body-histo');
+  if(!all.length){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:18px;">Aucune session</td></tr>';return;}
+  tbody.innerHTML=all.map(s=>`<tr>
+    <td><span style="font-size:1rem;">${icons[s._t]||'📋'}</span> <span style="font-size:.8rem;font-weight:600;">${MODULE_DEFS[s._t]?.title||s._t}</span></td>
+    <td><span class="badge ${s.niveau==='SSIAP1'?'b-blue':s.niveau==='SSIAP2'?'b-orange':'b-red'}" style="font-size:.65rem;">${s.niveau}</span></td>
+    <td style="font-size:.8rem;">${UTILS.dateStr(s.created_at)}</td>
+    <td style="text-align:center;font-size:.8rem;color:var(--text3);">—</td>
+    <td><span class="badge b-gray" style="font-size:.65rem;">${s.status}</span></td>
+    <td><button onclick="openParticipants('${s.id}','${s._t}','${s.session_number}')" class="btn btn-gray btn-xs">👥 PINs</button></td>
+  </tr>`).join('');
 }
 
-// ============================================================
+// ================================================================
 // HELPERS
-// ============================================================
-function statusBadge(s){
-  const m={attente:{cls:'b-orange',lbl:'⏳ Attente'},playing:{cls:'b-blue',lbl:'🎮 En jeu'},question:{cls:'b-blue',lbl:'❓ Question'},terminee:{cls:'b-gray',lbl:'✅ Terminée'},termine:{cls:'b-gray',lbl:'✅ Terminé'},finished:{cls:'b-gray',lbl:'✅ Terminé'},active:{cls:'b-green',lbl:'🟢 Active'}};
-  const c=m[s]||{cls:'b-gray',lbl:s||'—'};
-  return`<span class="badge ${c.cls}" style="font-size:.67rem;">${c.lbl}</span>`;
-}
+// ================================================================
 function openModal(id){document.getElementById(id).classList.remove('hidden');}
 function closeModal(id){document.getElementById(id).classList.add('hidden');}
 document.querySelectorAll('.modal-bg').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.add('hidden');}));
