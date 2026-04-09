@@ -9,6 +9,8 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="statistiques.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Syne:wght@700;800;900&display=swap');
 :root{--bg:#eef2ff;--card:#fff;--text:#111827;--text2:#6b7280;--text3:#9ca3af;--blue:#2563eb;--red:#e63946;--green:#059669;}
@@ -123,6 +125,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
       <div class="nav-item" onclick="showTab('lancer')"       id="nav-lancer">    <span class="nav-icon">🚀</span>Nouvelle session</div>
       <div class="nav-item" onclick="showTab('stagiaires')"   id="nav-stagiaires"><span class="nav-icon">👨‍🎓</span>Mes stagiaires</div>
       <div class="nav-item" onclick="showTab('historique')"   id="nav-historique"><span class="nav-icon">📊</span>Historique</div>
+      <div class="nav-item" onclick="showTab('stats')"        id="nav-stats">      <span class="nav-icon">📈</span>Statistiques</div>
     </nav>
     <div style="margin-top:auto;padding-top:30px;"><div class="sep"></div>
       <button onclick="logout()" class="btn btn-gray btn-sm" style="width:100%;">🚪 Déconnexion</button>
@@ -248,6 +251,50 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
         </div>
       </div>
 
+      <!-- STATISTIQUES -->
+      <div id="tab-stats" class="hidden">
+        <div class="flex justify-between items-center mb-5">
+          <h2 style="font-size:.95rem;font-weight:700;">Mes statistiques</h2>
+          <button onclick="loadStats()" class="btn btn-blue btn-sm">🔄 Actualiser</button>
+        </div>
+
+        <!-- Loading -->
+        <div id="stats-loading" style="display:none;justify-content:center;align-items:center;padding:40px;gap:12px;">
+          <div style="width:20px;height:20px;border:3px solid rgba(37,99,235,.2);border-top-color:#2563eb;border-radius:50%;animation:sp .6s linear infinite;"></div>
+          <span style="color:var(--text2);font-size:.85rem;">Chargement des données...</span>
+        </div>
+
+        <!-- Ligne 1 : Sessions/mois + Score/niveau -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+          <div class="card p-5">
+            <h3 style="font-size:.85rem;font-weight:700;color:#374151;margin-bottom:16px;">📅 Mes sessions par mois</h3>
+            <div style="height:220px;position:relative;"><canvas id="chart-sessions-mois"></canvas></div>
+          </div>
+          <div class="card p-5">
+            <h3 style="font-size:.85rem;font-weight:700;color:#374151;margin-bottom:16px;">🎯 Score moyen par niveau SSIAP</h3>
+            <div style="height:220px;position:relative;"><canvas id="chart-score-niveau"></canvas></div>
+          </div>
+        </div>
+
+        <!-- Ligne 2 : Progression stagiaires + Réussite par thème -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+          <div class="card p-5">
+            <h3 style="font-size:.85rem;font-weight:700;color:#374151;margin-bottom:16px;">📈 Progression des stagiaires</h3>
+            <div style="height:220px;position:relative;"><canvas id="chart-progression"></canvas></div>
+          </div>
+          <div class="card p-5">
+            <h3 style="font-size:.85rem;font-weight:700;color:#374151;margin-bottom:16px;">🕸️ Réussite par thème</h3>
+            <div style="height:220px;position:relative;"><canvas id="chart-themes"></canvas></div>
+          </div>
+        </div>
+
+        <!-- Ligne 3 : Activité 7 jours -->
+        <div class="card p-5">
+          <h3 style="font-size:.85rem;font-weight:700;color:#374151;margin-bottom:16px;">📆 Activité des 7 derniers jours</h3>
+          <div style="height:200px;position:relative;"><canvas id="chart-activite-hebdo"></canvas></div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -363,8 +410,15 @@ function isOn(key){return CENTER_DATA&&CENTER_DATA[key];}
 // ================================================================
 // NAVIGATION
 // ================================================================
-const TABS=['accueil','sessions','lancer','stagiaires','historique'];
-const TT={accueil:['Accueil','Votre espace formateur'],sessions:['Mes sessions','Gérez sessions et participants'],lancer:['Nouvelle session','Créez une session'],stagiaires:['Mes stagiaires','Suivi individuel'],historique:['Historique','Toutes vos sessions']};
+const TABS=['accueil','sessions','lancer','stagiaires','historique','stats'];
+const TT={
+  accueil:['Accueil','Votre espace formateur'],
+  sessions:['Mes sessions','Gérez sessions et participants'],
+  lancer:['Nouvelle session','Créez une session'],
+  stagiaires:['Mes stagiaires','Suivi individuel'],
+  historique:['Historique','Toutes vos sessions'],
+  stats:['Statistiques','Analyse et suivi pédagogique']
+};
 function showTab(t){
   TABS.forEach(id=>{document.getElementById(`tab-${id}`).classList.toggle('hidden',id!==t);document.getElementById(`nav-${id}`).classList.toggle('on',id===t);});
   const[title,sub]=TT[t]||['',''];
@@ -373,6 +427,12 @@ function showTab(t){
   if(t==='sessions')loadSessions();
   if(t==='stagiaires')renderStagiaires(allStagiaires);
   if(t==='historique')loadHistorique();
+  if(t==='stats')loadStats();
+}
+
+function loadStats(){
+  if(typeof STATS==='undefined'){console.warn('statistiques.js non chargé');return;}
+  STATS.renderFormateur(FORMATEUR.formateur_id, FORMATEUR.center_id);
 }
 
 // ================================================================
