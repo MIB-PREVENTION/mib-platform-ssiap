@@ -1,1 +1,1006 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>MIB — SSI Supervisé</title>
+<meta name="theme-color" content="#0f172a">
+<link rel="manifest" href="manifest.json">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="supabase.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Syne:wght@700;800;900&family=Share+Tech+Mono&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;font-family:'Inter',sans-serif;background:#0f172a;color:#e2e8f0;}
 
+/* FOND TECHNIQUE */
+.bg-tech{position:fixed;inset:0;z-index:0;
+  background:radial-gradient(ellipse 60% 40% at 20% 20%,rgba(239,68,68,.08) 0%,transparent 60%),
+  radial-gradient(ellipse 50% 40% at 80% 80%,rgba(245,158,11,.06) 0%,transparent 60%),
+  linear-gradient(135deg,#0f172a 0%,#1e1b4b 50%,#0f172a 100%);}
+
+/* PANNEAU PRINCIPAL */
+.panel-ssi{
+  background:linear-gradient(160deg,#1e293b 0%,#1a2744 100%);
+  border:2px solid #334155;border-radius:16px;
+  box-shadow:0 0 40px rgba(239,68,68,.15),inset 0 1px 0 rgba(255,255,255,.06);
+}
+.panel-header{
+  background:linear-gradient(90deg,#1e293b,#162032);
+  border-bottom:2px solid #334155;border-radius:14px 14px 0 0;
+  padding:14px 20px;
+}
+.panel-label{
+  font-family:'Share Tech Mono',monospace;
+  font-size:.75rem;letter-spacing:.15em;text-transform:uppercase;
+  color:#64748b;margin-bottom:3px;
+}
+.panel-title{
+  font-family:'Share Tech Mono',monospace;
+  font-size:1rem;color:#94a3b8;letter-spacing:.1em;
+}
+
+/* ZONES SSI */
+.zone-card{
+  background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:12px;
+  transition:all .3s;position:relative;overflow:hidden;
+}
+.zone-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:10px 10px 0 0;}
+.zone-normal::before  {background:#22c55e;}
+.zone-prealarm::before{background:#f59e0b;animation:flash-orange 1s ease-in-out infinite;}
+.zone-alarm::before   {background:#ef4444;animation:flash-red .6s ease-in-out infinite;}
+.zone-fault::before   {background:#f97316;}
+.zone-off::before     {background:#475569;}
+
+@keyframes flash-red{0%,100%{opacity:1;box-shadow:0 0 8px #ef4444;}50%{opacity:.4;box-shadow:none;}}
+@keyframes flash-orange{0%,100%{opacity:1;}50%{opacity:.4;}}
+
+.zone-status-dot{
+  width:12px;height:12px;border-radius:50%;flex-shrink:0;
+  box-shadow:0 0 6px currentColor;
+}
+.dot-normal  {background:#22c55e;color:#22c55e;}
+.dot-prealarm{background:#f59e0b;color:#f59e0b;animation:blink-dot 1s infinite;}
+.dot-alarm   {background:#ef4444;color:#ef4444;animation:blink-dot .6s infinite;}
+.dot-fault   {background:#f97316;color:#f97316;}
+.dot-off     {background:#475569;color:#475569;}
+@keyframes blink-dot{0%,100%{opacity:1;}50%{opacity:.2;}}
+
+/* VOYANTS LED */
+.led{width:16px;height:16px;border-radius:50%;border:1px solid rgba(0,0,0,.3);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.15);transition:all .3s;}
+.led-on-red   {background:radial-gradient(circle at 35% 35%,#ff6b6b,#dc2626);box-shadow:0 0 8px rgba(239,68,68,.8),inset 0 1px 0 rgba(255,255,255,.2);}
+.led-on-green {background:radial-gradient(circle at 35% 35%,#86efac,#16a34a);box-shadow:0 0 8px rgba(34,197,94,.8),inset 0 1px 0 rgba(255,255,255,.2);}
+.led-on-orange{background:radial-gradient(circle at 35% 35%,#fcd34d,#d97706);box-shadow:0 0 8px rgba(245,158,11,.8),inset 0 1px 0 rgba(255,255,255,.2);}
+.led-off      {background:#1e293b;}
+
+/* BOUTONS PANNEAU */
+.panel-btn{
+  padding:10px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.1);
+  font-weight:700;font-size:.78rem;cursor:pointer;transition:all .2s;
+  text-transform:uppercase;letter-spacing:.05em;
+  background:linear-gradient(145deg,#1e293b,#0f172a);color:#94a3b8;
+  box-shadow:3px 3px 8px rgba(0,0,0,.4),-1px -1px 4px rgba(255,255,255,.04);
+}
+.panel-btn:hover{transform:translateY(-1px);color:#e2e8f0;}
+.panel-btn:active{transform:translateY(1px);box-shadow:inset 2px 2px 6px rgba(0,0,0,.5);}
+.panel-btn.pb-red   {background:linear-gradient(135deg,#7f1d1d,#ef4444);color:#fff;border-color:#ef4444;box-shadow:0 4px 12px rgba(239,68,68,.4);}
+.panel-btn.pb-green {background:linear-gradient(135deg,#14532d,#22c55e);color:#fff;border-color:#22c55e;box-shadow:0 4px 12px rgba(34,197,94,.4);}
+.panel-btn.pb-orange{background:linear-gradient(135deg,#78350f,#f59e0b);color:#fff;border-color:#f59e0b;box-shadow:0 4px 12px rgba(245,158,11,.4);}
+.panel-btn.pb-blue  {background:linear-gradient(135deg,#1e3a8a,#3b82f6);color:#fff;border-color:#3b82f6;box-shadow:0 4px 12px rgba(59,130,246,.4);}
+.panel-btn:disabled {opacity:.4;cursor:not-allowed;transform:none;}
+
+/* LOG CONSOLE */
+.log-console{
+  background:#020617;border:1px solid #1e293b;border-radius:10px;
+  padding:12px;font-family:'Share Tech Mono',monospace;font-size:.72rem;
+  max-height:180px;overflow-y:auto;color:#4ade80;
+  box-shadow:inset 0 2px 8px rgba(0,0,0,.5);
+}
+.log-info   {color:#38bdf8;}
+.log-warn   {color:#f59e0b;}
+.log-alarm  {color:#ef4444;}
+.log-ok     {color:#4ade80;}
+.log-action {color:#a78bfa;}
+
+/* CHRONO */
+.chrono{
+  font-family:'Share Tech Mono',monospace;
+  font-size:1.6rem;font-weight:700;letter-spacing:.1em;
+  color:#f59e0b;text-shadow:0 0 10px rgba(245,158,11,.5);
+}
+
+/* SCORE */
+.score-panel{
+  background:linear-gradient(145deg,#0f172a,#1e293b);
+  border:1px solid #334155;border-radius:12px;padding:14px;
+}
+
+/* BOUTONS UI */
+.btn{padding:9px 16px;border-radius:10px;border:none;font-weight:700;font-size:.8rem;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;}
+.btn::before{content:'';position:absolute;top:0;left:0;right:0;height:45%;background:linear-gradient(180deg,rgba(255,255,255,.15),transparent);pointer-events:none;}
+.btn:hover{transform:translateY(-1px);}
+.btn:active{transform:scale(.98);}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+.btn-red   {background:linear-gradient(135deg,#ef4444,#b91c1c);color:#fff;box-shadow:0 4px 12px rgba(239,68,68,.4);}
+.btn-green {background:linear-gradient(135deg,#22c55e,#15803d);color:#fff;box-shadow:0 4px 12px rgba(34,197,94,.4);}
+.btn-orange{background:linear-gradient(135deg,#f59e0b,#b45309);color:#fff;box-shadow:0 4px 12px rgba(245,158,11,.4);}
+.btn-blue  {background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;box-shadow:0 4px 12px rgba(59,130,246,.4);}
+.btn-gray  {background:linear-gradient(135deg,#475569,#334155);color:#fff;box-shadow:0 4px 8px rgba(0,0,0,.3);}
+.btn-purple{background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;box-shadow:0 4px 12px rgba(124,58,237,.4);}
+.btn-sm{padding:7px 12px;font-size:.75rem;border-radius:8px;}
+.btn-xs{padding:5px 9px;font-size:.7rem;border-radius:7px;}
+.btn-lg{padding:13px 24px;font-size:.9rem;border-radius:11px;}
+
+/* SCÉNARIO CARD */
+.scenario-card{
+  background:linear-gradient(145deg,#1e293b,#162032);
+  border:1px solid #334155;border-radius:12px;padding:16px;cursor:pointer;
+  transition:all .25s;
+}
+.scenario-card:hover{border-color:#60a5fa;transform:translateY(-3px);box-shadow:0 8px 20px rgba(59,130,246,.2);}
+.scenario-card.active{border-color:#f59e0b;background:linear-gradient(145deg,#2d1f00,#1a1200);}
+
+/* INSTRUCTION FORMATEUR */
+.instruction-box{
+  background:linear-gradient(145deg,#0c1832,#0f172a);
+  border:1px solid #1e40af;border-radius:12px;padding:16px;
+  border-left:4px solid #3b82f6;
+}
+
+/* ALERTE ACTIVE */
+.alert-banner{
+  background:linear-gradient(135deg,#7f1d1d,#dc2626);
+  border:1px solid #ef4444;border-radius:12px;padding:14px 18px;
+  animation:pulse-alert 1s ease-in-out infinite;
+}
+@keyframes pulse-alert{0%,100%{box-shadow:0 0 15px rgba(239,68,68,.4);}50%{box-shadow:0 0 30px rgba(239,68,68,.8);}}
+
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);z-index:50;display:flex;align-items:center;justify-content:center;padding:16px;}
+.modal-box{background:#1e293b;border:1px solid #334155;border-radius:18px;padding:24px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 30px 70px rgba(0,0,0,.6);}
+
+/* RÉSULTATS */
+.result-ring{width:110px;height:110px;position:relative;}
+.result-ring svg{transform:rotate(-90deg);}
+.result-val{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+
+/* BADGE */
+.badge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:.67rem;font-weight:700;}
+.b-green {background:rgba(34,197,94,.15);color:#4ade80;border:1px solid rgba(34,197,94,.3);}
+.b-red   {background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.3);}
+.b-orange{background:rgba(245,158,11,.15);color:#fbbf24;border:1px solid rgba(245,158,11,.3);}
+.b-blue  {background:rgba(59,130,246,.15);color:#93c5fd;border:1px solid rgba(59,130,246,.3);}
+.b-gray  {background:rgba(100,116,139,.15);color:#94a3b8;border:1px solid rgba(100,116,139,.3);}
+
+.logo-t{font-family:'Syne',sans-serif;font-weight:900;}
+.mono{font-family:'Share Tech Mono',monospace;}
+.sep{height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.08),transparent);margin:14px 0;}
+.spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:sp .6s linear infinite;display:inline-block;vertical-align:middle;}
+@keyframes sp{to{transform:rotate(360deg)}}
+.hidden{display:none!important;}
+@keyframes bounce-in{0%{transform:scale(0);opacity:0}60%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+.bounce-in{animation:bounce-in .45s cubic-bezier(.34,1.56,.64,1);}
+</style>
+</head>
+<body>
+<div class="bg-tech"></div>
+
+<!-- ════════════════ ÉCRAN : LOGIN ════════════════ -->
+<div id="scr-login" class="relative z-10 min-h-screen flex flex-col items-center justify-center p-4">
+  <div class="text-center mb-8">
+    <div style="font-size:3.5rem;margin-bottom:12px;">🔴</div>
+    <div class="logo-t text-white" style="font-size:1.8rem;">SSI Supervisé</div>
+    <div style="font-size:.78rem;color:#64748b;margin-top:6px;letter-spacing:.1em;text-transform:uppercase;">Simulation panneau · Formation SSIAP</div>
+  </div>
+  <div style="background:#1e293b;border:1px solid #334155;border-radius:18px;padding:28px;width:100%;max-width:380px;">
+    <div style="color:#94a3b8;font-size:.82rem;margin-bottom:14px;text-align:center;">Chargement de la session...</div>
+    <div id="login-err" style="display:none;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);border-radius:10px;padding:10px;font-size:.82rem;color:#f87171;margin-bottom:14px;"></div>
+    <button onclick="joinAsFormateur()" class="btn btn-red btn-lg" id="btn-form" style="width:100%;margin-bottom:10px;display:none;">🎓 Accès formateur</button>
+    <button onclick="joinAsTrainee()" class="btn btn-orange btn-lg" id="btn-stag" style="width:100%;display:none;">👨‍🎓 Accès stagiaire</button>
+  </div>
+</div>
+
+<!-- ════════════════ ÉCRAN : FORMATEUR ════════════════ -->
+<div id="scr-formateur" class="relative z-10 hidden min-h-screen p-4 md:p-5">
+  <div class="flex items-center justify-between mb-4">
+    <div class="flex items-center gap-3">
+      <span style="font-size:1.6rem;">🔴</span>
+      <div>
+        <div class="logo-t text-white" style="font-size:1.1rem;">SSI Supervisé — Formateur</div>
+        <div style="font-size:.72rem;color:#64748b;" id="f-session-info">Session — SSIAP —</div>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <div class="chrono" id="f-chrono">00:00</div>
+      <button onclick="endSession()" class="btn btn-gray btn-sm">⏹ Terminer</button>
+      <button onclick="goBack()" class="btn btn-gray btn-sm">← Retour</button>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+    <!-- COLONNE 1 : Panneau SSI virtuel -->
+    <div class="lg:col-span-2">
+      <div class="panel-ssi mb-4">
+        <div class="panel-header flex items-center justify-between">
+          <div>
+            <div class="panel-label">Centrale de Détection Incendie</div>
+            <div class="panel-title">SDI — ESSER IQ8Control M · Simulation</div>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2">
+              <div class="led" id="led-alim" style="background:radial-gradient(circle at 35% 35%,#86efac,#16a34a);box-shadow:0 0 8px rgba(34,197,94,.8);"></div>
+              <span style="font-size:.65rem;color:#64748b;" class="mono">ALIM</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <div class="led" id="led-alarm"></div>
+              <span style="font-size:.65rem;color:#64748b;" class="mono">ALARME</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <div class="led" id="led-fault"></div>
+              <span style="font-size:.65rem;color:#64748b;" class="mono">DÉFAUT</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <div class="led" id="led-evac"></div>
+              <span style="font-size:.65rem;color:#64748b;" class="mono">ÉVAC</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ZONES -->
+        <div class="p-4">
+          <div style="font-size:.68rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;" class="mono">Zones de détection</div>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4" id="zones-grid"></div>
+
+          <!-- ALERTES ACTIVES -->
+          <div id="alert-banner" class="alert-banner hidden mb-4 flex items-center gap-3">
+            <span style="font-size:1.5rem;">🚨</span>
+            <div>
+              <div style="font-weight:800;color:#fff;font-size:.9rem;" id="alert-title">—</div>
+              <div style="font-size:.75rem;color:rgba(255,255,255,.75);" id="alert-sub">—</div>
+            </div>
+            <div style="margin-left:auto;font-family:'Share Tech Mono',monospace;font-size:.85rem;color:#fca5a5;" id="alert-chrono">00:00</div>
+          </div>
+
+          <!-- ACTIONS PANNEAU -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <button class="panel-btn pb-red" onclick="panelAction('ack')" id="pbtn-ack" disabled>
+              <div style="font-size:1.2rem;margin-bottom:4px;">🔔</div>ACK Alarme
+            </button>
+            <button class="panel-btn pb-orange" onclick="panelAction('reset')" id="pbtn-reset" disabled>
+              <div style="font-size:1.2rem;margin-bottom:4px;">🔄</div>Réinitialiser
+            </button>
+            <button class="panel-btn pb-red" onclick="panelAction('evac')" id="pbtn-evac" disabled>
+              <div style="font-size:1.2rem;margin-bottom:4px;">🚨</div>Évacuation
+            </button>
+            <button class="panel-btn pb-green" onclick="panelAction('silence')" id="pbtn-silence" disabled>
+              <div style="font-size:1.2rem;margin-bottom:4px;">🔇</div>Silence son
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- INSTRUCTION EN COURS -->
+      <div id="instruction-formateur" class="instruction-box hidden mb-4">
+        <div style="font-size:.68rem;font-weight:700;color:#60a5fa;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">📋 Instruction envoyée au stagiaire</div>
+        <div style="color:#e2e8f0;font-size:.88rem;line-height:1.6;" id="instruction-text">—</div>
+      </div>
+
+      <!-- LOG CONSOLE -->
+      <div style="font-size:.68rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;" class="mono">Journal de session</div>
+      <div class="log-console" id="log-console">
+        <div class="log-ok">[SYSTÈME] Panneau SSI initialisé. Tous les systèmes nominaux.</div>
+      </div>
+    </div>
+
+    <!-- COLONNE 2 : Scénarios + suivi -->
+    <div class="space-y-4">
+
+      <!-- STAGIAIRE CONNECTÉ -->
+      <div class="score-panel">
+        <div style="font-size:.7rem;color:#64748b;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;" class="mono">Stagiaire</div>
+        <div id="stag-status" style="color:#64748b;font-size:.85rem;">En attente...</div>
+        <div class="sep"></div>
+        <div class="grid grid-cols-3 gap-2 text-center">
+          <div><div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.3rem;color:#4ade80;" id="f-score-correct">0</div><div style="font-size:.65rem;color:#64748b;">Correct</div></div>
+          <div><div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.3rem;color:#f87171;" id="f-score-wrong">0</div><div style="font-size:.65rem;color:#64748b;">Erreur</div></div>
+          <div><div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.3rem;color:#fbbf24;" id="f-score-time">—</div><div style="font-size:.65rem;color:#64748b;">Moy. tps</div></div>
+        </div>
+      </div>
+
+      <!-- SCÉNARIOS -->
+      <div>
+        <div style="font-size:.7rem;color:#64748b;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;" class="mono">Scénarios disponibles</div>
+        <div class="space-y-2" id="scenarios-list"></div>
+      </div>
+
+      <!-- MESSAGE LIBRE -->
+      <div>
+        <div style="font-size:.7rem;color:#64748b;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;" class="mono">Message au stagiaire</div>
+        <textarea id="msg-libre" rows="2" style="width:100%;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:10px;color:#e2e8f0;font-size:.82rem;resize:none;outline:none;" placeholder="Saisissez une instruction..."></textarea>
+        <button onclick="sendMsg()" class="btn btn-blue btn-sm" style="width:100%;margin-top:6px;">📤 Envoyer</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ ÉCRAN : STAGIAIRE ════════════════ -->
+<div id="scr-stagiaire" class="relative z-10 hidden min-h-screen p-4">
+  <div class="flex items-center justify-between mb-4">
+    <div class="flex items-center gap-3">
+      <span style="font-size:1.4rem;">🔴</span>
+      <div>
+        <div class="logo-t text-white" style="font-size:1rem;">SSI Supervisé</div>
+        <div style="font-size:.7rem;color:#64748b;" id="s-session-info">Stagiaire</div>
+      </div>
+    </div>
+    <div class="chrono" id="s-chrono">00:00</div>
+  </div>
+
+  <!-- MESSAGE FORMATEUR -->
+  <div id="s-msg-box" class="hidden mb-4" style="background:linear-gradient(145deg,#1e3a5f,#1e293b);border:1px solid #3b82f6;border-radius:12px;padding:14px;border-left:4px solid #3b82f6;">
+    <div style="font-size:.68rem;font-weight:700;color:#60a5fa;margin-bottom:6px;">📋 Instruction du formateur</div>
+    <div style="color:#e2e8f0;font-size:.9rem;line-height:1.6;" id="s-msg-text">—</div>
+  </div>
+
+  <!-- PANNEAU SSI STAGIAIRE -->
+  <div class="panel-ssi mb-4">
+    <div class="panel-header flex items-center justify-between">
+      <div>
+        <div class="panel-label">Centrale de Détection Incendie</div>
+        <div class="panel-title mono">SDI · Simulation</div>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2"><div class="led" id="s-led-alim" style="background:radial-gradient(circle at 35% 35%,#86efac,#16a34a);box-shadow:0 0 8px rgba(34,197,94,.8);"></div><span style="font-size:.65rem;color:#64748b;" class="mono">ALIM</span></div>
+        <div class="flex items-center gap-2"><div class="led" id="s-led-alarm"></div><span style="font-size:.65rem;color:#64748b;" class="mono">ALARME</span></div>
+        <div class="flex items-center gap-2"><div class="led" id="s-led-fault"></div><span style="font-size:.65rem;color:#64748b;" class="mono">DÉFAUT</span></div>
+        <div class="flex items-center gap-2"><div class="led" id="s-led-evac"></div><span style="font-size:.65rem;color:#64748b;" class="mono">ÉVAC</span></div>
+      </div>
+    </div>
+    <div class="p-4">
+      <div style="font-size:.68rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;" class="mono">Zones de détection</div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4" id="s-zones-grid"></div>
+
+      <!-- ALERTE ACTIVE STAGIAIRE -->
+      <div id="s-alert-banner" class="alert-banner hidden mb-4 flex items-center gap-3">
+        <span style="font-size:1.5rem;">🚨</span>
+        <div>
+          <div style="font-weight:800;color:#fff;font-size:.9rem;" id="s-alert-title">—</div>
+          <div style="font-size:.75rem;color:rgba(255,255,255,.75);" id="s-alert-sub">—</div>
+        </div>
+      </div>
+
+      <!-- ACTIONS STAGIAIRE -->
+      <div class="grid grid-cols-2 gap-3" id="s-actions-grid">
+        <button class="panel-btn" id="s-pbtn-ack" onclick="stagAction('ack')" disabled>
+          <div style="font-size:1.2rem;margin-bottom:4px;">🔔</div>ACK Alarme
+        </button>
+        <button class="panel-btn" id="s-pbtn-reset" onclick="stagAction('reset')" disabled>
+          <div style="font-size:1.2rem;margin-bottom:4px;">🔄</div>Réinitialiser
+        </button>
+        <button class="panel-btn" id="s-pbtn-evac" onclick="stagAction('evac')" disabled>
+          <div style="font-size:1.2rem;margin-bottom:4px;">🚨</div>Évacuation
+        </button>
+        <button class="panel-btn" id="s-pbtn-silence" onclick="stagAction('silence')" disabled>
+          <div style="font-size:1.2rem;margin-bottom:4px;">🔇</div>Silence son
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FEEDBACK DERNIÈRE ACTION -->
+  <div id="s-feedback" class="hidden" style="border-radius:12px;padding:14px;margin-bottom:12px;text-align:center;"></div>
+
+  <!-- LOG STAGIAIRE -->
+  <div style="font-size:.68rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;" class="mono">Vos actions</div>
+  <div class="log-console" id="s-log-console">
+    <div class="log-ok">[SYSTÈME] Panneau SSI connecté. En attente des instructions.</div>
+  </div>
+</div>
+
+<!-- ════════════════ ÉCRAN : RÉSULTATS ════════════════ -->
+<div id="scr-results" class="relative z-10 hidden min-h-screen flex items-center justify-center p-4">
+  <div style="background:#1e293b;border:1px solid #334155;border-radius:20px;padding:28px;width:100%;max-width:500px;text-align:center;" class="bounce-in">
+    <div style="font-size:3rem;margin-bottom:12px;">🔴</div>
+    <div class="logo-t text-white" style="font-size:1.6rem;margin-bottom:6px;">Session terminée</div>
+    <div style="font-size:.78rem;color:#64748b;margin-bottom:24px;" id="res-info">—</div>
+
+    <!-- Ring score -->
+    <div class="flex justify-center mb-6">
+      <div class="result-ring">
+        <svg width="110" height="110" viewBox="0 0 110 110">
+          <circle cx="55" cy="55" r="46" fill="none" stroke="#1e293b" stroke-width="9"/>
+          <circle id="res-ring" cx="55" cy="55" r="46" fill="none" stroke="#ef4444" stroke-width="9"
+            stroke-linecap="round" stroke-dasharray="289" stroke-dashoffset="289" style="transition:stroke-dashoffset 1s ease;"/>
+        </svg>
+        <div class="result-val">
+          <div style="font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:900;color:#fff;" id="res-pct">0%</div>
+          <div style="font-size:.62rem;color:#64748b;">SCORE</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-3 gap-3 mb-5">
+      <div class="score-panel"><div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.5rem;color:#4ade80;" id="res-correct">0</div><div style="font-size:.68rem;color:#64748b;">✅ Correctes</div></div>
+      <div class="score-panel"><div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.5rem;color:#f87171;" id="res-wrong">0</div><div style="font-size:.68rem;color:#64748b;">❌ Erreurs</div></div>
+      <div class="score-panel"><div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.5rem;color:#fbbf24;" id="res-time">—</div><div style="font-size:.68rem;color:#64748b;">⏱ Durée</div></div>
+    </div>
+
+    <!-- Commentaire formateur -->
+    <div id="res-comment-wrap" class="hidden" style="background:#0f172a;border:1px solid #334155;border-radius:10px;padding:14px;margin-bottom:16px;text-align:left;">
+      <div style="font-size:.68rem;font-weight:700;color:#60a5fa;margin-bottom:6px;">💬 Commentaire du formateur</div>
+      <div style="font-size:.85rem;color:#e2e8f0;" id="res-comment">—</div>
+    </div>
+
+    <div class="flex gap-3 justify-center flex-wrap">
+      <button onclick="goBack()" class="btn btn-gray">🏠 Retour</button>
+      <button onclick="restartSession()" class="btn btn-red">🔄 Nouvelle session</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// CONFIGURATION SCÉNARIOS SSI
+// ============================================================
+const SCENARIOS = [
+  {
+    id: 'scenario_1',
+    titre: 'Détection Niveau 1 — Zone Hall',
+    description: 'Un détecteur optique de fumée se déclenche dans le hall d\'entrée (Zone 1). Pas d\'évacuation immédiate.',
+    zones_touchees: [0],
+    etat_zones: { 0: 'prealarm' },
+    etat_panel: { alarm: false, fault: false, evac: false, prealarm: true },
+    actions_attendues: ['ack'],
+    instructions: 'Un détecteur s\'est déclenché en Zone 1. Accusez réception de l\'alarme et vérifiez l\'état du panneau.',
+    difficulte: '⭐',
+    niveau: 'SSIAP1',
+  },
+  {
+    id: 'scenario_2',
+    titre: 'Alarme Générale — Zone Cuisine',
+    description: 'Alarme confirmée en Zone 3 (Cuisine). Déclenchement de l\'alarme générale. Évacuation requise.',
+    zones_touchees: [2],
+    etat_zones: { 2: 'alarm' },
+    etat_panel: { alarm: true, fault: false, evac: false, prealarm: false },
+    actions_attendues: ['ack', 'evac'],
+    instructions: 'ALARME EN ZONE 3 — Cuisine. Accusez réception puis déclenchez l\'évacuation générale.',
+    difficulte: '⭐⭐',
+    niveau: 'SSIAP1',
+  },
+  {
+    id: 'scenario_3',
+    titre: 'Défaut Batterie + Alarme Zone 2',
+    description: 'Défaut batterie de secours + alarme en Zone 2 (Bureaux). Gestion simultanée.',
+    zones_touchees: [1],
+    etat_zones: { 1: 'alarm' },
+    etat_panel: { alarm: true, fault: true, evac: false, prealarm: false },
+    actions_attendues: ['ack', 'silence', 'evac'],
+    instructions: 'DÉFAUT BATTERIE + ALARME ZONE 2. Gérez les deux alarmes : acquittez, silence sonore, puis évaluez l\'évacuation.',
+    difficulte: '⭐⭐',
+    niveau: 'SSIAP1',
+  },
+  {
+    id: 'scenario_4',
+    titre: 'Fausse Alarme — Procédure de reset',
+    description: 'L\'alarme Zone 1 est confirmée fausse alarme (test). Le stagiaire doit réinitialiser le panneau.',
+    zones_touchees: [0],
+    etat_zones: { 0: 'alarm' },
+    etat_panel: { alarm: true, fault: false, evac: false, prealarm: false },
+    actions_attendues: ['ack', 'reset'],
+    instructions: 'L\'alarme Zone 1 est une fausse alarme confirmée. Accusez réception puis réinitialisez le système.',
+    difficulte: '⭐',
+    niveau: 'SSIAP1',
+  },
+  {
+    id: 'scenario_5',
+    titre: 'Feu confirmé — Multi-zones',
+    description: 'Feu confirmé en zones 2 et 4. Évacuation totale. Réinitialisation après évacuation.',
+    zones_touchees: [1, 3],
+    etat_zones: { 1: 'alarm', 3: 'alarm' },
+    etat_panel: { alarm: true, fault: false, evac: true, prealarm: false },
+    actions_attendues: ['ack', 'evac', 'silence'],
+    instructions: 'INCENDIE CONFIRMÉ — Zones 2 et 4. Déclenchez immédiatement l\'évacuation générale et silence le signal sonore.',
+    difficulte: '⭐⭐⭐',
+    niveau: 'SSIAP2',
+  },
+  {
+    id: 'scenario_6',
+    titre: 'Coupure secteur + Alarme critique',
+    description: 'Coupure d\'alimentation secteur. Le SDI bascule sur batteries. Alarme en zone 3 simultanée.',
+    zones_touchees: [2],
+    etat_zones: { 2: 'alarm' },
+    etat_panel: { alarm: true, fault: true, evac: false, prealarm: false },
+    actions_attendues: ['ack', 'evac', 'silence', 'reset'],
+    instructions: 'Coupure secteur détectée — SDI sur batteries. Alarme Zone 3 simultanée. Gérez la situation complète.',
+    difficulte: '⭐⭐⭐',
+    niveau: 'SSIAP2',
+  },
+];
+
+const ZONES_DEF = [
+  { id: 0, nom: 'Zone 1', lieu: 'Hall / Accueil',   icon: '🚪' },
+  { id: 1, nom: 'Zone 2', lieu: 'Bureaux',           icon: '🏢' },
+  { id: 2, nom: 'Zone 3', lieu: 'Cuisine / Cafét.',  icon: '🍳' },
+  { id: 3, nom: 'Zone 4', lieu: 'Sous-sol / Parc.',  icon: '🅿️' },
+  { id: 4, nom: 'Zone 5', lieu: 'Salle de réunion',  icon: '📋' },
+  { id: 5, nom: 'Zone 6', lieu: 'Serveur / Technique',icon: '💻' },
+  { id: 6, nom: 'Zone 7', lieu: 'Couloirs Étage 1',  icon: '🛗' },
+  { id: 7, nom: 'Zone 8', lieu: 'Toiture / Combles', icon: '🏗️' },
+];
+
+// ============================================================
+// ÉTAT
+// ============================================================
+let SESSION_ID = null;
+let SESSION_DATA = null;
+let userRole = null; // 'formateur' | 'stagiaire'
+let STAG_DATA = null;
+let gameChannel = null;
+let chronoInterval = null;
+let alertChronoInterval = null;
+let sessionStart = null;
+let alertStart = null;
+
+let panelState = {
+  zones: { 0:'normal',1:'normal',2:'normal',3:'normal',4:'normal',5:'normal',6:'normal',7:'normal' },
+  alarm: false, fault: false, evac: false, prealarm: false,
+  activeScenario: null,
+  actionsAttenduees: [],
+  actionsEffectuees: [],
+};
+
+let stats = { correct: 0, wrong: 0, temps: [], scenarios_done: 0 };
+let currentInstruction = '';
+
+// ============================================================
+// INIT
+// ============================================================
+window.addEventListener('DOMContentLoaded', async () => {
+  const p = new URLSearchParams(window.location.search);
+  SESSION_ID = p.get('session');
+  const role = p.get('role');
+
+  if (!SESSION_ID) {
+    showErr('Session introuvable. Accédez via le dashboard formateur.');
+    return;
+  }
+
+  try {
+    const { data } = await supabase.from('ssi_sessions').select('*').eq('id', SESSION_ID).single();
+    if (!data) throw new Error('Session introuvable');
+    SESSION_DATA = data;
+  } catch (e) {
+    showErr('Session SSI introuvable.');
+    return;
+  }
+
+  if (role === 'formateur') {
+    userRole = 'formateur';
+    initFormateur();
+  } else {
+    // Vérifier si stagiaire connecté
+    const stagSession = SESSION.load('stagiaire');
+    if (stagSession && stagSession.session_id === SESSION_ID) {
+      STAG_DATA = stagSession;
+      userRole = 'stagiaire';
+      initStagiaire();
+    } else {
+      showErr('Accès non autorisé. Saisissez votre PIN sur la page de connexion.');
+    }
+  }
+});
+
+function showErr(msg) {
+  const el = document.getElementById('login-err');
+  el.textContent = msg;
+  el.style.display = 'block';
+  showScreen('scr-login');
+}
+
+function joinAsFormateur() { userRole = 'formateur'; initFormateur(); }
+function joinAsTrainee()   { userRole = 'stagiaire'; initStagiaire(); }
+
+// ============================================================
+// FORMATEUR
+// ============================================================
+function initFormateur() {
+  showScreen('scr-formateur');
+  document.getElementById('f-session-info').textContent = `Session ${SESSION_DATA?.session_number||'—'} · ${SESSION_DATA?.niveau||'—'}`;
+  renderZones('zones-grid', false);
+  renderScenarios();
+  updatePanelLEDs();
+  subscribeChannel();
+  startChrono('f-chrono');
+  sessionStart = Date.now();
+  addLog('log-console', 'ok', 'Session SSI démarrée. En attente du stagiaire.');
+}
+
+function renderScenarios() {
+  const niveau = SESSION_DATA?.niveau || 'SSIAP1';
+  const filtered = SCENARIOS.filter(s => s.niveau === niveau || niveau === 'SSIAP1');
+  document.getElementById('scenarios-list').innerHTML = filtered.map(s => `
+    <div class="scenario-card" onclick="triggerScenario('${s.id}')" id="sc-${s.id}">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <span style="font-weight:700;font-size:.82rem;color:#e2e8f0;">${s.titre}</span>
+        <span style="font-size:.75rem;">${s.difficulte}</span>
+      </div>
+      <div style="font-size:.72rem;color:#64748b;line-height:1.5;">${s.description}</div>
+    </div>`).join('');
+}
+
+async function triggerScenario(id) {
+  const sc = SCENARIOS.find(s => s.id === id);
+  if (!sc) return;
+
+  // Mise à jour état panneau
+  panelState.zones = { 0:'normal',1:'normal',2:'normal',3:'normal',4:'normal',5:'normal',6:'normal',7:'normal' };
+  Object.entries(sc.etat_zones).forEach(([z, e]) => panelState.zones[parseInt(z)] = e);
+  Object.assign(panelState, sc.etat_panel);
+  panelState.activeScenario = id;
+  panelState.actionsAttenduees = [...sc.actions_attendues];
+  panelState.actionsEffectuees = [];
+  alertStart = Date.now();
+
+  updatePanelLEDs();
+  renderZones('zones-grid', false);
+
+  // Bannière alerte
+  document.getElementById('alert-title').textContent = sc.titre;
+  document.getElementById('alert-sub').textContent = sc.description;
+  document.getElementById('alert-banner').classList.remove('hidden');
+
+  // Activer les boutons panneau
+  enablePanelBtns(['ack','reset','evac','silence']);
+
+  // Instruction formateur
+  document.getElementById('instruction-text').textContent = sc.instructions;
+  document.getElementById('instruction-formateur').classList.remove('hidden');
+  currentInstruction = sc.instructions;
+
+  // Marquer scénario actif
+  document.querySelectorAll('.scenario-card').forEach(el => el.classList.remove('active'));
+  document.getElementById(`sc-${id}`)?.classList.add('active');
+
+  // Chrono alerte
+  clearInterval(alertChronoInterval);
+  alertChronoInterval = setInterval(() => {
+    const el = document.getElementById('alert-chrono');
+    if (el) el.textContent = formatTime(Math.round((Date.now() - alertStart) / 1000));
+  }, 1000);
+
+  // Broadcaster au stagiaire
+  await broadcastEvent('scenario', {
+    scenario: sc,
+    panelState,
+    instruction: sc.instructions,
+  });
+
+  addLog('log-console', 'alarm', `Scénario déclenché : ${sc.titre}`);
+  addLog('log-console', 'info', `Actions attendues : ${sc.actions_attendues.join(' → ')}`);
+}
+
+async function panelAction(action) {
+  // Action effectuée par le formateur (pour correction)
+  await broadcastEvent('panel_action', { action, by: 'formateur', ts: Date.now() });
+  evalAction(action, 'formateur');
+}
+
+async function sendMsg() {
+  const txt = document.getElementById('msg-libre').value.trim();
+  if (!txt) return;
+  await broadcastEvent('instruction', { text: txt });
+  document.getElementById('msg-libre').value = '';
+  currentInstruction = txt;
+  document.getElementById('instruction-text').textContent = txt;
+  document.getElementById('instruction-formateur').classList.remove('hidden');
+  addLog('log-console', 'action', `Message envoyé : "${txt}"`);
+}
+
+async function endSession() {
+  if (!confirm('Terminer la session SSI ?')) return;
+  clearInterval(chronoInterval);
+  clearInterval(alertChronoInterval);
+  const duree = Math.round((Date.now() - sessionStart) / 1000);
+  const total = stats.correct + stats.wrong;
+  const pct = total > 0 ? Math.round(stats.correct / total * 100) : 0;
+
+  await supabase.from('ssi_sessions').update({ status: 'terminee', ended_at: new Date().toISOString() }).eq('id', SESSION_ID);
+  await broadcastEvent('session_end', { duree, stats });
+  showResults(pct, stats.correct, stats.wrong, duree);
+}
+
+function enablePanelBtns(actions) {
+  ['ack','reset','evac','silence'].forEach(a => {
+    const btn = document.getElementById(`pbtn-${a}`);
+    if (btn) btn.disabled = !actions.includes(a);
+  });
+}
+
+// ============================================================
+// STAGIAIRE
+// ============================================================
+function initStagiaire() {
+  showScreen('scr-stagiaire');
+  document.getElementById('s-session-info').textContent =
+    `${STAG_DATA?.nom_affiche || 'Stagiaire'} · ${SESSION_DATA?.niveau || '—'}`;
+  renderZones('s-zones-grid', true);
+  updatePanelLEDs();
+  subscribeChannel();
+  startChrono('s-chrono');
+  sessionStart = Date.now();
+  addLog('s-log-console', 'ok', 'Panneau SSI connecté. En attente des instructions.');
+}
+
+async function stagAction(action) {
+  const actionStart = Date.now();
+  const sc = SCENARIOS.find(s => s.id === panelState.activeScenario);
+  if (!sc) return;
+
+  const expected = panelState.actionsAttenduees;
+  const alreadyDone = panelState.actionsEffectuees;
+  const nextExpected = expected.find(a => !alreadyDone.includes(a));
+
+  const isCorrect = nextExpected === action;
+  const responseTime = Math.round((Date.now() - (alertStart || Date.now())) / 1000);
+
+  if (isCorrect) {
+    panelState.actionsEffectuees.push(action);
+    stats.correct++;
+    stats.temps.push(responseTime);
+    showFeedback(true, action, responseTime);
+    addLog('s-log-console', 'ok', `✓ Action correcte : ${getActionLabel(action)} (${responseTime}s)`);
+    // Si toutes les actions faites
+    if (panelState.actionsEffectuees.length >= expected.length) {
+      setTimeout(() => resetPanel(), 2000);
+      stats.scenarios_done++;
+    }
+  } else {
+    stats.wrong++;
+    showFeedback(false, action, responseTime);
+    addLog('s-log-console', 'alarm', `✗ Action incorrecte : ${getActionLabel(action)}. Attendu : ${getActionLabel(nextExpected)}`);
+  }
+
+  // Broadcaster au formateur
+  await broadcastEvent('stag_action', {
+    action, correct: isCorrect, responseTime,
+    expected: nextExpected, stagiaireName: STAG_DATA?.nom_affiche || '—'
+  });
+
+  // Mettre à jour les scores côté formateur
+  updateFormateurStats();
+}
+
+function showFeedback(correct, action, time) {
+  const el = document.getElementById('s-feedback');
+  el.style.background = correct
+    ? 'linear-gradient(145deg,#14532d,#166534)'
+    : 'linear-gradient(145deg,#7f1d1d,#991b1b)';
+  el.style.border = `1px solid ${correct ? '#22c55e' : '#ef4444'}`;
+  el.innerHTML = correct
+    ? `<div style="font-size:1.5rem;">✅</div><div style="font-weight:700;color:#4ade80;">Bonne action ! ${getActionLabel(action)}</div><div style="font-size:.78rem;color:rgba(255,255,255,.6);">Temps de réaction : ${time}s</div>`
+    : `<div style="font-size:1.5rem;">❌</div><div style="font-weight:700;color:#f87171;">Action incorrecte : ${getActionLabel(action)}</div><div style="font-size:.78rem;color:rgba(255,255,255,.6);">Action attendue : ${getActionLabel(panelState.actionsAttenduees.find(a => !panelState.actionsEffectuees.includes(a)))}</div>`;
+  el.classList.remove('hidden');
+  setTimeout(() => el.classList.add('hidden'), 3000);
+}
+
+function resetPanel() {
+  panelState.zones = { 0:'normal',1:'normal',2:'normal',3:'normal',4:'normal',5:'normal',6:'normal',7:'normal' };
+  Object.assign(panelState, { alarm: false, fault: false, evac: false, prealarm: false, activeScenario: null, actionsAttenduees: [], actionsEffectuees: [] });
+  updatePanelLEDs();
+  renderZones('s-zones-grid', true);
+  document.getElementById('s-alert-banner').classList.add('hidden');
+  disableStagBtns();
+  clearInterval(alertChronoInterval);
+  addLog('s-log-console', 'ok', '✓ Scénario terminé. Panneau réinitialisé. En attente du prochain scénario.');
+}
+
+function disableStagBtns() {
+  ['ack','reset','evac','silence'].forEach(a => {
+    const btn = document.getElementById(`s-pbtn-${a}`);
+    if (btn) btn.disabled = true;
+  });
+}
+
+function updateFormateurStats() {
+  document.getElementById('f-score-correct').textContent = stats.correct;
+  document.getElementById('f-score-wrong').textContent = stats.wrong;
+  const moy = stats.temps.length ? Math.round(stats.temps.reduce((a,b)=>a+b,0)/stats.temps.length) : 0;
+  document.getElementById('f-score-time').textContent = moy ? `${moy}s` : '—';
+}
+
+// ============================================================
+// BROADCAST (remplace Firebase)
+// ============================================================
+function subscribeChannel() {
+  if (gameChannel) supabase.removeChannel(gameChannel);
+  gameChannel = supabase.channel(`ssi-${SESSION_ID}`, { config: { broadcast: { self: false } } })
+    .on('broadcast', { event: 'ssi_event' }, payload => handleEvent(payload.payload))
+    .subscribe();
+}
+
+async function broadcastEvent(type, data = {}) {
+  if (!gameChannel) subscribeChannel();
+  await gameChannel.send({ type: 'broadcast', event: 'ssi_event', payload: { type, ...data } });
+}
+
+function handleEvent(evt) {
+  if (userRole === 'stagiaire') {
+    if (evt.type === 'scenario') {
+      // Recevoir le scénario du formateur
+      const sc = evt.scenario;
+      Object.assign(panelState, evt.panelState);
+      alertStart = Date.now();
+      updatePanelLEDs();
+      renderZones('s-zones-grid', true);
+      // Afficher l'alerte
+      document.getElementById('s-alert-title').textContent = sc.titre;
+      document.getElementById('s-alert-sub').textContent = sc.description;
+      document.getElementById('s-alert-banner').classList.remove('hidden');
+      // Activer les boutons
+      ['ack','reset','evac','silence'].forEach(a => {
+        const btn = document.getElementById(`s-pbtn-${a}`);
+        if (btn) btn.disabled = false;
+      });
+      // Instruction
+      document.getElementById('s-msg-text').textContent = evt.instruction;
+      document.getElementById('s-msg-box').classList.remove('hidden');
+      addLog('s-log-console', 'alarm', `⚠️ Scénario reçu : ${sc.titre}`);
+    }
+    if (evt.type === 'instruction') {
+      document.getElementById('s-msg-text').textContent = evt.text;
+      document.getElementById('s-msg-box').classList.remove('hidden');
+      addLog('s-log-console', 'info', `📋 Instruction : ${evt.text}`);
+    }
+    if (evt.type === 'session_end') showResults(0, evt.stats?.correct||0, evt.stats?.wrong||0, evt.duree||0);
+  }
+
+  if (userRole === 'formateur') {
+    if (evt.type === 'stag_action') {
+      const nom = evt.stagiaireName || 'Stagiaire';
+      if (evt.correct) {
+        document.getElementById('stag-status').textContent = `✅ ${nom} — ${getActionLabel(evt.action)} (${evt.responseTime}s)`;
+        document.getElementById('stag-status').style.color = '#4ade80';
+        addLog('log-console', 'ok', `✓ ${nom} — ${getActionLabel(evt.action)} en ${evt.responseTime}s`);
+      } else {
+        document.getElementById('stag-status').textContent = `❌ ${nom} — ${getActionLabel(evt.action)} (attendu : ${getActionLabel(evt.expected)})`;
+        document.getElementById('stag-status').style.color = '#f87171';
+        addLog('log-console', 'alarm', `✗ ${nom} — Action incorrecte : ${getActionLabel(evt.action)}`);
+      }
+      stats.correct = evt.correct ? stats.correct + 1 : stats.correct;
+      stats.wrong = !evt.correct ? stats.wrong + 1 : stats.wrong;
+      updateFormateurStats();
+    }
+    if (evt.type === 'stag_connected') {
+      document.getElementById('stag-status').textContent = `🟢 ${evt.name} connecté`;
+      document.getElementById('stag-status').style.color = '#4ade80';
+      addLog('log-console', 'ok', `Stagiaire connecté : ${evt.name}`);
+    }
+  }
+}
+
+// ============================================================
+// PANNEAU — RENDU ET MISES À JOUR
+// ============================================================
+function renderZones(gridId, isTrainee) {
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
+  grid.innerHTML = ZONES_DEF.map(z => {
+    const etat = panelState.zones[z.id] || 'normal';
+    const labels = { normal:'Normal', prealarm:'Pré-alarme', alarm:'ALARME', fault:'Défaut', off:'Hors service' };
+    const badgeCls = { normal:'b-green', prealarm:'b-orange', alarm:'b-red', fault:'b-orange', off:'b-gray' };
+    return `<div class="zone-card zone-${etat}">
+      <div class="flex items-center justify-between mb-2">
+        <div class="flex items-center gap-2">
+          <div class="zone-status-dot dot-${etat}"></div>
+          <span style="font-family:'Share Tech Mono',monospace;font-size:.7rem;color:#94a3b8;">${z.nom}</span>
+        </div>
+        <span style="font-size:1rem;">${z.icon}</span>
+      </div>
+      <div style="font-size:.72rem;color:#64748b;margin-bottom:6px;">${z.lieu}</div>
+      <span class="badge ${badgeCls[etat]}" style="font-size:.62rem;">${labels[etat]}</span>
+    </div>`;
+  }).join('');
+}
+
+function updatePanelLEDs() {
+  // Formateur LEDs
+  setLED('led-alarm',  panelState.alarm,   'red');
+  setLED('led-fault',  panelState.fault,   'orange');
+  setLED('led-evac',   panelState.evac,    'red');
+  // Stagiaire LEDs
+  setLED('s-led-alarm', panelState.alarm,  'red');
+  setLED('s-led-fault', panelState.fault,  'orange');
+  setLED('s-led-evac',  panelState.evac,   'red');
+}
+
+function setLED(id, on, color) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (!on) { el.className = 'led led-off'; return; }
+  el.className = `led led-on-${color}`;
+  if (color === 'red' && (id.includes('alarm') || id.includes('evac'))) {
+    el.style.animation = 'blink-dot .6s infinite';
+  }
+}
+
+// ============================================================
+// CHRONO
+// ============================================================
+function startChrono(elId) {
+  clearInterval(chronoInterval);
+  const start = Date.now();
+  chronoInterval = setInterval(() => {
+    const el = document.getElementById(elId);
+    if (el) el.textContent = formatTime(Math.round((Date.now() - start) / 1000));
+  }, 1000);
+}
+
+function formatTime(s) {
+  return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+}
+
+// ============================================================
+// RÉSULTATS
+// ============================================================
+function showResults(pct, correct, wrong, duree) {
+  clearInterval(chronoInterval);
+  clearInterval(alertChronoInterval);
+  const total = correct + wrong;
+  const realPct = total > 0 ? Math.round(correct/total*100) : pct;
+  showScreen('scr-results');
+  document.getElementById('res-info').textContent = `Session ${SESSION_DATA?.session_number||'—'} · ${SESSION_DATA?.niveau||'—'} · ${total} action(s)`;
+  document.getElementById('res-correct').textContent = correct;
+  document.getElementById('res-wrong').textContent = wrong;
+  document.getElementById('res-time').textContent = formatTime(duree);
+  document.getElementById('res-pct').textContent = realPct + '%';
+  setTimeout(() => {
+    const ring = document.getElementById('res-ring');
+    if (ring) {
+      const circ = 289;
+      ring.style.strokeDashoffset = circ * (1 - realPct/100);
+      ring.style.stroke = realPct >= 80 ? '#22c55e' : realPct >= 60 ? '#f59e0b' : '#ef4444';
+    }
+  }, 300);
+}
+
+function goBack() { window.location.href = 'formateur.html'; }
+function restartSession() { window.location.reload(); }
+
+// ============================================================
+// LOG CONSOLE
+// ============================================================
+function addLog(consoleId, level, msg) {
+  const el = document.getElementById(consoleId);
+  if (!el) return;
+  const now = new Date().toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const cls = `log-${level}`;
+  const div = document.createElement('div');
+  div.className = cls;
+  div.textContent = `[${now}] ${msg}`;
+  el.appendChild(div);
+  el.scrollTop = el.scrollHeight;
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+const SCREENS = ['scr-login','scr-formateur','scr-stagiaire','scr-results'];
+function showScreen(id) { SCREENS.forEach(s => document.getElementById(s)?.classList.toggle('hidden', s !== id)); }
+
+function getActionLabel(a) {
+  const m = { ack:'Acquittement alarme', reset:'Réinitialisation', evac:'Déclenchement évacuation', silence:'Silence sonore' };
+  return m[a] || a;
+}
+
+function evalAction(action) {
+  // Validation côté formateur (pas utilisé normalement, le formateur ne joue pas)
+  addLog('log-console', 'action', `Formateur — ${getActionLabel(action)}`);
+}
+</script>
+</body>
+</html>
