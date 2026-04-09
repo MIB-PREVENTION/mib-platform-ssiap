@@ -1,1 +1,832 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>MIB — SSI Auto-formation</title>
+<meta name="theme-color" content="#0f172a">
+<link rel="manifest" href="manifest.json">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="supabase.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Syne:wght@700;800;900&family=Share+Tech+Mono&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{min-height:100%;font-family:'Inter',sans-serif;background:#0f172a;color:#e2e8f0;}
 
+.bg-tech{position:fixed;inset:0;z-index:0;
+  background:radial-gradient(ellipse 60% 40% at 20% 10%,rgba(245,158,11,.07) 0%,transparent 60%),
+  radial-gradient(ellipse 50% 40% at 80% 90%,rgba(13,148,136,.08) 0%,transparent 60%),
+  linear-gradient(135deg,#0f172a 0%,#1a2040 50%,#0f172a 100%);}
+
+/* PANELS */
+.panel-ssi{background:linear-gradient(160deg,#1e293b,#1a2744);border:2px solid #334155;border-radius:16px;box-shadow:0 0 30px rgba(245,158,11,.08),inset 0 1px 0 rgba(255,255,255,.05);}
+.panel-header{background:linear-gradient(90deg,#1e293b,#162032);border-bottom:2px solid #334155;border-radius:14px 14px 0 0;padding:12px 18px;}
+.mono{font-family:'Share Tech Mono',monospace;}
+.panel-label{font-family:'Share Tech Mono',monospace;font-size:.72rem;letter-spacing:.15em;text-transform:uppercase;color:#64748b;margin-bottom:2px;}
+.panel-title{font-family:'Share Tech Mono',monospace;font-size:.9rem;color:#94a3b8;letter-spacing:.08em;}
+
+/* ZONES */
+.zone-card{background:#0f172a;border:1px solid #1e293b;border-radius:9px;padding:10px;transition:all .3s;position:relative;overflow:hidden;}
+.zone-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:9px 9px 0 0;}
+.zone-normal::before  {background:#22c55e;}
+.zone-prealarm::before{background:#f59e0b;animation:fo 1s ease-in-out infinite;}
+.zone-alarm::before   {background:#ef4444;animation:fr .6s ease-in-out infinite;}
+.zone-fault::before   {background:#f97316;}
+@keyframes fr{0%,100%{opacity:1;box-shadow:0 0 8px #ef4444;}50%{opacity:.3;box-shadow:none;}}
+@keyframes fo{0%,100%{opacity:1;}50%{opacity:.3;}}
+
+.zone-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;box-shadow:0 0 5px currentColor;}
+.dot-normal  {background:#22c55e;color:#22c55e;}
+.dot-prealarm{background:#f59e0b;color:#f59e0b;animation:bd 1s infinite;}
+.dot-alarm   {background:#ef4444;color:#ef4444;animation:bd .6s infinite;}
+.dot-fault   {background:#f97316;color:#f97316;}
+@keyframes bd{0%,100%{opacity:1;}50%{opacity:.2;}}
+
+/* VOYANTS */
+.led{width:14px;height:14px;border-radius:50%;border:1px solid rgba(0,0,0,.3);}
+.led-on-red   {background:radial-gradient(circle at 35% 35%,#ff6b6b,#dc2626);box-shadow:0 0 8px rgba(239,68,68,.9);}
+.led-on-green {background:radial-gradient(circle at 35% 35%,#86efac,#16a34a);box-shadow:0 0 8px rgba(34,197,94,.9);}
+.led-on-orange{background:radial-gradient(circle at 35% 35%,#fcd34d,#d97706);box-shadow:0 0 8px rgba(245,158,11,.9);}
+.led-off      {background:#1e293b;}
+
+/* BOUTONS PANNEAU */
+.panel-btn{padding:10px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.08);font-weight:700;font-size:.72rem;cursor:pointer;transition:all .2s;text-transform:uppercase;letter-spacing:.04em;background:linear-gradient(145deg,#1e293b,#0f172a);color:#64748b;box-shadow:3px 3px 8px rgba(0,0,0,.4);}
+.panel-btn:hover:not(:disabled){transform:translateY(-1px);color:#e2e8f0;}
+.panel-btn:active:not(:disabled){transform:translateY(1px);}
+.panel-btn:disabled{opacity:.3;cursor:not-allowed;}
+.panel-btn.pb-red   {background:linear-gradient(135deg,#7f1d1d,#ef4444);color:#fff;border-color:#ef4444;box-shadow:0 4px 12px rgba(239,68,68,.4);}
+.panel-btn.pb-green {background:linear-gradient(135deg,#14532d,#22c55e);color:#fff;border-color:#22c55e;box-shadow:0 4px 12px rgba(34,197,94,.4);}
+.panel-btn.pb-orange{background:linear-gradient(135deg,#78350f,#f59e0b);color:#fff;border-color:#f59e0b;box-shadow:0 4px 12px rgba(245,158,11,.4);}
+.panel-btn.pb-blue  {background:linear-gradient(135deg,#1e3a8a,#3b82f6);color:#fff;border-color:#3b82f6;box-shadow:0 4px 12px rgba(59,130,246,.4);}
+
+/* UI BOUTONS */
+.btn{padding:10px 18px;border-radius:10px;border:none;font-weight:700;font-size:.82rem;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;}
+.btn::before{content:'';position:absolute;top:0;left:0;right:0;height:45%;background:linear-gradient(180deg,rgba(255,255,255,.15),transparent);pointer-events:none;}
+.btn:hover{transform:translateY(-2px);}
+.btn:active{transform:scale(.98);}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+.btn-red   {background:linear-gradient(135deg,#ef4444,#b91c1c);color:#fff;box-shadow:0 4px 12px rgba(239,68,68,.4);}
+.btn-green {background:linear-gradient(135deg,#22c55e,#15803d);color:#fff;box-shadow:0 4px 12px rgba(34,197,94,.4);}
+.btn-orange{background:linear-gradient(135deg,#f59e0b,#b45309);color:#fff;box-shadow:0 4px 12px rgba(245,158,11,.4);}
+.btn-blue  {background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;box-shadow:0 4px 12px rgba(59,130,246,.4);}
+.btn-teal  {background:linear-gradient(135deg,#0d9488,#0f766e);color:#fff;box-shadow:0 4px 12px rgba(13,148,136,.4);}
+.btn-gray  {background:linear-gradient(135deg,#475569,#334155);color:#fff;box-shadow:0 4px 8px rgba(0,0,0,.3);}
+.btn-sm{padding:7px 12px;font-size:.75rem;border-radius:8px;}
+.btn-xs{padding:5px 9px;font-size:.7rem;border-radius:7px;}
+.btn-lg{padding:14px 26px;font-size:.92rem;border-radius:11px;}
+
+/* SCÉNARIO SELECT */
+.sc-card{background:linear-gradient(145deg,#1e293b,#162032);border:1.5px solid #334155;border-radius:14px;padding:18px;cursor:pointer;transition:all .28s;position:relative;overflow:hidden;}
+.sc-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0;}
+.sc-card.sc-easy   ::before{background:#22c55e;}
+.sc-card.sc-medium ::before{background:#f59e0b;}
+.sc-card.sc-hard   ::before{background:#ef4444;}
+.sc-card:hover{transform:translateY(-5px);border-color:#475569;box-shadow:0 12px 30px rgba(0,0,0,.4);}
+
+/* GUIDE BOX */
+.guide-box{background:linear-gradient(145deg,#0c1a2e,#0f172a);border:1px solid #1e40af;border-radius:12px;padding:16px;border-left:4px solid #3b82f6;}
+.guide-step{display:flex;gap:12px;align-items:flex-start;padding:10px;border-radius:10px;background:rgba(59,130,246,.05);border:1px solid rgba(59,130,246,.1);transition:all .3s;}
+.guide-step.current{background:rgba(59,130,246,.12);border-color:rgba(59,130,246,.3);}
+.guide-step.done{background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.2);}
+.guide-step.error{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.2);}
+.step-num{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.78rem;flex-shrink:0;background:#334155;color:#94a3b8;}
+.guide-step.current .step-num{background:#3b82f6;color:#fff;}
+.guide-step.done .step-num{background:#22c55e;color:#fff;}
+.guide-step.error .step-num{background:#ef4444;color:#fff;}
+
+/* EXPLICATION */
+.expl-box{background:linear-gradient(145deg,#0c2030,#0f172a);border:1px solid #0e4a6e;border-radius:12px;padding:16px;border-left:4px solid #0ea5e9;}
+
+/* ALERTE */
+.alert-banner{background:linear-gradient(135deg,#7f1d1d,#dc2626);border:1px solid #ef4444;border-radius:12px;padding:14px 18px;animation:pa 1s ease-in-out infinite;}
+@keyframes pa{0%,100%{box-shadow:0 0 15px rgba(239,68,68,.4);}50%{box-shadow:0 0 30px rgba(239,68,68,.8);}}
+
+/* LOG */
+.log-console{background:#020617;border:1px solid #1e293b;border-radius:10px;padding:12px;font-family:'Share Tech Mono',monospace;font-size:.72rem;max-height:160px;overflow-y:auto;color:#4ade80;box-shadow:inset 0 2px 8px rgba(0,0,0,.5);}
+.log-info{color:#38bdf8;}.log-warn{color:#f59e0b;}.log-alarm{color:#ef4444;}.log-ok{color:#4ade80;}.log-expl{color:#c084fc;}
+
+/* PROG BAR */
+.prog{height:6px;border-radius:999px;background:#1e293b;overflow:hidden;}
+.prog-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,#f59e0b,#ef4444);transition:width .5s;}
+
+/* RÉSULTATS */
+.res-kpi{background:linear-gradient(145deg,#1e293b,#0f172a);border:1px solid #334155;border-radius:12px;padding:16px;text-align:center;}
+.result-ring{width:120px;height:120px;position:relative;}
+.result-ring svg{transform:rotate(-90deg);}
+.ring-val{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+
+/* BADGES */
+.badge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:.67rem;font-weight:700;}
+.b-green {background:rgba(34,197,94,.15);color:#4ade80;border:1px solid rgba(34,197,94,.3);}
+.b-red   {background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.3);}
+.b-orange{background:rgba(245,158,11,.15);color:#fbbf24;border:1px solid rgba(245,158,11,.3);}
+.b-blue  {background:rgba(59,130,246,.15);color:#93c5fd;border:1px solid rgba(59,130,246,.3);}
+.b-teal  {background:rgba(13,148,136,.15);color:#2dd4bf;border:1px solid rgba(13,148,136,.3);}
+
+.logo-t{font-family:'Syne',sans-serif;font-weight:900;}
+.sep{height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.07),transparent);margin:14px 0;}
+.spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:sp .6s linear infinite;display:inline-block;vertical-align:middle;}
+@keyframes sp{to{transform:rotate(360deg)}}
+.hidden{display:none!important;}
+@keyframes bounce-in{0%{transform:scale(0);opacity:0}60%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+.bounce-in{animation:bounce-in .45s cubic-bezier(.34,1.56,.64,1);}
+@keyframes fade-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fade-in .35s ease;}
+</style>
+</head>
+<body>
+<div class="bg-tech"></div>
+
+<!-- ════════════ ÉCRAN : SÉLECTION ════════════ -->
+<div id="scr-select" class="relative z-10 min-h-screen p-4 md:p-6">
+  <div class="max-w-4xl mx-auto">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-8">
+      <div class="flex items-center gap-3">
+        <span style="font-size:2rem;">🟡</span>
+        <div>
+          <div class="logo-t text-white" style="font-size:1.4rem;">SSI Auto-formation</div>
+          <div style="font-size:.75rem;color:#64748b;margin-top:2px;">Apprenez à maîtriser les panneaux de sécurité incendie</div>
+        </div>
+      </div>
+      <button onclick="goBack()" class="btn btn-gray btn-sm">← Retour</button>
+    </div>
+
+    <!-- Stats personnelles -->
+    <div class="grid grid-cols-3 gap-3 mb-6" id="personal-stats" style="display:none;">
+      <div class="res-kpi"><div style="font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;color:#fbbf24;" id="stat-done">0</div><div style="font-size:.68rem;color:#64748b;margin-top:4px;">Scénarios terminés</div></div>
+      <div class="res-kpi"><div style="font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;color:#4ade80;" id="stat-score">—</div><div style="font-size:.68rem;color:#64748b;margin-top:4px;">Meilleur score</div></div>
+      <div class="res-kpi"><div style="font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;color:#60a5fa;" id="stat-lvl">—</div><div style="font-size:.68rem;color:#64748b;margin-top:4px;">Niveau</div></div>
+    </div>
+
+    <h2 style="font-size:.82rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px;" class="mono">Choisissez un scénario</h2>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="scenario-select-grid"></div>
+  </div>
+</div>
+
+<!-- ════════════ ÉCRAN : JEU ════════════ -->
+<div id="scr-game" class="relative z-10 hidden min-h-screen p-4 md:p-5">
+  <div class="max-w-5xl mx-auto">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center gap-3">
+        <span style="font-size:1.4rem;">🟡</span>
+        <div>
+          <div class="logo-t text-white" style="font-size:1rem;" id="game-sc-title">Scénario</div>
+          <div style="font-size:.7rem;color:#64748b;" id="game-sc-sub">SSI Auto-formation</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <!-- Progress -->
+        <div style="width:120px;">
+          <div class="flex justify-between mb-1"><span style="font-size:.65rem;color:#64748b;" class="mono" id="prog-lbl">Étape 1/4</span></div>
+          <div class="prog"><div class="prog-fill" id="prog-fill" style="width:25%;"></div></div>
+        </div>
+        <button onclick="exitGame()" class="btn btn-gray btn-sm">✕ Quitter</button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+      <!-- PANNEAU SSI -->
+      <div class="lg:col-span-2 space-y-4">
+        <div class="panel-ssi">
+          <div class="panel-header flex items-center justify-between">
+            <div>
+              <div class="panel-label">Centrale de Détection Incendie</div>
+              <div class="panel-title mono">SDI · Mode Auto-formation</div>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="flex items-center gap-2"><div class="led" id="g-led-alim" style="background:radial-gradient(circle at 35% 35%,#86efac,#16a34a);box-shadow:0 0 8px rgba(34,197,94,.8);"></div><span style="font-size:.62rem;color:#64748b;" class="mono">ALIM</span></div>
+              <div class="flex items-center gap-2"><div class="led" id="g-led-alarm"></div><span style="font-size:.62rem;color:#64748b;" class="mono">ALARME</span></div>
+              <div class="flex items-center gap-2"><div class="led" id="g-led-fault"></div><span style="font-size:.62rem;color:#64748b;" class="mono">DÉFAUT</span></div>
+              <div class="flex items-center gap-2"><div class="led" id="g-led-evac"></div><span style="font-size:.62rem;color:#64748b;" class="mono">ÉVAC</span></div>
+            </div>
+          </div>
+          <div class="p-4">
+            <!-- Zones -->
+            <div style="font-size:.65rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;" class="mono">Zones de détection</div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4" id="g-zones-grid"></div>
+
+            <!-- Alerte active -->
+            <div id="g-alert-banner" class="alert-banner hidden mb-4 flex items-center gap-3">
+              <span style="font-size:1.3rem;">🚨</span>
+              <div>
+                <div style="font-weight:800;color:#fff;font-size:.88rem;" id="g-alert-title">—</div>
+                <div style="font-size:.72rem;color:rgba(255,255,255,.75);" id="g-alert-sub">—</div>
+              </div>
+            </div>
+
+            <!-- Boutons actions -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <button class="panel-btn" id="g-btn-ack"    onclick="doAction('ack')"    disabled><div style="font-size:1rem;margin-bottom:3px;">🔔</div>ACK Alarme</button>
+              <button class="panel-btn" id="g-btn-reset"  onclick="doAction('reset')"  disabled><div style="font-size:1rem;margin-bottom:3px;">🔄</div>Réinitialiser</button>
+              <button class="panel-btn" id="g-btn-evac"   onclick="doAction('evac')"   disabled><div style="font-size:1rem;margin-bottom:3px;">🚨</div>Évacuation</button>
+              <button class="panel-btn" id="g-btn-silence" onclick="doAction('silence')" disabled><div style="font-size:1rem;margin-bottom:3px;">🔇</div>Silence son</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- FEEDBACK ACTION -->
+        <div id="g-feedback" class="hidden fade-in" style="border-radius:12px;padding:14px;text-align:center;"></div>
+
+        <!-- EXPLICATION -->
+        <div id="g-explication" class="expl-box hidden fade-in">
+          <div style="font-size:.68rem;font-weight:700;color:#38bdf8;margin-bottom:8px;">💡 Explication</div>
+          <div style="color:#e0f2fe;font-size:.85rem;line-height:1.7;" id="g-expl-text">—</div>
+          <button onclick="nextStep()" class="btn btn-teal btn-sm" style="margin-top:12px;width:100%;" id="btn-next-step">Étape suivante →</button>
+        </div>
+
+        <!-- LOG -->
+        <div>
+          <div style="font-size:.65rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;" class="mono">Journal</div>
+          <div class="log-console" id="g-log"></div>
+        </div>
+      </div>
+
+      <!-- GUIDE LATÉRAL -->
+      <div>
+        <!-- Situation -->
+        <div class="guide-box mb-4 fade-in">
+          <div style="font-size:.68rem;font-weight:700;color:#60a5fa;margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em;">📋 Situation</div>
+          <div style="color:#e2e8f0;font-size:.85rem;line-height:1.6;" id="g-situation">—</div>
+        </div>
+
+        <!-- Étapes à réaliser -->
+        <div>
+          <div style="font-size:.68rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;" class="mono">Procédure à suivre</div>
+          <div class="space-y-2" id="g-steps-list"></div>
+        </div>
+
+        <!-- Score en cours -->
+        <div class="sep"></div>
+        <div class="grid grid-cols-2 gap-2">
+          <div class="res-kpi"><div style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:#4ade80;" id="g-correct">0</div><div style="font-size:.65rem;color:#64748b;">✅ Correct</div></div>
+          <div class="res-kpi"><div style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:#f87171;" id="g-wrong">0</div><div style="font-size:.65rem;color:#64748b;">❌ Erreur</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ ÉCRAN : RÉSULTATS ════════════ -->
+<div id="scr-results" class="relative z-10 hidden min-h-screen flex items-center justify-center p-4">
+  <div style="background:#1e293b;border:1px solid #334155;border-radius:20px;padding:28px;width:100%;max-width:480px;" class="bounce-in">
+
+    <div style="text-align:center;margin-bottom:20px;">
+      <div style="font-size:2.8rem;margin-bottom:10px;" id="res-icon">🏆</div>
+      <div class="logo-t text-white" style="font-size:1.5rem;" id="res-title">Scénario terminé !</div>
+      <div style="font-size:.78rem;color:#64748b;margin-top:4px;" id="res-sub">—</div>
+    </div>
+
+    <!-- Ring score -->
+    <div class="flex justify-center mb-5">
+      <div class="result-ring">
+        <svg width="120" height="120" viewBox="0 0 120 120">
+          <circle cx="60" cy="60" r="50" fill="none" stroke="#1e293b" stroke-width="9"/>
+          <circle id="res-ring" cx="60" cy="60" r="50" fill="none" stroke="#f59e0b" stroke-width="9"
+            stroke-linecap="round" stroke-dasharray="314" stroke-dashoffset="314"
+            style="transition:stroke-dashoffset 1s ease;"/>
+        </svg>
+        <div class="ring-val">
+          <div class="logo-t text-white" style="font-size:1.7rem;" id="res-pct">0%</div>
+          <div style="font-size:.62rem;color:#64748b;">SCORE</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-3 gap-3 mb-5">
+      <div class="res-kpi"><div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.4rem;color:#4ade80;" id="res-correct">0</div><div style="font-size:.65rem;color:#64748b;">✅ Correct</div></div>
+      <div class="res-kpi"><div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.4rem;color:#f87171;" id="res-wrong">0</div><div style="font-size:.65rem;color:#64748b;">❌ Erreur</div></div>
+      <div class="res-kpi"><div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.4rem;color:#fbbf24;" id="res-steps">0</div><div style="font-size:.65rem;color:#64748b;">📋 Étapes</div></div>
+    </div>
+
+    <!-- Récap erreurs -->
+    <div id="res-erreurs" class="hidden" style="background:#0f172a;border:1px solid #334155;border-radius:10px;padding:14px;margin-bottom:16px;">
+      <div style="font-size:.7rem;font-weight:700;color:#f87171;margin-bottom:8px;text-transform:uppercase;letter-spacing:.07em;">Erreurs commises</div>
+      <div id="res-err-list" style="font-size:.8rem;color:#94a3b8;line-height:1.8;"></div>
+    </div>
+
+    <!-- Boutons -->
+    <div class="flex gap-3 flex-wrap">
+      <button onclick="restartSame()" class="btn btn-orange flex-1">🔄 Recommencer</button>
+      <button onclick="showScreen('scr-select');loadSelect();" class="btn btn-teal flex-1">📋 Autres scénarios</button>
+    </div>
+    <button onclick="goBack()" class="btn btn-gray" style="width:100%;margin-top:10px;">🏠 Retour accueil</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// SCÉNARIOS SSI AUTO-FORMATION
+// ============================================================
+const SCENARIOS_AUTO = [
+  {
+    id: 'auto_1',
+    titre: 'Première alarme — Pré-alarme Zone 1',
+    difficulte: '⭐',
+    niveau: 'SSIAP1',
+    categorie: 'Bases',
+    categorieColor: 'b-green',
+    description: 'Un détecteur de fumée se déclenche dans le hall. C\'est une pré-alarme (pas encore confirmée). Découvrez la procédure d\'acquittement.',
+    situation: 'Un détecteur optique de fumée vient de se déclencher dans le hall d\'entrée (Zone 1). Le voyant ALARME clignote. Vous devez réagir selon la procédure.',
+    zones_init: { 0: 'prealarm' },
+    panel_init: { alarm: false, fault: false, evac: false, prealarm: true },
+    etapes: [
+      { action: 'ack', label: 'Acquitter l\'alarme', explication: 'L\'acquittement (ACK) permet de confirmer que vous avez pris en compte l\'alarme. Le signal sonore s\'arrête mais le voyant reste allumé. C\'est toujours la première action à effectuer.' },
+    ],
+    message_fin: 'Excellente première procédure ! L\'acquittement est toujours la première action lors d\'une détection.',
+  },
+  {
+    id: 'auto_2',
+    titre: 'Fausse alarme — Réinitialisation',
+    difficulte: '⭐',
+    niveau: 'SSIAP1',
+    categorie: 'Bases',
+    categorieColor: 'b-green',
+    description: 'Après investigation, l\'alarme Zone 1 est confirmée fausse. Apprenez à réinitialiser le système après une fausse alarme.',
+    situation: 'L\'alarme Zone 1 vient de se déclencher. Après vérification sur place, vous confirmez qu\'il s\'agit d\'une fausse alarme (vapeurs cuisine). Procédez à la procédure complète.',
+    zones_init: { 0: 'alarm' },
+    panel_init: { alarm: true, fault: false, evac: false, prealarm: false },
+    etapes: [
+      { action: 'ack', label: 'Acquitter l\'alarme', explication: 'L\'acquittement coupe le signal sonore et confirme la prise en charge. C\'est obligatoire avant toute autre action.' },
+      { action: 'reset', label: 'Réinitialiser le panneau', explication: 'Après avoir confirmé la fausse alarme et évacué la zone de tout danger, la réinitialisation remet le panneau en état de veille normal. Le détecteur est à nouveau opérationnel.' },
+    ],
+    message_fin: 'Parfait ! ACK puis Reset : c\'est la procédure standard pour une fausse alarme confirmée.',
+  },
+  {
+    id: 'auto_3',
+    titre: 'Alarme réelle — Évacuation générale',
+    difficulte: '⭐⭐',
+    niveau: 'SSIAP1',
+    categorie: 'Évacuation',
+    categorieColor: 'b-orange',
+    description: 'Feu confirmé en Zone 3 (Cuisine). L\'évacuation générale est obligatoire. Apprenez la procédure complète.',
+    situation: 'ALARME CONFIRMÉE — Feu en Zone 3 (Cuisine). La fumée est visible. Vous devez déclencher l\'évacuation générale du bâtiment et silence le signal sonore après.',
+    zones_init: { 2: 'alarm' },
+    panel_init: { alarm: true, fault: false, evac: false, prealarm: false },
+    etapes: [
+      { action: 'ack', label: 'Acquitter l\'alarme', explication: 'Même en cas de feu réel, l\'acquittement est la première action. Il confirme la prise en charge et permet au système d\'enregistrer l\'heure de réaction.' },
+      { action: 'evac', label: 'Déclencher l\'évacuation', explication: 'Le bouton ÉVACUATION déclenche l\'alarme générale d\'évacuation dans tout le bâtiment (sirènes, messages vocaux selon équipement). Tous les occupants doivent quitter immédiatement.' },
+      { action: 'silence', label: 'Silence sonore (après évacuation)', explication: 'Une fois l\'évacuation enclenchée et les secours alertés, vous pouvez silencer le signal sonore local pour communiquer avec les pompiers. Les voyants restent allumés.' },
+    ],
+    message_fin: 'Très bien ! ACK → Évacuation → Silence : la procédure complète en cas d\'incendie confirmé.',
+  },
+  {
+    id: 'auto_4',
+    titre: 'Gestion d\'un défaut système',
+    difficulte: '⭐⭐',
+    niveau: 'SSIAP1',
+    categorie: 'Défauts',
+    categorieColor: 'b-orange',
+    description: 'Le panneau signale un défaut (batterie de secours). Pas d\'alarme mais le système doit être maintenu opérationnel.',
+    situation: 'Le voyant DÉFAUT s\'allume sans alarme. Il s\'agit d\'un défaut de la batterie de secours. Le bâtiment n\'est pas en danger immédiat mais le problème doit être pris en charge.',
+    zones_init: { 5: 'fault' },
+    panel_init: { alarm: false, fault: true, evac: false, prealarm: false },
+    etapes: [
+      { action: 'ack', label: 'Acquitter le défaut', explication: 'L\'acquittement d\'un défaut fonctionne comme pour une alarme : il confirme la prise en compte. Le voyant DÉFAUT reste allumé tant que le problème n\'est pas corrigé.' },
+      { action: 'silence', label: 'Silence le signal sonore', explication: 'Le signal sonore de défaut peut être mis en silence pour ne pas perturber l\'activité. Attention : le défaut doit être signalé au technicien de maintenance dans les 24h.' },
+    ],
+    message_fin: 'Bien géré ! Un défaut n\'est pas une alarme mais doit être traité rapidement. Notez toujours l\'heure et la nature du défaut dans le registre de sécurité.',
+  },
+  {
+    id: 'auto_5',
+    titre: 'Multi-zones — Feu d\'envergure',
+    difficulte: '⭐⭐⭐',
+    niveau: 'SSIAP2',
+    categorie: 'Avancé',
+    categorieColor: 'b-red',
+    description: 'Alarme simultanée en zones 2 et 4. Situation complexe nécessitant une gestion multi-zones et une évacuation totale.',
+    situation: 'ALARME GÉNÉRALE — Zones 2 (Bureaux) et 4 (Sous-sol) en alarme simultanée. Feu déclaré confirmé par les détecteurs. Procédure complète requise.',
+    zones_init: { 1: 'alarm', 3: 'alarm' },
+    panel_init: { alarm: true, fault: false, evac: false, prealarm: false },
+    etapes: [
+      { action: 'ack', label: 'Acquitter les alarmes', explication: 'Un seul acquittement suffit pour toutes les alarmes actives simultanément. Le système enregistre l\'heure d\'acquittement pour chaque zone.' },
+      { action: 'evac', label: 'Évacuation immédiate', explication: 'Avec plusieurs zones en alarme, l\'évacuation est obligatoire et immédiate. Toutes les zones doivent être évacuées sans exception, y compris le sous-sol.' },
+      { action: 'silence', label: 'Silence pour communication', explication: 'Le silence sonore permet de communiquer avec les équipes et les pompiers. Gardez contact radio avec les agents de sécurité aux sorties.' },
+      { action: 'reset', label: 'Réinitialiser après intervention', explication: 'La réinitialisation ne s\'effectue QU\'APRÈS le feu de vert des pompiers et la levée de doute complète. Ne réinitialisez jamais avant autorisation des secours.' },
+    ],
+    message_fin: 'Excellent ! Procédure multi-zones maîtrisée. Dans la réalité, ces 4 actions se font en coordination avec les pompiers et votre équipe.',
+  },
+  {
+    id: 'auto_6',
+    titre: 'Scénario complet SSIAP 3 — Crise complexe',
+    difficulte: '⭐⭐⭐',
+    niveau: 'SSIAP3',
+    categorie: 'Expert',
+    categorieColor: 'b-blue',
+    description: 'Coupure secteur + Alarme Zone critique. Gestion simultanée de 2 événements avec le SDI sur batteries.',
+    situation: 'ALERTE MULTIPLE — Coupure d\'alimentation secteur détectée (Zone 6 en défaut) ET alarme confirmée Zone 3 (Cuisine). Le SDI fonctionne sur batteries (autonomie 24h). Gérez les deux situations.',
+    zones_init: { 2: 'alarm', 5: 'fault' },
+    panel_init: { alarm: true, fault: true, evac: false, prealarm: false },
+    etapes: [
+      { action: 'ack', label: 'Acquitter alarme + défaut', explication: 'Un seul ACK acquitte simultanément l\'alarme et le défaut. Vérifiez les deux voyants : ALARME et DÉFAUT doivent être pris en compte.' },
+      { action: 'evac', label: 'Déclencher l\'évacuation', explication: 'L\'alarme Zone 3 est prioritaire. L\'évacuation est déclenchée malgré le défaut d\'alimentation — le SDI sur batteries garantit le fonctionnement des dispositifs d\'évacuation.' },
+      { action: 'silence', label: 'Silence pour coordination', explication: 'En tant que chef de service, vous devez coordonner : pompiers, agents en poste, évacuation. Le silence vous permet de communiquer efficacement.' },
+      { action: 'reset', label: 'Reset après feu de vert', explication: 'La réinitialisation avec coupure secteur active remet à zéro l\'alarme Zone 3. Le défaut d\'alimentation reste affiché jusqu\'à remise en service par le technicien. Notez tout dans le registre.' },
+    ],
+    message_fin: '⭐ Expert ! La gestion d\'une crise complexe avec multiple événements simultanés est maîtrisée. Vous êtes prêt pour l\'examen SSIAP 3.',
+  },
+];
+
+const ZONES_DEF = [
+  { id:0, nom:'Zone 1', lieu:'Hall / Accueil',     icon:'🚪' },
+  { id:1, nom:'Zone 2', lieu:'Bureaux',             icon:'🏢' },
+  { id:2, nom:'Zone 3', lieu:'Cuisine / Cafét.',    icon:'🍳' },
+  { id:3, nom:'Zone 4', lieu:'Sous-sol / Parking',  icon:'🅿️' },
+  { id:4, nom:'Zone 5', lieu:'Salle réunion',       icon:'📋' },
+  { id:5, nom:'Zone 6', lieu:'Local technique',     icon:'💻' },
+  { id:6, nom:'Zone 7', lieu:'Couloirs Étage 1',    icon:'🛗' },
+  { id:7, nom:'Zone 8', lieu:'Toiture / Combles',   icon:'🏗️' },
+];
+
+// ============================================================
+// ÉTAT
+// ============================================================
+let currentSc = null;
+let currentStep = 0;
+let correct = 0, wrong = 0;
+let waitingExpl = false;
+let errorLog = [];
+let panelState = { zones: {}, alarm: false, fault: false, evac: false, prealarm: false };
+let STAG_DATA = null;
+let sessionDbId = null;
+
+// ============================================================
+// INIT
+// ============================================================
+window.addEventListener('DOMContentLoaded', async () => {
+  const p = new URLSearchParams(window.location.search);
+  STAG_DATA = SESSION.load('stagiaire');
+
+  loadSelect();
+  showScreen('scr-select');
+
+  // Charger stats personnelles si stagiaire connecté
+  if (STAG_DATA?.stagiaire_id) loadPersonalStats();
+});
+
+function goBack() {
+  const f = SESSION.load('formateur');
+  window.location.href = f ? 'formateur.html' : 'login-stagiaire.html';
+}
+
+// ============================================================
+// SÉLECTION SCÉNARIO
+// ============================================================
+function loadSelect() {
+  const grid = document.getElementById('scenario-select-grid');
+  grid.innerHTML = SCENARIOS_AUTO.map(sc => `
+    <div class="sc-card sc-${getDiffCls(sc.difficulte)}" onclick="startScenario('${sc.id}')">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <span class="badge ${sc.categorieColor}" style="font-size:.65rem;">${sc.categorie}</span>
+        <span style="font-size:.85rem;">${sc.difficulte}</span>
+      </div>
+      <div style="font-weight:800;color:#fff;font-size:.9rem;margin-bottom:6px;">${sc.titre}</div>
+      <div style="font-size:.75rem;color:#64748b;line-height:1.5;margin-bottom:12px;">${sc.description}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-size:.7rem;color:#475569;" class="mono">${sc.etapes.length} étape(s) · ${sc.niveau}</span>
+        <span style="font-size:.82rem;font-weight:700;color:#60a5fa;">Démarrer →</span>
+      </div>
+    </div>`).join('');
+}
+
+function getDiffCls(d) {
+  const n = (d.match(/⭐/g)||[]).length;
+  return n === 1 ? 'easy' : n === 2 ? 'medium' : 'hard';
+}
+
+async function loadPersonalStats() {
+  try {
+    const { data } = await supabase.from('ssi_autoformation_sessions')
+      .select('score, max_score, nb_etapes')
+      .eq('stagiaire_id', STAG_DATA.stagiaire_id)
+      .eq('status', 'terminee');
+    if (!data?.length) return;
+    const done = data.length;
+    const best = Math.max(...data.filter(d => d.max_score > 0).map(d => Math.round(d.score/d.max_score*100)));
+    const lvl = data.reduce((a,d) => a + (d.nb_etapes||0), 0);
+    document.getElementById('stat-done').textContent = done;
+    document.getElementById('stat-score').textContent = best + '%';
+    document.getElementById('stat-lvl').textContent = lvl + ' étapes';
+    document.getElementById('personal-stats').style.display = 'grid';
+  } catch(e) {}
+}
+
+// ============================================================
+// DÉMARRAGE SCÉNARIO
+// ============================================================
+async function startScenario(id) {
+  currentSc = SCENARIOS_AUTO.find(s => s.id === id);
+  if (!currentSc) return;
+  currentStep = 0;
+  correct = 0;
+  wrong = 0;
+  waitingExpl = false;
+  errorLog = [];
+
+  // Init panneau
+  panelState.zones = { 0:'normal',1:'normal',2:'normal',3:'normal',4:'normal',5:'normal',6:'normal',7:'normal' };
+  Object.entries(currentSc.zones_init || {}).forEach(([z,e]) => panelState.zones[parseInt(z)] = e);
+  Object.assign(panelState, currentSc.panel_init || {});
+
+  // Créer session en DB si stagiaire connecté
+  if (STAG_DATA?.stagiaire_id) {
+    try {
+      const { data } = await supabase.from('ssi_autoformation_sessions').insert({
+        stagiaire_id: STAG_DATA.stagiaire_id,
+        center_id: STAG_DATA.center_id,
+        scenario_id: id,
+        niveau: currentSc.niveau,
+        status: 'en_cours',
+        nb_etapes: currentSc.etapes.length,
+      }).select().single();
+      sessionDbId = data?.id;
+    } catch(e) {}
+  }
+
+  showScreen('scr-game');
+  document.getElementById('game-sc-title').textContent = currentSc.titre;
+  document.getElementById('game-sc-sub').textContent = `${currentSc.niveau} · ${currentSc.categorie} · ${currentSc.difficulte}`;
+  document.getElementById('g-situation').textContent = currentSc.situation;
+
+  renderGameZones();
+  updateGameLEDs();
+  renderSteps();
+  updateProgress();
+  enableActions();
+  addLog('g-log', 'ok', `Scénario démarré : ${currentSc.titre}`);
+
+  // Afficher alerte si panel en alarme
+  if (panelState.alarm || panelState.prealarm) {
+    const zoneAlarm = Object.entries(panelState.zones).find(([,e]) => e === 'alarm' || e === 'prealarm');
+    if (zoneAlarm) {
+      const zone = ZONES_DEF.find(z => z.id === parseInt(zoneAlarm[0]));
+      document.getElementById('g-alert-title').textContent = `${panelState.alarm ? 'ALARME' : 'PRÉ-ALARME'} — ${zone?.nom || 'Zone'} : ${zone?.lieu || ''}`;
+      document.getElementById('g-alert-sub').textContent = panelState.alarm ? 'Alarme confirmée — Procédez selon la procédure' : 'Détection non confirmée — Vérification requise';
+      document.getElementById('g-alert-banner').classList.remove('hidden');
+    }
+  }
+}
+
+// ============================================================
+// RENDU
+// ============================================================
+function renderGameZones() {
+  const grid = document.getElementById('g-zones-grid');
+  const labels = { normal:'Normal', prealarm:'Pré-alarme', alarm:'ALARME', fault:'Défaut', off:'HS' };
+  const badgeCls = { normal:'b-green', prealarm:'b-orange', alarm:'b-red', fault:'b-orange', off:'b-gray' };
+  grid.innerHTML = ZONES_DEF.map(z => {
+    const etat = panelState.zones[z.id] || 'normal';
+    return `<div class="zone-card zone-${etat}">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <div class="zone-dot dot-${etat}"></div>
+          <span style="font-family:'Share Tech Mono',monospace;font-size:.65rem;color:#94a3b8;">${z.nom}</span>
+        </div>
+        <span style="font-size:.85rem;">${z.icon}</span>
+      </div>
+      <div style="font-size:.65rem;color:#64748b;margin-bottom:4px;">${z.lieu}</div>
+      <span class="badge ${badgeCls[etat]}" style="font-size:.6rem;">${labels[etat]}</span>
+    </div>`;
+  }).join('');
+}
+
+function updateGameLEDs() {
+  const setLED = (id, on, color) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.className = on ? `led led-on-${color}` : 'led led-off';
+  };
+  setLED('g-led-alarm', panelState.alarm, 'red');
+  setLED('g-led-fault', panelState.fault, 'orange');
+  setLED('g-led-evac',  panelState.evac,  'red');
+}
+
+function renderSteps() {
+  const el = document.getElementById('g-steps-list');
+  el.innerHTML = currentSc.etapes.map((s, i) => {
+    let cls = '';
+    if (i < currentStep) cls = 'done';
+    else if (i === currentStep) cls = 'current';
+    const icon = i < currentStep ? '✅' : i === currentStep ? '▶' : String(i+1);
+    return `<div class="guide-step ${cls}" id="step-${i}">
+      <div class="step-num">${i < currentStep ? '✓' : i+1}</div>
+      <div>
+        <div style="font-weight:700;font-size:.82rem;color:${i===currentStep?'#e2e8f0':'#64748b'};">${s.label}</div>
+        ${i === currentStep ? '<div style="font-size:.7rem;color:#60a5fa;margin-top:2px;">← Action attendue</div>' : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updateProgress() {
+  const pct = Math.round((currentStep / currentSc.etapes.length) * 100);
+  document.getElementById('prog-fill').style.width = pct + '%';
+  document.getElementById('prog-lbl').textContent = `Étape ${currentStep+1}/${currentSc.etapes.length}`;
+}
+
+function enableActions() {
+  ['ack','reset','evac','silence'].forEach(a => {
+    const btn = document.getElementById(`g-btn-${a}`);
+    if (btn) btn.disabled = false;
+  });
+}
+
+function disableActions() {
+  ['ack','reset','evac','silence'].forEach(a => {
+    const btn = document.getElementById(`g-btn-${a}`);
+    if (btn) btn.disabled = true;
+  });
+}
+
+// ============================================================
+// ACTION UTILISATEUR
+// ============================================================
+async function doAction(action) {
+  if (waitingExpl) return;
+  const step = currentSc.etapes[currentStep];
+  if (!step) return;
+
+  const isCorrect = action === step.action;
+
+  if (isCorrect) {
+    correct++;
+    waitingExpl = true;
+    disableActions();
+
+    // Mettre à jour le panneau visuellement
+    applyPanelEffect(action);
+
+    // Afficher feedback positif
+    showFeedback(true, action);
+    addLog('g-log', 'ok', `✓ ${getActionLabel(action)} — Correct !`);
+
+    // Afficher explication
+    document.getElementById('g-expl-text').textContent = step.explication;
+    document.getElementById('g-explication').classList.remove('hidden');
+
+    // Marquer étape done
+    const stepEl = document.getElementById(`step-${currentStep}`);
+    if (stepEl) { stepEl.className = 'guide-step done'; stepEl.querySelector('.step-num').textContent = '✓'; }
+
+    document.getElementById('g-correct').textContent = correct;
+
+  } else {
+    wrong++;
+    showFeedback(false, action);
+    errorLog.push({ step: currentStep, action, expected: step.action, label: step.label });
+    addLog('g-log', 'alarm', `✗ ${getActionLabel(action)} — Attendu : ${getActionLabel(step.action)}`);
+
+    // Secouer les boutons
+    const btn = document.getElementById(`g-btn-${action}`);
+    if (btn) {
+      btn.style.animation = 'none';
+      setTimeout(() => { btn.style.animation = ''; }, 50);
+    }
+
+    document.getElementById('g-wrong').textContent = wrong;
+  }
+}
+
+function applyPanelEffect(action) {
+  if (action === 'ack') {
+    // ACK — les voyants d'alarme arrêtent de clignoter (restent allumés)
+    // Pas de changement d'état, juste visuel
+  }
+  if (action === 'reset') {
+    panelState.zones = { 0:'normal',1:'normal',2:'normal',3:'normal',4:'normal',5:'normal',6:'normal',7:'normal' };
+    panelState.alarm = false; panelState.prealarm = false;
+    document.getElementById('g-alert-banner').classList.add('hidden');
+    renderGameZones();
+    updateGameLEDs();
+  }
+  if (action === 'evac') {
+    panelState.evac = true;
+    updateGameLEDs();
+    addLog('g-log', 'warn', '🚨 ÉVACUATION GÉNÉRALE DÉCLENCHÉE');
+  }
+  if (action === 'silence') {
+    addLog('g-log', 'info', '🔇 Signal sonore mis en silence');
+  }
+}
+
+function nextStep() {
+  document.getElementById('g-explication').classList.add('hidden');
+  document.getElementById('g-feedback').classList.add('hidden');
+  waitingExpl = false;
+  currentStep++;
+
+  if (currentStep >= currentSc.etapes.length) {
+    endScenario();
+    return;
+  }
+
+  renderSteps();
+  updateProgress();
+  enableActions();
+  addLog('g-log', 'info', `► Étape ${currentStep+1}/${currentSc.etapes.length} : ${currentSc.etapes[currentStep].label}`);
+}
+
+function showFeedback(ok, action) {
+  const el = document.getElementById('g-feedback');
+  el.style.background = ok
+    ? 'linear-gradient(145deg,#14532d,#166534)'
+    : 'linear-gradient(145deg,#7f1d1d,#991b1b)';
+  el.style.border = `1px solid ${ok ? '#22c55e' : '#ef4444'}`;
+  el.innerHTML = ok
+    ? `<div style="font-size:1.3rem;">✅</div><div style="font-weight:700;color:#4ade80;font-size:.9rem;">Correct ! ${getActionLabel(action)}</div>`
+    : `<div style="font-size:1.3rem;">❌</div><div style="font-weight:700;color:#f87171;font-size:.9rem;">Incorrect ! Action attendue : ${getActionLabel(currentSc.etapes[currentStep].action)}</div>`;
+  el.classList.remove('hidden');
+  if (!ok) setTimeout(() => el.classList.add('hidden'), 2500);
+}
+
+// ============================================================
+// FIN SCÉNARIO
+// ============================================================
+async function endScenario() {
+  const totalSteps = currentSc.etapes.length;
+  const pct = Math.round(correct / (correct + wrong) * 100);
+
+  // Sauvegarder en DB
+  if (sessionDbId) {
+    try {
+      await supabase.from('ssi_autoformation_sessions').update({
+        status: 'terminee',
+        score: correct,
+        max_score: correct + wrong,
+        nb_erreurs: wrong,
+        ended_at: new Date().toISOString(),
+      }).eq('id', sessionDbId);
+    } catch(e) {}
+  }
+
+  showScreen('scr-results');
+
+  const icon = pct === 100 ? '🏆' : pct >= 80 ? '🥇' : pct >= 60 ? '👍' : '📚';
+  const title = pct === 100 ? 'Score parfait !' : pct >= 80 ? 'Très bien !' : pct >= 60 ? 'Bien joué !' : 'À retravailler';
+  document.getElementById('res-icon').textContent = icon;
+  document.getElementById('res-title').textContent = title;
+  document.getElementById('res-sub').textContent = `${currentSc.titre} · ${totalSteps} étapes`;
+  document.getElementById('res-correct').textContent = correct;
+  document.getElementById('res-wrong').textContent = wrong;
+  document.getElementById('res-steps').textContent = totalSteps;
+  document.getElementById('res-pct').textContent = pct + '%';
+
+  setTimeout(() => {
+    const ring = document.getElementById('res-ring');
+    if (ring) {
+      const circ = 314;
+      ring.style.strokeDashoffset = circ * (1 - pct/100);
+      ring.style.stroke = pct >= 80 ? '#22c55e' : pct >= 60 ? '#f59e0b' : '#ef4444';
+    }
+  }, 300);
+
+  // Erreurs
+  if (errorLog.length) {
+    document.getElementById('res-err-list').innerHTML = errorLog.map(e =>
+      `• Étape ${e.step+1} : ${e.label} — vous avez choisi <span style="color:#f87171;">${getActionLabel(e.action)}</span>`
+    ).join('<br>');
+    document.getElementById('res-erreurs').classList.remove('hidden');
+  }
+}
+
+function restartSame() {
+  if (currentSc) startScenario(currentSc.id);
+}
+
+function exitGame() {
+  if (confirm('Quitter ce scénario ?')) {
+    showScreen('scr-select');
+    loadSelect();
+  }
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+const SCREENS = ['scr-select','scr-game','scr-results'];
+function showScreen(id) { SCREENS.forEach(s => document.getElementById(s)?.classList.toggle('hidden', s !== id)); }
+
+function getActionLabel(a) {
+  const m = { ack:'Acquittement alarme', reset:'Réinitialisation', evac:'Déclenchement évacuation', silence:'Silence sonore' };
+  return m[a] || a;
+}
+
+function addLog(id, level, msg) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const t = new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const div = document.createElement('div');
+  div.className = `log-${level}`;
+  div.textContent = `[${t}] ${msg}`;
+  el.appendChild(div);
+  el.scrollTop = el.scrollHeight;
+}
+</script>
+</body>
+</html>
