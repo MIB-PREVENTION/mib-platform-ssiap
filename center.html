@@ -9,6 +9,7 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Syne:wght@700;800;900&display=swap');
 
@@ -329,7 +330,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
         <div style="margin-top:24px;padding:16px 20px;border-radius:14px;background:linear-gradient(145deg,#fff7ed,#ffedd5);border:1.5px solid #fed7aa;">
           <p style="font-size:.82rem;color:#c2410c;font-weight:600;">💡 Vous souhaitez activer d'autres modules ?</p>
           <p style="font-size:.78rem;color:#92400e;margin-top:4px;">Contactez MIB Prévention pour faire évoluer votre plan.</p>
-          <a href="mailto:contact@mib-prevention.fr" class="btn btn-orange btn-sm" style="display:inline-flex;margin-top:10px;text-decoration:none;">📧 Nous contacter</a>
+          <a href="/cdn-cgi/l/email-protection#bdded2d3c9dcdec9fdd0d4df90cdcfd8cbd8d3c9d4d2d393dbcf" class="btn btn-orange btn-sm" style="display:inline-flex;margin-top:10px;text-decoration:none;">📧 Nous contacter</a>
         </div>
       </div>
 
@@ -435,12 +436,41 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
           style="letter-spacing:.3em;font-size:1.2rem;text-align:center;">
         <p style="font-size:.7rem;color:var(--text3);margin-top:4px;">Ce PIN permet au formateur de se connecter.</p>
       </div>
-      <div id="f-pin-display" class="hidden">
-        <div class="pin-display" id="f-pin-generated"></div>
-        <p style="font-size:.72rem;color:var(--text2);margin-top:6px;text-align:center;">Transmettez ce PIN au formateur</p>
+      <!-- Résultat après création -->
+      <div id="f-result" class="hidden">
+        <div class="sep"></div>
+        <div id="f-msg-ok" class="alert-ok mb-4"></div>
+
+        <!-- PIN + QR côte à côte -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;">
+          <!-- PIN -->
+          <div style="text-align:center;">
+            <div style="font-size:.68rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;">Code PIN formateur</div>
+            <div id="f-pin-generated" style="font-family:'Syne',sans-serif;font-size:2rem;font-weight:900;letter-spacing:.3em;color:#6366f1;background:linear-gradient(145deg,#e8edf5,#f3f6fc);border-radius:12px;padding:14px;box-shadow:inset 3px 3px 8px rgba(100,116,139,.18),inset -2px -2px 5px rgba(255,255,255,.9);"></div>
+            <p style="font-size:.7rem;color:var(--text3);margin-top:6px;">À transmettre au formateur</p>
+          </div>
+          <!-- QR CODE -->
+          <div style="text-align:center;">
+            <div style="font-size:.68rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;">QR Code connexion</div>
+            <div style="display:inline-block;padding:10px;background:#fff;border-radius:12px;box-shadow:3px 3px 10px rgba(100,116,139,.15);">
+              <div id="f-qr-code"></div>
+            </div>
+            <p style="font-size:.7rem;color:var(--text3);margin-top:6px;">Pointe vers la page login</p>
+          </div>
+        </div>
+
+        <!-- URL login formateur -->
+        <div style="margin-top:12px;padding:10px 14px;border-radius:10px;background:linear-gradient(145deg,#f8faff,#eef1f8);font-size:.75rem;color:var(--text2);word-break:break-all;" id="f-qr-url-display"></div>
+
+        <!-- Bouton imprimer -->
+        <button onclick="printFormateurCard()" class="btn btn-blue btn-sm" style="width:100%;margin-top:12px;">🖨️ Imprimer la fiche formateur</button>
+
+        <!-- Zone impression -->
+        <div id="f-print-zone" style="display:none;"></div>
       </div>
+
       <div id="f-msg" class="hidden"></div>
-      <div class="flex gap-3 mt-1">
+      <div class="flex gap-3 mt-1" id="f-form-actions">
         <button onclick="closeModal('modal-add-formateur')" class="btn btn-gray flex-1">Annuler</button>
         <button onclick="saveFormateur()" class="btn btn-green flex-1" id="btn-save-f">Enregistrer</button>
       </div>
@@ -517,7 +547,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
   </div>
 </div>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 // ============================================================
 // ÉTAT
 // ============================================================
@@ -678,17 +708,35 @@ async function saveFormateur(){
     }
 
     const payload={prenom,nom,email:email||null,role,center_id:CENTER.id,...(pinHash?{pin_hash:pinHash}:{})};
-    if(isEdit){await supabase.from('formateurs').update(payload).eq('id',editingFormateurId);}
-    else{await supabase.from('formateurs').insert(payload);}
-
-    if(pin){
-      document.getElementById('f-pin-generated').textContent=pin;
-      document.getElementById('f-pin-display').classList.remove('hidden');
-      msgEl.innerHTML=`<div class="alert-ok">✅ Formateur ${isEdit?'modifié':'créé'} ! Transmettez le PIN ci-dessus.</div>`;
+    if(isEdit){
+      await supabase.from('formateurs').update(payload).eq('id',editingFormateurId);
+      msgEl.innerHTML='<div class="alert-ok">✅ Formateur modifié.</div>';
+      msgEl.classList.remove('hidden');
     }else{
-      msgEl.innerHTML=`<div class="alert-ok">✅ Formateur modifié.</div>`;
+      await supabase.from('formateurs').insert(payload);
+      // Construire l'URL de login avec le center_id pré-rempli
+      const base=window.location.origin+window.location.pathname.replace(/[^/]*$/,'');
+      const loginUrl=`${base}login-formateur.html?center=${CENTER.id}`;
+
+      // Sauvegarder le qr_url (optionnel)
+      await supabase.from('formateurs').update({qr_url:loginUrl}).eq('center_id',CENTER.id).eq('pin_hash',pinHash).single().catch(()=>{});
+
+      // Afficher PIN + QR
+      document.getElementById('f-pin-generated').textContent=pin;
+      document.getElementById('f-qr-url-display').textContent=`🔗 ${loginUrl}`;
+
+      // Générer le QR code
+      const qrEl=document.getElementById('f-qr-code');
+      qrEl.innerHTML='';
+      new QRCode(qrEl,{text:loginUrl,width:130,height:130,colorDark:'#1d4ed8',colorLight:'#ffffff'});
+
+      // Préparer la zone d'impression
+      document.getElementById('f-print-zone').innerHTML=buildFormateurCard(prenom,nom,pin,loginUrl,role);
+
+      document.getElementById('f-msg-ok').textContent=`✅ ${prenom} ${nom} créé(e) ! Remettez le QR code et le PIN.`;
+      document.getElementById('f-result').classList.remove('hidden');
+      document.getElementById('f-form-actions').classList.add('hidden');
     }
-    msgEl.classList.remove('hidden');
     loadFormateurs();loadAll();
   }catch(e){
     msgEl.innerHTML=`<div class="alert-err">❌ Erreur : ${e.message}</div>`;
@@ -716,9 +764,34 @@ function resetFormateurModal(){
   document.getElementById('modal-f-title').textContent='Nouveau formateur';
   ['f-prenom','f-nom','f-email','f-pin'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('f-role').value='formateur';
-  document.getElementById('f-pin-display').classList.add('hidden');
+  document.getElementById('f-result').classList.add('hidden');
+  document.getElementById('f-form-actions').classList.remove('hidden');
   document.getElementById('f-msg').classList.add('hidden');
+  document.getElementById('f-qr-code').innerHTML='';
+  document.getElementById('f-pin-generated').textContent='';
 }
+
+function buildFormateurCard(prenom,nom,pin,url,role){
+  return`<div style="font-family:sans-serif;padding:24px;max-width:400px;border:2px solid #1d4ed8;border-radius:16px;margin-top:20px;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+      <div style="font-size:2rem;">👨‍🏫</div>
+      <div>
+        <div style="font-size:1.3rem;font-weight:900;color:#111827;">${prenom} ${nom}</div>
+        <div style="font-size:.82rem;color:#6b7280;">${role} · ${CENTER.nom}</div>
+      </div>
+    </div>
+    <div style="background:#eff6ff;border-radius:10px;padding:14px;margin-bottom:14px;">
+      <div style="font-size:.7rem;font-weight:700;color:#1d4ed8;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;">Code PIN de connexion</div>
+      <div style="font-size:2.2rem;font-weight:900;letter-spacing:.35em;color:#1d4ed8;">${pin}</div>
+      <div style="font-size:.72rem;color:#6b7280;margin-top:4px;">À ne pas communiquer</div>
+    </div>
+    <div style="font-size:.72rem;color:#6b7280;margin-bottom:8px;">Scannez le QR code pour accéder à la page de connexion :</div>
+    <div style="font-size:.68rem;color:#374151;word-break:break-all;">${url}</div>
+    <div style="font-size:.65rem;color:#9ca3af;margin-top:12px;">MIB Prévention © 2026</div>
+  </div>`;
+}
+
+function printFormateurCard(){window.print();}
 
 async function toggleFormateur(id,actif){
   await supabase.from('formateurs').update({actif:!actif}).eq('id',id);
@@ -963,8 +1036,4 @@ function openModal(id){
   if(id==='modal-csv'){csvData=[];document.getElementById('csv-preview').classList.add('hidden');document.getElementById('csv-msg').classList.add('hidden');document.getElementById('btn-import').disabled=true;document.getElementById('csv-file').value='';}
   document.getElementById(id).classList.remove('hidden');
 }
-function closeModal(id){document.getElementById(id).classList.add('hidden');}
-document.querySelectorAll('.modal-bg').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.add('hidden');}));
-</script>
-</body>
-</html>
+function closeModal(id){document.getElementById(id).classList.add('hidden');
