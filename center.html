@@ -10,6 +10,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="statistiques.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Syne:wght@700;800;900&display=swap');
 
@@ -168,6 +170,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
       <div class="nav-item" onclick="showTab('formateurs')" id="nav-formateurs"><span class="nav-icon">👨‍🏫</span>Formateurs</div>
       <div class="nav-item" onclick="showTab('stagiaires')" id="nav-stagiaires"><span class="nav-icon">👨‍🎓</span>Stagiaires</div>
       <div class="nav-item" onclick="showTab('sessions')" id="nav-sessions"><span class="nav-icon">📡</span>Sessions</div>
+      <div class="nav-item" onclick="showTab('stats')" id="nav-stats"><span class="nav-icon">📈</span>Statistiques</div>
       <div class="sep"></div>
       <div class="nav-item" onclick="showTab('modules')" id="nav-modules"><span class="nav-icon">🧩</span>Mes modules</div>
       <div class="nav-item" onclick="showTab('qualiopi')" id="nav-qualiopi"><span class="nav-icon">📋</span>Qualiopi</div>
@@ -402,6 +405,44 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
         </div>
       </div>
 
+      <!-- ── STATISTIQUES ── -->
+      <div id="tab-stats" class="hidden">
+        <div class="flex justify-between items-center mb-5">
+          <h2 style="font-size:.95rem;font-weight:700;">Statistiques du centre</h2>
+          <button onclick="loadStats()" class="btn btn-blue btn-sm">🔄 Actualiser</button>
+        </div>
+
+        <!-- Loading -->
+        <div id="stats-loading" style="display:none;justify-content:center;align-items:center;padding:40px;gap:12px;">
+          <div style="width:20px;height:20px;border:3px solid rgba(37,99,235,.2);border-top-color:#2563eb;border-radius:50%;animation:sp .6s linear infinite;"></div>
+          <span style="color:var(--text2);font-size:.85rem;">Chargement des données...</span>
+        </div>
+
+        <!-- Ligne 1 : Sessions par mois + Répartition modules -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+          <div class="card p-5">
+            <h3 style="font-size:.85rem;font-weight:700;color:#374151;margin-bottom:16px;">📅 Sessions par mois</h3>
+            <div style="height:220px;position:relative;"><canvas id="chart-sessions-mois"></canvas></div>
+          </div>
+          <div class="card p-5">
+            <h3 style="font-size:.85rem;font-weight:700;color:#374151;margin-bottom:16px;">🧩 Répartition des modules</h3>
+            <div style="height:220px;position:relative;"><canvas id="chart-modules"></canvas></div>
+          </div>
+        </div>
+
+        <!-- Ligne 2 : Score par niveau + Activité hebdo -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div class="card p-5">
+            <h3 style="font-size:.85rem;font-weight:700;color:#374151;margin-bottom:16px;">🎯 Score moyen par niveau SSIAP</h3>
+            <div style="height:220px;position:relative;"><canvas id="chart-score-niveau"></canvas></div>
+          </div>
+          <div class="card p-5">
+            <h3 style="font-size:.85rem;font-weight:700;color:#374151;margin-bottom:16px;">📆 Activité des 7 derniers jours</h3>
+            <div style="height:220px;position:relative;"><canvas id="chart-activite-hebdo"></canvas></div>
+          </div>
+        </div>
+      </div>
+
     </div><!-- /contenu -->
   </div><!-- /main -->
 </div>
@@ -582,12 +623,13 @@ function logout(){SESSION.clear('centre');window.location.href='index.html';}
 // ============================================================
 // NAVIGATION
 // ============================================================
-const TABS=['dashboard','formateurs','stagiaires','sessions','modules','qualiopi','compte'];
+const TABS=['dashboard','formateurs','stagiaires','sessions','stats','modules','qualiopi','compte'];
 const TAB_TITLES={
   dashboard:['Tableau de bord','Vue générale de votre centre'],
   formateurs:['Formateurs','Gérez votre équipe pédagogique'],
   stagiaires:['Stagiaires','Liste et gestion des apprenants'],
   sessions:['Sessions','Historique de toutes les sessions'],
+  stats:['Statistiques','Analyse et suivi pédagogique'],
   modules:['Modules actifs','Fonctionnalités de votre plan'],
   qualiopi:['Qualiopi','Émargements et bilans pédagogiques'],
   compte:['Mon compte','Informations et licence']
@@ -606,6 +648,12 @@ function showTab(t){
   if(t==='modules')renderModules();
   if(t==='qualiopi')loadQualiopi();
   if(t==='compte')renderCompte();
+  if(t==='stats')loadStats();
+}
+
+function loadStats(){
+  if(typeof STATS==='undefined'){console.warn('statistiques.js non chargé');return;}
+  STATS.renderCentre(CENTER.id);
 }
 
 // ============================================================
