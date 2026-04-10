@@ -618,7 +618,7 @@ function updateSidebar(){
   document.getElementById('top-expire').textContent=CENTER.license_expires_at?UTILS.dateStr(CENTER.license_expires_at):'—';
 }
 
-function logout(){SESSION.clear('centre');window.location.href='index.html';}
+window.logout = function logout(){SESSION.clear('centre');window.location.href='index.html';}
 
 // ============================================================
 // NAVIGATION
@@ -634,7 +634,7 @@ const TAB_TITLES={
   qualiopi:['Qualiopi','Émargements et bilans pédagogiques'],
   compte:['Mon compte','Informations et licence']
 };
-function showTab(t){
+window.showTab = function showTab(t){
   TABS.forEach(id=>{
     document.getElementById(`tab-${id}`).classList.toggle('hidden',id!==t);
     document.getElementById(`nav-${id}`).classList.toggle('on',id===t);
@@ -651,7 +651,7 @@ function showTab(t){
   if(t==='stats')loadStats();
 }
 
-function loadStats(){
+window.loadStats = function loadStats(){
   if(typeof STATS==='undefined'){console.warn('statistiques.js non chargé');return;}
   STATS.renderCentre(CENTER.id);
 }
@@ -659,7 +659,7 @@ function loadStats(){
 // ============================================================
 // LOAD ALL (dashboard)
 // ============================================================
-async function loadAll(){
+window.loadAll = async function loadAll(){
   if(!CENTER)return;
   const cid=CENTER.id;
   const debut=new Date(new Date().setDate(1)).toISOString();
@@ -731,7 +731,7 @@ async function loadFormateurs(){
   }catch(e){console.error(e);}
 }
 
-async function saveFormateur(){
+window.saveFormateur = async function saveFormateur(){
   const prenom=document.getElementById('f-prenom').value.trim();
   const nom=document.getElementById('f-nom').value.trim();
   const email=document.getElementById('f-email').value.trim().toLowerCase();
@@ -792,7 +792,7 @@ async function saveFormateur(){
   }finally{btnEl.disabled=false;btnEl.textContent='Enregistrer';}
 }
 
-async function editFormateur(id){
+window.editFormateur = async function editFormateur(id){
   const{data}=await supabase.from('formateurs').select('*').eq('id',id).single();
   if(!data)return;
   editingFormateurId=id;
@@ -839,13 +839,13 @@ function buildFormateurCard(prenom,nom,pin,url,role){
   </div>`;
 }
 
-function printFormateurCard(){window.print();}
+window.printFormateurCard = function printFormateurCard(){window.print();}
 
-async function toggleFormateur(id,actif){
+window.toggleFormateur = async function toggleFormateur(id,actif){
   await supabase.from('formateurs').update({actif:!actif}).eq('id',id);
   loadFormateurs();
 }
-async function deleteFormateur(id){
+window.deleteFormateur = async function deleteFormateur(id){
   if(!confirm('Supprimer ce formateur ?'))return;
   await supabase.from('formateurs').delete().eq('id',id);
   loadFormateurs();loadAll();
@@ -891,7 +891,7 @@ function filterStagiaires(){
   ));
 }
 
-async function saveStagiaire(){
+window.saveStagiaire = async function saveStagiaire(){
   const prenom=document.getElementById('s-prenom').value.trim();
   const nom=document.getElementById('s-nom').value.trim();
   const email=document.getElementById('s-email').value.trim().toLowerCase();
@@ -922,7 +922,7 @@ async function saveStagiaire(){
   }finally{btnEl.disabled=false;btnEl.textContent='Enregistrer';}
 }
 
-async function editStagiaire(id){
+window.editStagiaire = async function editStagiaire(id){
   const s=allStagiaires.find(x=>x.id===id);if(!s)return;
   editingStagiaireId=id;
   document.getElementById('modal-s-title').textContent='Modifier le stagiaire';
@@ -935,13 +935,13 @@ async function editStagiaire(id){
   openModal('modal-add-stagiaire');
 }
 
-async function deleteStagiaire(id){
+window.deleteStagiaire = async function deleteStagiaire(id){
   if(!confirm('Supprimer ce stagiaire ?'))return;
   await supabase.from('stagiaires').update({actif:false}).eq('id',id);
   loadStagiaires();loadAll();
 }
 
-function exportCSV(){
+window.exportCSV = function exportCSV(){
   const rows=[['Prenom','Nom','Email','Telephone','Niveau'],...allStagiaires.map(s=>[s.prenom,s.nom,s.email||'',s.telephone||'',s.niveau])];
   const csv=rows.map(r=>r.join(';')).join('\n');
   const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
@@ -949,7 +949,7 @@ function exportCSV(){
 }
 
 // ── CSV IMPORT ──
-function previewCSV(input){
+window.previewCSV = function previewCSV(input){
   const file=input.files[0];if(!file)return;
   const reader=new FileReader();
   reader.onload=e=>{
@@ -969,7 +969,7 @@ function previewCSV(input){
   reader.readAsText(file,'UTF-8');
 }
 
-async function importCSV(){
+window.importCSV = async function importCSV(){
   if(!csvData.length)return;
   const existing=new Set(allStagiaires.map(s=>`${s.nom.toLowerCase()}_${s.prenom.toLowerCase()}`));
   const toInsert=csvData.filter(r=>{const k=`${(r[1]||'').toLowerCase()}_${(r[0]||'').toLowerCase()}`;return!existing.has(k);})
@@ -1043,7 +1043,7 @@ function renderModules(){
 // ============================================================
 // QUALIOPI
 // ============================================================
-async function loadQualiopi(){
+window.loadQualiopi = async function loadQualiopi(){
   if(!CENTER)return;
   try{
     const{data:parts}=await supabase.from('formation_participants').select('*,formation_sessions(titre,date_session,formateurs(nom,prenom))').limit(20);
@@ -1078,10 +1078,10 @@ function statusBadge(s){
   const c=m[s]||{cls:'b-gray',lbl:s||'—'};
   return`<span class="badge ${c.cls}" style="font-size:.68rem;">${c.lbl}</span>`;
 }
-function openModal(id){
+window.openModal = function openModal(id){
   if(id==='modal-add-formateur')resetFormateurModal();
   if(id==='modal-add-stagiaire'){editingStagiaireId=null;document.getElementById('modal-s-title').textContent='Nouveau stagiaire';['s-prenom','s-nom','s-email','s-tel'].forEach(i=>document.getElementById(i).value='');document.getElementById('s-niveau').value='SSIAP1';document.getElementById('s-msg').classList.add('hidden');}
   if(id==='modal-csv'){csvData=[];document.getElementById('csv-preview').classList.add('hidden');document.getElementById('csv-msg').classList.add('hidden');document.getElementById('btn-import').disabled=true;document.getElementById('csv-file').value='';}
   document.getElementById(id).classList.remove('hidden');
 }
-function closeModal(id){document.getElementById(id).classList.add('hidden');
+window.closeModal = function closeModal(id){document.getElementById(id).classList.add('hidden');
