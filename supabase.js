@@ -11,7 +11,8 @@ const SUPABASE_URL = 'https://ozfkmlokovxigfnwjeuk.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im96ZmttbG9rb3Z4aWdmbndqZXVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODUzODUsImV4cCI6MjA5MTE2MTM4NX0.zu5V20Nz7vO3dSYhOtr7mqS7VAMaUDVS2Ibs01xS9Fk';
 
 // Client Supabase global — utilisé partout
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+// On réaffecte window.supabase pour éviter le conflit CDN
+window.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   realtime: {
     params: { eventsPerSecond: 10 }
   }
