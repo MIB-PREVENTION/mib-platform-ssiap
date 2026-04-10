@@ -191,7 +191,7 @@ const SESSION = {
 
   // Sauvegarder la session dans localStorage
   save: (key, data) => {
-    sessionStorage.setItem(`mib_${key}`, JSON.stringify({
+    localStorage.setItem(`mib_${key}`, JSON.stringify({
       ...data,
       savedAt: new Date().toISOString()
     }));
@@ -200,19 +200,19 @@ const SESSION = {
   // Récupérer une session sauvegardée
   load: (key) => {
     try {
-      const raw = sessionStorage.getItem(`mib_${key}`);
+      const raw = localStorage.getItem(`mib_${key}`);
       return raw ? JSON.parse(raw) : null;
     } catch { return null; }
   },
 
   // Supprimer une session
-  clear: (key) => sessionStorage.removeItem(`mib_${key}`),
+  clear: (key) => localStorage.removeItem(`mib_${key}`),
 
   // Supprimer toutes les sessions MIB
   clearAll: () => {
-    Object.keys(sessionStorage)
+    Object.keys(localStorage)
       .filter(k => k.startsWith('mib_'))
-      .forEach(k => sessionStorage.removeItem(k));
+      .forEach(k => localStorage.removeItem(k));
   }
 };
 
