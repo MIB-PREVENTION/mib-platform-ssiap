@@ -605,13 +605,20 @@ window.addEventListener('DOMContentLoaded',async()=>{
   const session=SESSION.load('centre');
   if(!session){window.location.href='index.html';return;}
   try{
-    CENTER=await DB.getById('centers',session.center_id);
+    const{data,error}=await supabase.from('centers').select('*').eq('id',session.center_id).maybeSingle();
+    if(error)console.error('Supabase error:',error);
+    if(!data){
+      console.warn('Centre non trouvé en DB, utilisation session fallback');
+      CENTER={id:session.center_id,nom:session.center_nom,plan:session.plan,max_formateurs:3,max_stagiaires:30};
+    }else{
+      CENTER=data;
+    }
     updateSidebar();
     loadAll();
-  }catch(e){console.error(e);window.location.href='index.html';}
+  }catch(e){console.error('Init error:',e);}
 });
 
-function updateSidebar(){
+window.updateSidebar = function updateSidebar(){
   if(!CENTER)return;
   document.getElementById('sb-centre-nom').textContent=CENTER.nom;
   document.getElementById('sb-plan-lbl').textContent=`Plan ${CENTER.plan||'—'}`;
@@ -708,7 +715,7 @@ window.loadAll = async function loadAll(){
 // ============================================================
 // FORMATEURS
 // ============================================================
-async function loadFormateurs(){
+window.loadFormateurs = async function loadFormateurs(){
   if(!CENTER)return;
   try{
     const{data}=await supabase.from('formateurs').select('*').eq('center_id',CENTER.id).order('nom');
@@ -854,7 +861,7 @@ window.deleteFormateur = async function deleteFormateur(id){
 // ============================================================
 // STAGIAIRES
 // ============================================================
-async function loadStagiaires(){
+window.loadStagiaires = async function loadStagiaires(){
   if(!CENTER)return;
   try{
     const{data}=await supabase.from('stagiaires').select('*').eq('center_id',CENTER.id).eq('actif',true).order('nom');
@@ -864,7 +871,7 @@ async function loadStagiaires(){
   }catch(e){console.error(e);}
 }
 
-function renderStagiaires(data){
+window.renderStagiaires = function renderStagiaires(data){
   const tbody=document.getElementById('body-stagiaires');
   if(!data.length){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:20px;">Aucun stagiaire</td></tr>';return;}
   tbody.innerHTML=data.map(s=>`<tr>
@@ -882,7 +889,7 @@ function renderStagiaires(data){
   </tr>`).join('');
 }
 
-function filterStagiaires(){
+window.filterStagiaires = function filterStagiaires(){
   const q=document.getElementById('search-stag').value.toLowerCase();
   const niv=document.getElementById('filter-niveau').value;
   renderStagiaires(allStagiaires.filter(s=>
@@ -990,7 +997,7 @@ window.importCSV = async function importCSV(){
 // ============================================================
 // SESSIONS
 // ============================================================
-async function loadSessions(){
+window.loadSessions = async function loadSessions(){
   if(!CENTER)return;
   try{
     const[{data:qs},{data:cs},{data:ssi}]=await Promise.all([
@@ -1027,7 +1034,7 @@ const MODULE_DEFS=[
   {key:'module_ssi_supervise',icon:'🔴',title:'SSI Supervisé',desc:'Simulation panneau SSI avec formateur superviseur'},
   {key:'module_ssi_autoformation',icon:'🟡',title:'SSI Auto-formation',desc:'Scénarios SSI guidés, stagiaire seul à la maison'},
 ];
-function renderModules(){
+window.renderModules = function renderModules(){
   const grid=document.getElementById('grid-modules');
   grid.innerHTML=MODULE_DEFS.map(m=>{
     const on=CENTER&&CENTER[m.key];
@@ -1061,7 +1068,7 @@ window.loadQualiopi = async function loadQualiopi(){
 // ============================================================
 // COMPTE
 // ============================================================
-function renderCompte(){
+window.renderCompte = function renderCompte(){
   if(!CENTER)return;
   document.getElementById('info-nom').textContent=CENTER.nom;
   document.getElementById('info-email').textContent=CENTER.email;
@@ -1073,7 +1080,7 @@ function renderCompte(){
 // ============================================================
 // HELPERS
 // ============================================================
-function statusBadge(s){
+window.statusBadge = function statusBadge(s){
   const m={active:{cls:'b-green',lbl:'✅ Actif'},en_cours:{cls:'b-blue',lbl:'🔵 En cours'},terminee:{cls:'b-gray',lbl:'⬜ Terminée'},attente:{cls:'b-orange',lbl:'⏳ Attente'},termine:{cls:'b-gray',lbl:'⬜ Terminé'},playing:{cls:'b-blue',lbl:'🎮 En jeu'},annulee:{cls:'b-red',lbl:'❌ Annulée'}};
   const c=m[s]||{cls:'b-gray',lbl:s||'—'};
   return`<span class="badge ${c.cls}" style="font-size:.68rem;">${c.lbl}</span>`;
