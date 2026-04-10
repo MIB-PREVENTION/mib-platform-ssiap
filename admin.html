@@ -608,7 +608,8 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
 // ============================================================
 // AUTH
 // ============================================================
-const ADMIN_HASH='a8f5f167f44f4964e6c998dee827110c847d0b4a5d61b3e7a99ee18fc3e00b37'; // SHA-256('MIB2026admin')
+const ADMIN_HASH='12797f6fe53c637ad9032fd2512c15580d40d018cec1e8a1acbae0caa6f04130'; // SHA-256('MIB2026admin')
+async function hashLocal(text){const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text));return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');}
 
 let allCentres=[];
 
@@ -617,7 +618,7 @@ async function doLogin(){
   const err=document.getElementById('login-err');
   err.classList.add('hidden');
   if(!pwd)return;
-  const h=await UTILS.hash(pwd);
+  const h=await hashLocal(pwd);
   if(h!==ADMIN_HASH){err.textContent='❌ Mot de passe incorrect.';err.classList.remove('hidden');return;}
   SESSION.save('admin',{role:'admin'});
   showApp();
