@@ -215,7 +215,8 @@ switchTab('login');
 
 // Vérifier token dans URL
 window.addEventListener('DOMContentLoaded',()=>{
-  if(SESSION.load('centre')){window.location.href='center.html';return;}
+  // Session effacée à chaque chargement — login obligatoire
+  SESSION.clear('centre');
   const p=new URLSearchParams(window.location.search);
   const token=p.get('reset');
   if(token){resetToken=token;switchTab('token');}
