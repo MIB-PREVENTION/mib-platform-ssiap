@@ -392,7 +392,7 @@ const STATS = {
   },
 
   // ============================================================
-  // RENDER — FORMATEUR
+  // RENDER — FORMATEUR noveau
   // ============================================================
   async renderFormateur(formateurId, centerId) {
     const el = document.getElementById('stats-loading');
