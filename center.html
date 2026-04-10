@@ -613,19 +613,28 @@ let editingStagiaireId=null;
 // ============================================================
 window.addEventListener('DOMContentLoaded',async()=>{
   const session=SESSION.load('centre');
+  console.log('SESSION:', session);
   if(!session){window.location.href='index.html';return;}
+  // Utiliser immédiatement les données de session (affichage instantané)
+  CENTER={
+    id:session.center_id,
+    nom:session.center_nom,
+    plan:session.plan,
+    max_formateurs:session.max_formateurs||3,
+    max_stagiaires:session.max_stagiaires||30
+  };
+  updateSidebar();
+  loadAll();
+  // Enrichir avec les données complètes de la DB en arrière-plan
   try{
     const{data,error}=await supabase.from('centers').select('*').eq('id',session.center_id).maybeSingle();
-    if(error)console.error('Supabase error:',error);
-    if(!data){
-      console.warn('Centre non trouvé en DB, utilisation session fallback');
-      CENTER={id:session.center_id,nom:session.center_nom,plan:session.plan,max_formateurs:3,max_stagiaires:30};
-    }else{
+    console.log('DB result:', data, error);
+    if(data){
       CENTER=data;
+      updateSidebar();
+      loadAll();
     }
-    updateSidebar();
-    loadAll();
-  }catch(e){console.error('Init error:',e);}
+  }catch(e){console.error('DB error:',e);}
 });
 
 window.updateSidebar = function updateSidebar(){
