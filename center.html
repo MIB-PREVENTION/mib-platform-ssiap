@@ -588,7 +588,17 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
   </div>
 </div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
+<script>
+// ============================================================
+// DÉCLARATIONS GLOBALES ANTICIPÉES (évite "not defined" avec Cloudflare)
+// ============================================================
+window.showTab = window.showTab || function(t){ console.log('showTab appelé avant init:', t); };
+window.logout  = window.logout  || function(){ sessionStorage.clear(); window.location.href='index.html'; };
+window.loadAll = window.loadAll || function(){};
+window.openModal  = window.openModal  || function(id){ document.getElementById(id)?.classList.remove('hidden'); };
+window.closeModal = window.closeModal || function(id){ document.getElementById(id)?.classList.add('hidden'); };
+
 // ============================================================
 // ÉTAT
 // ============================================================
