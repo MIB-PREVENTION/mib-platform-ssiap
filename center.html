@@ -156,43 +156,18 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
   var _s;
   try{_s=JSON.parse(localStorage.getItem('mib_centre'));}catch(e){}
   if(!_s){document.addEventListener('DOMContentLoaded',function(){window.location.href='index.html';});return;}
-  
   window.CENTER={id:_s.center_id,nom:_s.center_nom,plan:_s.plan,email:_s.email||'',license_key:_s.license_key||'',license_expires_at:_s.license_expires_at||null,max_formateurs:_s.max_formateurs||3,max_stagiaires:_s.max_stagiaires||30};
-  
   document.addEventListener('DOMContentLoaded',function(){
-    // Sidebar
-    var n=document.getElementById('sb-centre-nom');
-    var p=document.getElementById('sb-plan-lbl');
-    if(n)n.textContent=_s.center_nom;
-    if(p)p.textContent='Plan '+(_s.plan||'—');
-    
-    // Fonctions globales si pas définies
-    if(typeof window.openModal!=='function')
-      window.openModal=function(id){var el=document.getElementById(id);if(el)el.classList.remove('hidden');};
-    if(typeof window.closeModal!=='function')
-      window.closeModal=function(id){var el=document.getElementById(id);if(el)el.classList.add('hidden');};
-    if(typeof window.logout!=='function')
-      window.logout=function(){localStorage.removeItem('mib_centre');window.location.href='index.html';};
-    if(typeof window.showTab!=='function')
-      window.showTab=function(t){
-        ['dashboard','formateurs','stagiaires','sessions','stats','modules','qualiopi','compte'].forEach(function(id){
-          var tab=document.getElementById('tab-'+id);
-          var nav=document.getElementById('nav-'+id);
-          if(tab)tab.classList.toggle('hidden',id!==t);
-          if(nav)nav.classList.toggle('on',id===t);
-        });
-        if(t==='formateurs'&&typeof loadFormateurs==='function')loadFormateurs();
-        if(t==='stagiaires'&&typeof loadStagiaires==='function')loadStagiaires();
-        if(t==='sessions'&&typeof loadSessions==='function')loadSessions();
-        if(t==='modules'&&typeof renderModules==='function')renderModules();
-        if(t==='compte'&&typeof renderCompte==='function')renderCompte();
-        if(t==='stats'&&typeof loadStats==='function')loadStats();
-      };
-    
-    // Charger le dashboard
-    setTimeout(function(){
-      if(typeof loadAll==='function')loadAll();
-    },800);
+    var n=document.getElementById('sb-centre-nom');var p=document.getElementById('sb-plan-lbl');
+    if(n)n.textContent=_s.center_nom;if(p)p.textContent='Plan '+(_s.plan||'—');
+    if(typeof window.showTab!=='function')window.showTab=function(t){['dashboard','formateurs','stagiaires','sessions','stats','modules','qualiopi','compte'].forEach(function(id){var tab=document.getElementById('tab-'+id);var nav=document.getElementById('nav-'+id);if(tab)tab.classList.toggle('hidden',id!==t);if(nav)nav.classList.toggle('on',id===t);});var titles={dashboard:['Tableau de bord','Vue générale de votre centre'],formateurs:['Formateurs','Gérez votre équipe pédagogique'],stagiaires:['Stagiaires','Liste et gestion des apprenants'],sessions:['Sessions','Historique de toutes les sessions'],stats:['Statistiques','Analyse et suivi pédagogique'],modules:['Modules actifs','Fonctionnalités de votre plan'],qualiopi:['Qualiopi','Émargements et bilans pédagogiques'],compte:['Mon compte','Informations et licence']};var ti=titles[t]||['',''];var el1=document.getElementById('top-title');var el2=document.getElementById('top-sub');if(el1)el1.textContent=ti[0];if(el2)el2.textContent=ti[1];if(t==='formateurs'&&typeof loadFormateurs==='function')loadFormateurs();if(t==='stagiaires'&&typeof loadStagiaires==='function')loadStagiaires();if(t==='sessions'&&typeof loadSessions==='function')loadSessions();if(t==='modules'&&typeof renderModules==='function')renderModules();if(t==='qualiopi'&&typeof loadQualiopi==='function')loadQualiopi();if(t==='compte'&&typeof renderCompte==='function')renderCompte();if(t==='stats'&&typeof loadStats==='function')loadStats();};
+    if(typeof window.logout!=='function')window.logout=function(){localStorage.removeItem('mib_centre');window.location.href='index.html';};
+    if(typeof window.openModal!=='function')window.openModal=function(id){if(id==='modal-add-formateur'){['f-prenom','f-nom','f-email'].forEach(function(i){var el=document.getElementById(i);if(el)el.value='';});var fr=document.getElementById('f-role');if(fr)fr.value='formateur';var res=document.getElementById('f-result');if(res)res.classList.add('hidden');var fa=document.getElementById('f-form-actions');if(fa)fa.classList.remove('hidden');var fm=document.getElementById('f-msg');if(fm)fm.classList.add('hidden');}if(id==='modal-add-stagiaire'){['s-prenom','s-nom','s-email','s-tel'].forEach(function(i){var el=document.getElementById(i);if(el)el.value='';});var sn=document.getElementById('s-niveau');if(sn)sn.value='SSIAP1';var sm=document.getElementById('s-msg');if(sm)sm.classList.add('hidden');}if(id==='modal-csv'){var cp=document.getElementById('csv-preview');if(cp)cp.classList.add('hidden');var cm=document.getElementById('csv-msg');if(cm)cm.classList.add('hidden');var bi=document.getElementById('btn-import');if(bi)bi.disabled=true;var cf=document.getElementById('csv-file');if(cf)cf.value='';}var el=document.getElementById(id);if(el)el.classList.remove('hidden');};
+    if(typeof window.closeModal!=='function')window.closeModal=function(id){var el=document.getElementById(id);if(el)el.classList.add('hidden');};
+    if(typeof window.filterStagiaires!=='function')window.filterStagiaires=function(){if(typeof renderStagiaires==='function'&&window._allStagiaires){var q=(document.getElementById('search-stag').value||'').toLowerCase();var niv=document.getElementById('filter-niveau').value||'';renderStagiaires(window._allStagiaires.filter(function(s){return(!q||(s.nom+' '+s.prenom).toLowerCase().includes(q))&&(!niv||s.niveau===niv);}));}};
+    if(typeof window.saveFormateur!=='function')window.saveFormateur=async function(){var prenom=(document.getElementById('f-prenom').value||'').trim();var nom=(document.getElementById('f-nom').value||'').trim();var email=(document.getElementById('f-email').value||'').trim();var role=(document.getElementById('f-role').value||'formateur');var msg=document.getElementById('f-msg');msg.classList.add('hidden');if(!prenom||!nom){msg.innerHTML='<div class="alert-err">❌ Prénom et nom obligatoires.</div>';msg.classList.remove('hidden');return;}var btn=document.getElementById('btn-save-f');if(btn){btn.disabled=true;btn.innerHTML='<span class="spin"></span>';}try{var pin='';for(var a=0;a<20;a++){var c=String(Math.floor(100000+Math.random()*900000));var ph=await UTILS.hash(c);var{data:ex}=await supabase.from('formateurs').select('id').eq('center_id',window.CENTER.id).eq('pin_hash',ph).eq('actif',true);if(!ex||!ex.length){pin=c;break;}}if(!pin)throw new Error('Impossible de générer un PIN unique');var pinHash=await UTILS.hash(pin);var{error}=await supabase.from('formateurs').insert({prenom,nom,email:email||null,role,pin_hash:pinHash,center_id:window.CENTER.id,actif:true});if(error)throw error;var pg=document.getElementById('f-pin-generated');if(pg)pg.textContent=pin;var ok=document.getElementById('f-msg-ok');if(ok)ok.textContent='✅ '+prenom+' '+nom+' créé(e) ! PIN: '+pin;var res=document.getElementById('f-result');if(res)res.classList.remove('hidden');var fa=document.getElementById('f-form-actions');if(fa)fa.classList.add('hidden');var base=window.location.origin+window.location.pathname.replace(/[^/]*$/,'');var loginUrl=base+'login-formateur.html?center='+window.CENTER.id;var qrEl=document.getElementById('f-qr-code');if(qrEl&&typeof QRCode!=='undefined'){qrEl.innerHTML='';new QRCode(qrEl,{text:loginUrl,width:130,height:130,colorDark:'#1d4ed8',colorLight:'#ffffff'});}var ud=document.getElementById('f-qr-url-display');if(ud)ud.textContent='🔗 '+loginUrl;if(typeof loadFormateurs==='function')loadFormateurs();if(typeof loadAll==='function')loadAll();}catch(e){msg.innerHTML='<div class="alert-err">❌ '+e.message+'</div>';msg.classList.remove('hidden');}finally{if(btn){btn.disabled=false;btn.textContent='Enregistrer';}}};
+    if(typeof window.saveStagiaire!=='function')window.saveStagiaire=async function(){var prenom=(document.getElementById('s-prenom').value||'').trim();var nom=(document.getElementById('s-nom').value||'').trim();var email=(document.getElementById('s-email').value||'').trim();var tel=(document.getElementById('s-tel').value||'').trim();var niveau=(document.getElementById('s-niveau').value||'SSIAP1');var msg=document.getElementById('s-msg');msg.classList.add('hidden');if(!prenom||!nom){msg.innerHTML='<div class="alert-err">❌ Prénom et nom obligatoires.</div>';msg.classList.remove('hidden');return;}var btn=document.getElementById('btn-save-s');if(btn){btn.disabled=true;btn.innerHTML='<span class="spin"></span>';}try{var pin='';for(var a=0;a<20;a++){var c=String(Math.floor(1000+Math.random()*9000));var ph=await UTILS.hash(c);var{data:ex}=await supabase.from('stagiaires').select('id').eq('center_id',window.CENTER.id).eq('pin_hash',ph).eq('actif',true);if(!ex||!ex.length){pin=c;break;}}if(!pin)throw new Error('Impossible de générer un PIN unique');var pinHash=await UTILS.hash(pin);var{error}=await supabase.from('stagiaires').insert({prenom,nom,email:email||null,telephone:tel||null,niveau,center_id:window.CENTER.id,actif:true,pin_hash:pinHash});if(error)throw error;msg.innerHTML='<div class="alert-ok">✅ '+prenom+' '+nom+' ajouté(e) !<br><strong>PIN stagiaire : '+pin+'</strong><br><small>À remettre au stagiaire — valable pour la durée de la formation.</small></div>';msg.classList.remove('hidden');setTimeout(function(){if(typeof closeModal==='function')closeModal('modal-add-stagiaire');if(typeof loadStagiaires==='function')loadStagiaires();if(typeof loadAll==='function')loadAll();},3000);}catch(e){msg.innerHTML='<div class="alert-err">❌ '+e.message+'</div>';msg.classList.remove('hidden');}finally{if(btn){btn.disabled=false;btn.textContent='Enregistrer';}}};
+    setTimeout(function(){if(typeof loadAll==='function')loadAll();},800);
   });
 })();
 </script>
@@ -515,12 +490,10 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
           <option value="responsable">Responsable de centre</option>
         </select>
       </div>
-      <div>
-        <label class="lbl">PIN (6 chiffres)</label>
-        <input type="text" id="f-pin" class="inp" placeholder="Ex : 123456" maxlength="6" inputmode="numeric"
-          oninput="this.value=this.value.replace(/[^0-9]/g,'')"
-          style="letter-spacing:.3em;font-size:1.2rem;text-align:center;">
-        <p style="font-size:.7rem;color:var(--text3);margin-top:4px;">Ce PIN permet au formateur de se connecter.</p>
+      <input type="hidden" id="f-pin">
+      <div style="background:linear-gradient(145deg,#eff6ff,#dbeafe);border-radius:12px;padding:12px;text-align:center;">
+        <div style="font-size:.7rem;font-weight:700;color:#1d4ed8;text-transform:uppercase;letter-spacing:.07em;">🔐 Code PIN</div>
+        <div style="font-size:.82rem;color:#374151;margin-top:4px;">Généré automatiquement à la création</div>
       </div>
       <!-- Résultat après création -->
       <div id="f-result" class="hidden">
@@ -660,8 +633,6 @@ window.addEventListener('DOMContentLoaded',async()=>{
   const session=SESSION.load('centre');
   console.log('SESSION:', session);
   if(!session){window.location.href='index.html';return;}
-  document.getElementById('sb-centre-nom').textContent=session.center_nom;
-  document.getElementById('sb-plan-lbl').textContent='Plan '+(session.plan||'—');
   // Utiliser immédiatement les données de session (affichage instantané)
   CENTER={
     id:session.center_id,
