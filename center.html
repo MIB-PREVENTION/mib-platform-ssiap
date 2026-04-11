@@ -936,34 +936,92 @@ window.filterStagiaires = function filterStagiaires(){
 }
 
 window.saveStagiaire = async function saveStagiaire(){
-  const prenom=document.getElementById('s-prenom').value.trim();
-  const nom=document.getElementById('s-nom').value.trim();
-  const email=document.getElementById('s-email').value.trim().toLowerCase();
-  const tel=document.getElementById('s-tel').value.trim();
-  const niveau=document.getElementById('s-niveau').value;
-  const msgEl=document.getElementById('s-msg');
+  const prenom = document.getElementById('s-prenom').value.trim();
+  const nom    = document.getElementById('s-nom').value.trim();
+  const email  = document.getElementById('s-email').value.trim().toLowerCase();
+  const tel    = document.getElementById('s-tel').value.trim();
+  const niveau = document.getElementById('s-niveau').value;
+  const msgEl  = document.getElementById('s-msg');
   msgEl.classList.add('hidden');
-  if(!prenom||!nom){msgEl.innerHTML='<div class="alert-err">❌ Prénom et nom obligatoires.</div>';msgEl.classList.remove('hidden');return;}
 
-  const btnEl=document.getElementById('btn-save-s');
-  btnEl.disabled=true;btnEl.innerHTML='<span class="spin"></span>';
-  const isEdit=!!editingStagiaireId;
+  if(!prenom||!nom){
+    msgEl.innerHTML='<div class="alert-err">❌ Prénom et nom obligatoires.</div>';
+    msgEl.classList.remove('hidden');
+    return;
+  }
+
+  const btnEl = document.getElementById('btn-save-s');
+  btnEl.disabled = true;
+  btnEl.innerHTML = '<span class="spin"></span>';
+
   try{
+    const isEdit = !!editingStagiaireId;
+
     // Vérif doublon
     if(!isEdit){
-      const dup=allStagiaires.find(s=>s.nom.toLowerCase()===nom.toLowerCase()&&s.prenom.toLowerCase()===prenom.toLowerCase());
-      if(dup){msgEl.innerHTML='<div class="alert-err">⚠️ Un stagiaire avec ce nom existe déjà.</div>';msgEl.classList.remove('hidden');btnEl.disabled=false;btnEl.textContent='Enregistrer';return;}
+      const dup = allStagiaires.find(s =>
+        s.nom.toLowerCase()===nom.toLowerCase() &&
+        s.prenom.toLowerCase()===prenom.toLowerCase()
+      );
+      if(dup){
+        msgEl.innerHTML='<div class="alert-err">⚠️ Un stagiaire avec ce nom existe déjà.</div>';
+        msgEl.classList.remove('hidden');
+        btnEl.disabled=false; btnEl.textContent='Enregistrer';
+        return;
+      }
     }
-    const payload={prenom,nom,email:email||null,telephone:tel||null,niveau,center_id:CENTER.id,actif:true};
-    if(isEdit)await supabase.from('stagiaires').update(payload).eq('id',editingStagiaireId);
-    else await supabase.from('stagiaires').insert(payload);
-    msgEl.innerHTML=`<div class="alert-ok">✅ Stagiaire ${isEdit?'modifié':'ajouté'} !</div>`;
-    msgEl.classList.remove('hidden');
-    loadStagiaires();loadAll();
+
+    let pin = '';
+    let pinHash = null;
+
+    if(!isEdit){
+      // Générer un PIN 4 chiffres unique
+      for(let a=0; a<20; a++){
+        const c = String(Math.floor(1000 + Math.random()*9000));
+        const ph = await UTILS.hash(c);
+        const {data:ex} = await supabase.from('stagiaires')
+          .select('id').eq('center_id',CENTER.id).eq('pin_hash',ph).eq('actif',true);
+        if(!ex||!ex.length){ pin=c; pinHash=ph; break; }
+      }
+      if(!pin) throw new Error('Impossible de générer un PIN unique');
+    }
+
+    const payload = {
+      prenom, nom,
+      email: email||null,
+      telephone: tel||null,
+      niveau,
+      center_id: CENTER.id,
+      actif: true,
+      ...(pinHash ? {pin_hash: pinHash} : {})
+    };
+
+    if(isEdit){
+      await supabase.from('stagiaires').update(payload).eq('id', editingStagiaireId);
+      msgEl.innerHTML='<div class="alert-ok">✅ Stagiaire modifié !</div>';
+      msgEl.classList.remove('hidden');
+      await loadStagiaires(); loadAll();
+    } else {
+      const {error} = await supabase.from('stagiaires').insert(payload);
+      if(error) throw error;
+      msgEl.innerHTML=`<div class="alert-ok">
+        ✅ <strong>${prenom} ${nom}</strong> ajouté(e) !<br>
+        <strong>PIN stagiaire : ${pin}</strong><br>
+        <small>À remettre au stagiaire — valable pour toute la formation.</small>
+      </div>`;
+      msgEl.classList.remove('hidden');
+      await loadStagiaires(); loadAll();
+      // Fermer la modale après 3 secondes
+      setTimeout(()=>{ closeModal('modal-add-stagiaire'); }, 3000);
+    }
+
   }catch(e){
     msgEl.innerHTML=`<div class="alert-err">❌ Erreur : ${e.message}</div>`;
     msgEl.classList.remove('hidden');
-  }finally{btnEl.disabled=false;btnEl.textContent='Enregistrer';}
+  }finally{
+    btnEl.disabled=false;
+    btnEl.textContent='Enregistrer';
+  }
 }
 
 window.editStagiaire = async function editStagiaire(id){
