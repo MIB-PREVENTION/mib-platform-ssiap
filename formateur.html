@@ -110,14 +110,18 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
     });
     return;
   }
+  // login-formateur.html sauvegarde : formateur_nom (combiné), role_formateur, modules
+  var parts = (_s.formateur_nom || '').split(' ');
   window.FORMATEUR = {
     id: _s.formateur_id,
-    prenom: _s.prenom,
-    nom: _s.nom,
-    role: _s.role || 'formateur',
+    prenom: parts[0] || '',
+    nom: parts.slice(1).join(' ') || '',
+    role: _s.role_formateur || 'formateur',
     center_id: _s.center_id,
-    center_nom: _s.center_nom || ''
+    center_nom: _s.center_nom || '',
+    modules: _s.modules || {}
   };
+  window._SESSION_CENTER_DATA = _s.modules || {};
 })();
 </script>
 
@@ -324,11 +328,8 @@ window.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('sb-nom').textContent = `${FORMATEUR.prenom} ${FORMATEUR.nom}`;
   document.getElementById('sb-centre').textContent = FORMATEUR.center_nom || '—';
 
-  // Charger les données du centre pour les modules
-  try {
-    const { data } = await supabase.from('centers').select('*').eq('id', FORMATEUR.center_id).maybeSingle();
-    if (data) CENTER_DATA = data;
-  } catch(e) { console.error(e); }
+  // Modules du centre disponibles directement depuis la session
+  CENTER_DATA = window._SESSION_CENTER_DATA || {};
 
   loadDashboard();
 });
