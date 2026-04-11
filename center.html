@@ -615,6 +615,8 @@ window.addEventListener('DOMContentLoaded',async()=>{
   const session=SESSION.load('centre');
   console.log('SESSION:', session);
   if(!session){window.location.href='index.html';return;}
+  document.getElementById('sb-centre-nom').textContent=session.center_nom;
+  document.getElementById('sb-plan-lbl').textContent='Plan '+(session.plan||'—');
   // Utiliser immédiatement les données de session (affichage instantané)
   CENTER={
     id:session.center_id,
