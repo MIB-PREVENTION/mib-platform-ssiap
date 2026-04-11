@@ -909,21 +909,29 @@ window.loadStagiaires = async function loadStagiaires(){
 }
 
 window.renderStagiaires = function renderStagiaires(data){
-  const tbody=document.getElementById('body-stagiaires');
-  if(!data.length){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:20px;">Aucun stagiaire</td></tr>';return;}
-  tbody.innerHTML=data.map(s=>`<tr>
-    <td><strong>${s.nom}</strong></td>
-    <td>${s.prenom}</td>
-    <td style="font-size:.8rem;color:var(--text2);">${s.email||'—'}</td>
-    <td><span class="badge ${s.niveau==='SSIAP1'?'b-blue':s.niveau==='SSIAP2'?'b-orange':'b-red'}">${s.niveau}</span></td>
-    <td style="font-size:.8rem;">${UTILS.dateStr(s.created_at)}</td>
-    <td>
-      <div style="display:flex;gap:5px;">
-        <button onclick="editStagiaire('${s.id}')" class="btn btn-blue btn-xs">✏️</button>
-        <button onclick="deleteStagiaire('${s.id}')" class="btn btn-red btn-xs">🗑️</button>
-      </div>
-    </td>
-  </tr>`).join('');
+  const tbody = document.getElementById('body-stagiaires');
+  if(!data || !data.length){
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:20px;">Aucun stagiaire</td></tr>';
+    return;
+  }
+  try {
+    tbody.innerHTML = data.map(s => `<tr>
+      <td><strong>${s.nom||'—'}</strong></td>
+      <td>${s.prenom||'—'}</td>
+      <td style="font-size:.8rem;color:var(--text2);">${s.email||'—'}</td>
+      <td><span class="badge ${s.niveau==='SSIAP1'?'b-blue':s.niveau==='SSIAP2'?'b-orange':'b-red'}">${s.niveau||'—'}</span></td>
+      <td style="font-size:.8rem;">${s.created_at ? UTILS.dateStr(s.created_at) : '—'}</td>
+      <td>
+        <div style="display:flex;gap:5px;">
+          <button onclick="editStagiaire('${s.id}')" class="btn btn-blue btn-xs">✏️</button>
+          <button onclick="deleteStagiaire('${s.id}')" class="btn btn-red btn-xs">🗑️</button>
+        </div>
+      </td>
+    </tr>`).join('');
+  } catch(e) {
+    console.error('renderStagiaires error:', e);
+    tbody.innerHTML = `<tr><td colspan="6" style="color:red;padding:20px;">${e.message}</td></tr>`;
+  }
 }
 
 window.filterStagiaires = function filterStagiaires(){
