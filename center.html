@@ -152,8 +152,36 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
 </head>
 <body>
 <script>
-try{var _s=JSON.parse(localStorage.getItem('mib_centre'));if(_s){document.addEventListener('DOMContentLoaded',function(){var n=document.getElementById('sb-centre-nom');var p=document.getElementById('sb-plan-lbl');if(n)n.textContent=_s.center_nom;if(p)p.textContent='Plan '+(_s.plan||'—');if(!_s.center_id)window.location.href='index.html';});}}catch(e){}
-</script> 
+// Fix immédiat — exécuté avant tout le reste
+try{
+  var _s=JSON.parse(localStorage.getItem('mib_centre'));
+  if(!_s){window.location.href='index.html';}
+  else{
+    document.addEventListener('DOMContentLoaded',function(){
+      // Afficher les données du centre
+      var n=document.getElementById('sb-centre-nom');
+      var p=document.getElementById('sb-plan-lbl');
+      if(n)n.textContent=_s.center_nom;
+      if(p)p.textContent='Plan '+(_s.plan||'—');
+      
+      // Rendre showTab global si pas encore défini
+      if(typeof window.showTab!=='function'){
+        window.showTab=function(t){
+          ['dashboard','formateurs','stagiaires','sessions','stats','modules','qualiopi','compte'].forEach(function(id){
+            var tab=document.getElementById('tab-'+id);
+            var nav=document.getElementById('nav-'+id);
+            if(tab)tab.classList.toggle('hidden',id!==t);
+            if(nav)nav.classList.toggle('on',id===t);
+          });
+        };
+      }
+      if(typeof window.logout!=='function'){
+        window.logout=function(){localStorage.removeItem('mib_centre');window.location.href='index.html';};
+      }
+    });
+  }
+}catch(e){}
+</script>
 <div class="bg-wrap"></div>
 
 <div class="relative z-10 flex min-h-screen">
