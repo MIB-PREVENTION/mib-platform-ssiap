@@ -163,6 +163,11 @@ try{
       var p=document.getElementById('sb-plan-lbl');
       if(n)n.textContent=_s.center_nom;
       if(p)p.textContent='Plan '+(_s.plan||'—');
+      if(p)p.textContent='Plan '+(_s.plan||'—');
+      // Initialiser CENTER pour que les fonctions Supabase fonctionnent
+      window.CENTER={id:_s.center_id,nom:_s.center_nom,plan:_s.plan,max_formateurs:_s.max_formateurs||3,max_stagiaires:_s.max_stagiaires||30};
+      // Charger les données dès que tout est prêt
+      setTimeout(function(){if(typeof loadAll==='function')loadAll();},500);
       
       // Rendre showTab global si pas encore défini
       if(typeof window.showTab!=='function'){
