@@ -151,6 +151,9 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
 </style>
 </head>
 <body>
+<script>
+try{var _s=JSON.parse(localStorage.getItem('mib_centre'));if(_s){document.addEventListener('DOMContentLoaded',function(){var n=document.getElementById('sb-centre-nom');var p=document.getElementById('sb-plan-lbl');if(n)n.textContent=_s.center_nom;if(p)p.textContent='Plan '+(_s.plan||'—');if(!_s.center_id)window.location.href='index.html';});}}catch(e){}
+</script> 
 <div class="bg-wrap"></div>
 
 <div class="relative z-10 flex min-h-screen">
