@@ -144,7 +144,6 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
     <nav>
       <div class="nav-item on" onclick="showTab('dashboard')" id="nav-dashboard"><span class="nav-icon">📊</span>Tableau de bord</div>
       <div class="nav-item" onclick="showTab('formateurs')" id="nav-formateurs"><span class="nav-icon">👨‍🏫</span>Formateurs</div>
-      <div class="nav-item" onclick="showTab('stagiaires')" id="nav-stagiaires"><span class="nav-icon">👨‍🎓</span>Stagiaires</div>
       <div class="nav-item" onclick="showTab('sessions')" id="nav-sessions"><span class="nav-icon">📋</span>Sessions</div>
       <div class="nav-item" onclick="showTab('stats')" id="nav-stats"><span class="nav-icon">📈</span>Statistiques</div>
       <div class="sep"></div>
@@ -332,6 +331,17 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
             <div class="kpi"><div class="kpi-icon">✅</div><div class="kpi-val text-green-600" id="detail-nb-present">—</div><div class="kpi-lbl">Présents</div></div>
             <div class="kpi"><div class="kpi-icon">📅</div><div class="kpi-val text-purple-600" style="font-size:1.1rem;" id="detail-dates">—</div><div class="kpi-lbl">Période</div></div>
           </div>
+          <!-- Assigner formateur -->
+          <div class="card p-4 mb-5" id="detail-formateur-card">
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <div style="font-size:.68rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.07em;">👨‍🏫 Formateur responsable</div>
+                <div style="font-size:.9rem;font-weight:600;margin-top:4px;" id="detail-formateur-nom">—</div>
+              </div>
+              <button onclick="openModal('modal-assign-formateur')" class="btn btn-blue btn-sm">✏️ Changer</button>
+            </div>
+          </div>
+
           <div class="card p-5 mb-5">
             <div class="flex justify-between items-center mb-4">
               <h3 style="font-size:.9rem;font-weight:700;">👨‍🎓 Stagiaires inscrits</h3>
@@ -560,6 +570,29 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
       <div class="flex gap-3">
         <button onclick="closeModal('modal-csv')" class="btn btn-gray flex-1">Annuler</button>
         <button onclick="importCSV()" class="btn btn-blue flex-1" id="btn-import" disabled>Importer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Assigner formateur à session -->
+<div id="modal-assign-formateur" class="modal-bg hidden">
+  <div class="modal-box" style="max-width:420px;">
+    <div class="flex justify-between items-center mb-5">
+      <h3 style="font-size:1.05rem;font-weight:800;">👨‍🏫 Assigner un formateur</h3>
+      <button onclick="closeModal('modal-assign-formateur')" style="width:32px;height:32px;border-radius:50%;background:#f3f4f6;border:none;cursor:pointer;">✕</button>
+    </div>
+    <div class="space-y-3">
+      <div>
+        <label class="lbl">Formateur responsable</label>
+        <select id="assign-formateur-select" class="inp">
+          <option value="">— Aucun formateur —</option>
+        </select>
+      </div>
+      <div id="assign-f-msg" class="hidden"></div>
+      <div class="flex gap-3 mt-1">
+        <button onclick="closeModal('modal-assign-formateur')" class="btn btn-gray flex-1">Annuler</button>
+        <button onclick="assignFormateur()" class="btn btn-blue flex-1">Confirmer</button>
       </div>
     </div>
   </div>
@@ -1117,6 +1150,9 @@ window.openSessionDetail = async function(id) {
   document.getElementById('detail-sess-statut').innerHTML = sessionStatutBadge(currentSession.statut);
   document.getElementById('detail-statut-select').value = currentSession.statut || 'planifiee';
   document.getElementById('detail-dates').textContent = (currentSession.date_debut ? UTILS.dateStr(currentSession.date_debut) : '—') + (currentSession.date_fin ? ' → '+UTILS.dateStr(currentSession.date_fin) : '');
+  // Afficher le formateur
+  const f = allFormateurs.find(x => x.id === currentSession.formateur_id);
+  document.getElementById('detail-formateur-nom').textContent = f ? `${f.prenom} ${f.nom}` : 'Aucun formateur assigné';
   await loadParticipants();
   renderDetailModules();
 };
@@ -1328,13 +1364,11 @@ window.openModal = function(id) {
     document.getElementById('csv-file').value = '';
   }
   if (id === 'modal-add-session') {
-    // Remplir le select formateurs
     const sel = document.getElementById('sess-formateur');
     sel.innerHTML = '<option value="">— Sélectionner un formateur —</option>';
     allFormateurs.forEach(f => {
       const opt = document.createElement('option');
-      opt.value = f.id;
-      opt.textContent = `${f.prenom} ${f.nom}`;
+      opt.value = f.id; opt.textContent = `${f.prenom} ${f.nom}`;
       sel.appendChild(opt);
     });
     document.getElementById('sess-msg').classList.add('hidden');
@@ -1345,7 +1379,38 @@ window.openModal = function(id) {
     document.getElementById('part-msg').classList.add('hidden');
     openModal_participants();
   }
+  if (id === 'modal-assign-formateur') {
+    const sel = document.getElementById('assign-formateur-select');
+    sel.innerHTML = '<option value="">— Aucun formateur —</option>';
+    allFormateurs.forEach(f => {
+      const opt = document.createElement('option');
+      opt.value = f.id; opt.textContent = `${f.prenom} ${f.nom}`;
+      if (currentSession && currentSession.formateur_id === f.id) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    document.getElementById('assign-f-msg').classList.add('hidden');
+  }
   document.getElementById(id).classList.remove('hidden');
+};
+
+window.assignFormateur = async function() {
+  const formateur_id = document.getElementById('assign-formateur-select').value || null;
+  const msgEl = document.getElementById('assign-f-msg');
+  try {
+    const { error } = await supabase.from('sessions_formation').update({formateur_id}).eq('id', currentSession.id);
+    if (error) throw error;
+    currentSession.formateur_id = formateur_id;
+    // Mettre à jour l'affichage
+    const f = allFormateurs.find(x => x.id === formateur_id);
+    const nomEl = document.getElementById('detail-formateur-nom');
+    nomEl.textContent = f ? `${f.prenom} ${f.nom}` : 'Aucun formateur assigné';
+    document.getElementById('detail-sess-sub').textContent = f ? `Formateur : ${f.prenom} ${f.nom}` : 'Aucun formateur assigné';
+    closeModal('modal-assign-formateur');
+    loadSessions();
+  } catch(e) {
+    msgEl.innerHTML = `<div class="alert-err">❌ ${e.message}</div>`;
+    msgEl.classList.remove('hidden');
+  }
 };
 
 window.closeModal = function(id) {
@@ -1354,14 +1419,13 @@ window.closeModal = function(id) {
 
 window.loadAll = window.loadAll || function(){};
 
-// Démarrage
-document.addEventListener('DOMContentLoaded', () => {
-  const s = SESSION.load('centre');
-  if (s) {
-    document.getElementById('sb-centre-nom').textContent = s.center_nom || '';
-    document.getElementById('sb-plan-lbl').textContent = `Plan ${s.plan||'—'}`;
-  }
-});
+// Démarrage initial sidebar
+if (window.CENTER) {
+  const el1 = document.getElementById('sb-centre-nom');
+  const el2 = document.getElementById('sb-plan-lbl');
+  if (el1) el1.textContent = window.CENTER.nom || '';
+  if (el2) el2.textContent = `Plan ${window.CENTER.plan||'—'}`;
+}
 </script>
 </body>
 </html>
