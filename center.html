@@ -149,6 +149,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
       <div class="sep"></div>
       <div class="nav-item" onclick="showTab('modules')" id="nav-modules"><span class="nav-icon">🧩</span>Mes modules</div>
       <div class="nav-item" onclick="showTab('qualiopi')" id="nav-qualiopi"><span class="nav-icon">📋</span>Qualiopi</div>
+      <div class="nav-item" onclick="showTab('avis')" id="nav-avis"><span class="nav-icon">💬</span>Avis & Retours</div>
       <div class="nav-item" onclick="showTab('compte')" id="nav-compte"><span class="nav-icon">⚙️</span>Mon compte</div>
     </nav>
     <div style="margin-top:auto;padding-top:30px;">
@@ -218,7 +219,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
             <h2 style="font-size:1rem;font-weight:700;">Équipe de formateurs</h2>
             <p style="font-size:.78rem;color:var(--text2);margin-top:2px;">Gérez les accès PIN de vos formateurs</p>
           </div>
-          <button onclick="editingFormateurId=null; openModal('modal-add-formateur')" class="btn btn-green">+ Ajouter</button>
+          <button onclick="openModal('modal-add-formateur')" class="btn btn-green">+ Ajouter</button>
         </div>
         <div class="card p-5">
           <div class="overflow-x-auto">
@@ -354,10 +355,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
               </table>
             </div>
           </div>
-          <div class="card p-5">
-            <h3 style="font-size:.9rem;font-weight:700;margin-bottom:14px;">🧩 Modules disponibles pour cette session</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3" id="detail-modules"></div>
-          </div>
+
         </div>
       </div>
 
@@ -413,6 +411,21 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
             <div class="pin-display" style="letter-spacing:.12em;font-size:.9rem;" id="info-key">—</div>
             <p style="font-size:.72rem;color:var(--text3);margin-top:8px;text-align:center;">Conservez cette clé pour vous reconnecter</p>
           </div>
+        </div>
+      </div>
+
+
+      <!-- ── AVIS & RETOURS ── -->
+      <div id="tab-avis" class="hidden">
+        <div class="flex flex-wrap justify-between items-center gap-3 mb-5">
+          <div>
+            <h2 style="font-size:1rem;font-weight:700;">Avis & Retours</h2>
+            <p style="font-size:.78rem;color:var(--text2);margin-top:2px;">Vos retours et demandes au superviseur MIB</p>
+          </div>
+          <button onclick="openModal('modal-avis')" class="btn btn-blue">+ Nouvel avis / Demande</button>
+        </div>
+        <div class="card p-5">
+          <div id="avis-list"><div style="text-align:center;color:var(--text3);padding:30px;">Chargement...</div></div>
         </div>
       </div>
 
@@ -478,7 +491,6 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
         <div style="font-size:.7rem;font-weight:700;color:#1d4ed8;text-transform:uppercase;letter-spacing:.07em;">🔐 Code PIN</div>
         <div style="font-size:.82rem;color:#374151;margin-top:4px;">Généré automatiquement à la création</div>
       </div>
-      <div id="f-pin-info" class="hidden" style="background:linear-gradient(145deg,#eff6ff,#dbeafe);border-radius:12px;padding:12px;text-align:center;font-weight:700;color:#1d4ed8;font-size:.9rem;letter-spacing:.1em;"></div>
       <div id="f-result" class="hidden">
         <div class="sep"></div>
         <div id="f-msg-ok" class="alert-ok mb-4"></div>
@@ -714,14 +726,16 @@ window.logout = function() { SESSION.clear('centre'); window.location.href = 'in
 // ============================================================
 // NAVIGATION
 // ============================================================
-const TABS = ['dashboard','formateurs','sessions','stats','modules','qualiopi','compte'];
+const TABS = ['dashboard','formateurs','stagiaires','sessions','stats','modules','qualiopi','avis','compte'];
 const TAB_TITLES = {
   dashboard: ['Tableau de bord','Vue générale de votre centre'],
   formateurs: ['Formateurs','Gérez votre équipe pédagogique'],
+  stagiaires: ['Stagiaires','Liste et gestion des apprenants'],
   sessions: ['Sessions de formation','Gérez vos sessions INI / REC / RAN'],
   stats: ['Statistiques','Analyse et suivi pédagogique'],
   modules: ['Modules actifs','Fonctionnalités de votre plan'],
   qualiopi: ['Qualiopi','Émargements et bilans pédagogiques'],
+  avis: ['Avis & Retours','Vos retours et demandes'],
   compte: ['Mon compte','Informations et licence']
 };
 window.showTab = function(t) {
@@ -737,6 +751,7 @@ window.showTab = function(t) {
   if (t === 'sessions') loadSessions();
   if (t === 'modules') renderModules();
   if (t === 'qualiopi') loadQualiopi();
+  if (t === 'avis') loadAvis();
   if (t === 'compte') renderCompte();
   if (t === 'stats') loadStats();
 };
@@ -826,53 +841,38 @@ window.loadFormateurs = async function() {
 
 window.saveFormateur = async function() {
   const prenom = document.getElementById('f-prenom').value.trim();
-  const nom    = document.getElementById('f-nom').value.trim();
-  const email  = document.getElementById('f-email').value.trim().toLowerCase();
-  const role   = document.getElementById('f-role').value;
-  const msgEl  = document.getElementById('f-msg');
+  const nom = document.getElementById('f-nom').value.trim();
+  const email = document.getElementById('f-email').value.trim().toLowerCase();
+  const role = document.getElementById('f-role').value;
+  const msgEl = document.getElementById('f-msg');
   msgEl.classList.add('hidden');
   if (!prenom || !nom) { msgEl.innerHTML='<div class="alert-err">❌ Prénom et nom obligatoires.</div>'; msgEl.classList.remove('hidden'); return; }
   const btnEl = document.getElementById('btn-save-f');
   btnEl.disabled = true; btnEl.innerHTML = '<span class="spin"></span>';
   try {
-    if (editingFormateurId) {
-      // ── MODE ÉDITION ──
-      const payload = { prenom, nom, email: email||null, role };
-      const { error } = await supabase.from('formateurs').update(payload).eq('id', editingFormateurId);
-      if (error) throw error;
-      msgEl.innerHTML = '<div class="alert-ok">✅ Formateur modifié avec succès.</div>';
-      msgEl.classList.remove('hidden');
-      loadFormateurs(); loadAll();
-      setTimeout(() => closeModal('modal-add-formateur'), 1500);
-    } else {
-      // ── MODE CRÉATION ──
-      let pin = '', pinHash = null;
-      for (let a = 0; a < 20; a++) {
-        const c = String(Math.floor(100000 + Math.random()*900000));
-        const ph = await UTILS.hash(c);
-        const { data: ex } = await supabase.from('formateurs').select('id').eq('center_id',CENTER.id).eq('pin_hash',ph).eq('actif',true);
-        if (!ex || !ex.length) { pin = c; pinHash = ph; break; }
-      }
-      if (!pin) throw new Error('Impossible de générer un PIN unique');
-      const { error } = await supabase.from('formateurs').insert({
-        prenom, nom, email: email||null, role,
-        pin_hash: pinHash, pin_clair: pin,
-        center_id: CENTER.id, actif: true
-      });
-      if (error) throw error;
-      const base = window.location.origin + window.location.pathname.replace(/[^/]*$/, '');
-      const loginUrl = `${base}login-formateur.html?center=${CENTER.id}`;
-      document.getElementById('f-pin-generated').textContent = pin;
-      document.getElementById('f-qr-url-display').textContent = `🔗 ${loginUrl}`;
-      const qrEl = document.getElementById('f-qr-code');
-      qrEl.innerHTML = '';
-      if (typeof QRCode !== 'undefined') new QRCode(qrEl, {text:loginUrl,width:130,height:130,colorDark:'#1d4ed8',colorLight:'#ffffff'});
-      document.getElementById('f-print-zone').innerHTML = buildFormateurCard(prenom, nom, pin, loginUrl, role);
-      document.getElementById('f-msg-ok').textContent = `✅ ${prenom} ${nom} créé(e) ! PIN : ${pin}`;
-      document.getElementById('f-result').classList.remove('hidden');
-      document.getElementById('f-form-actions').classList.add('hidden');
-      loadFormateurs(); loadAll();
+    // Générer PIN 6 chiffres unique
+    let pin = '', pinHash = null;
+    for (let a = 0; a < 20; a++) {
+      const c = String(Math.floor(100000 + Math.random()*900000));
+      const ph = await UTILS.hash(c);
+      const { data: ex } = await supabase.from('formateurs').select('id').eq('center_id',CENTER.id).eq('pin_hash',ph).eq('actif',true);
+      if (!ex || !ex.length) { pin = c; pinHash = ph; break; }
     }
+    if (!pin) throw new Error('Impossible de générer un PIN unique');
+    const { error } = await supabase.from('formateurs').insert({ prenom, nom, email: email||null, role, pin_hash: pinHash, center_id: CENTER.id, actif: true });
+    if (error) throw error;
+    const base = window.location.origin + window.location.pathname.replace(/[^/]*$/, '');
+    const loginUrl = `${base}login-formateur.html?center=${CENTER.id}`;
+    document.getElementById('f-pin-generated').textContent = pin;
+    document.getElementById('f-qr-url-display').textContent = `🔗 ${loginUrl}`;
+    const qrEl = document.getElementById('f-qr-code');
+    qrEl.innerHTML = '';
+    if (typeof QRCode !== 'undefined') new QRCode(qrEl, {text:loginUrl,width:130,height:130,colorDark:'#1d4ed8',colorLight:'#ffffff'});
+    document.getElementById('f-print-zone').innerHTML = buildFormateurCard(prenom, nom, pin, loginUrl, role);
+    document.getElementById('f-msg-ok').textContent = `✅ ${prenom} ${nom} créé(e) ! PIN : ${pin}`;
+    document.getElementById('f-result').classList.remove('hidden');
+    document.getElementById('f-form-actions').classList.add('hidden');
+    loadFormateurs(); loadAll();
   } catch(e) {
     msgEl.innerHTML = `<div class="alert-err">❌ ${e.message}</div>`;
     msgEl.classList.remove('hidden');
@@ -889,17 +889,6 @@ window.editFormateur = async function(id) {
   document.getElementById('f-email').value = data.email || '';
   document.getElementById('f-role').value = data.role;
   document.getElementById('f-msg').classList.add('hidden');
-  document.getElementById('f-result').classList.add('hidden');
-  document.getElementById('f-form-actions').classList.remove('hidden');
-
-  // Afficher le PIN actuel si disponible
-  const pinInfo = document.getElementById('f-pin-info');
-  if (pinInfo) {
-    pinInfo.textContent = data.pin_clair ? `PIN actuel : ${data.pin_clair}` : 'PIN non disponible (ancien compte)';
-    pinInfo.classList.remove('hidden');
-  }
-
-  document.getElementById(id === undefined ? '' : 'modal-add-formateur').classList?.remove('hidden');
   openModal('modal-add-formateur');
 };
 
@@ -913,8 +902,6 @@ function resetFormateurModal() {
   document.getElementById('f-msg').classList.add('hidden');
   document.getElementById('f-qr-code').innerHTML = '';
   document.getElementById('f-pin-generated').textContent = '';
-  const pinInfo = document.getElementById('f-pin-info');
-  if (pinInfo) pinInfo.classList.add('hidden');
 }
 
 function buildFormateurCard(prenom, nom, pin, url, role) {
@@ -1182,7 +1169,7 @@ window.openSessionDetail = async function(id) {
   const f = allFormateurs.find(x => x.id === currentSession.formateur_id);
   document.getElementById('detail-formateur-nom').textContent = f ? `${f.prenom} ${f.nom}` : 'Aucun formateur assigné';
   await loadParticipants();
-  renderDetailModules();
+
 };
 
 window.backToSessionsList = function() {
@@ -1282,24 +1269,7 @@ window.addSelectedParticipants = async function() {
   } catch(e) { partMsg.innerHTML=`<div class="alert-err">❌ ${e.message}</div>`; partMsg.classList.remove('hidden'); }
 };
 
-window.renderDetailModules = function() {
-  const MODULE_DEFS = [
-    {key:'module_auto_entrainement', icon:'🎯', title:'Auto-entraînement', url:'auto-entrainement.html'},
-    {key:'module_quiz_salle', icon:'📡', title:'Quiz Salle', url:'quiz-salle.html'},
-    {key:'module_challenge_cup', icon:'🏆', title:'Challenge Cup', url:'challenge-cup.html'},
-    {key:'module_ssi_supervise', icon:'🔴', title:'SSI Supervisé', url:'ssi-supervise.html'},
-    {key:'module_ssi_autoformation', icon:'🟡', title:'SSI Auto-formation', url:'ssi-autoformation.html'},
-  ];
-  const grid = document.getElementById('detail-modules');
-  const actifs = MODULE_DEFS.filter(m => CENTER && CENTER[m.key]);
-  if (!actifs.length) { grid.innerHTML='<p style="color:var(--text3);font-size:.82rem;">Aucun module actif sur votre plan.</p>'; return; }
-  grid.innerHTML = actifs.map(m => `
-    <div class="mod-card mod-on" style="cursor:pointer;" onclick="window.open('${m.url}?session=${currentSession.id}&center=${CENTER.id}','_blank')">
-      <div class="mod-icon">${m.icon}</div>
-      <div class="mod-title">${m.title}</div>
-      <div class="mod-status" style="margin-top:8px;">▶ Lancer →</div>
-    </div>`).join('');
-};
+
 
 window.deleteSession = async function(id) {
   if (!confirm('Supprimer cette session et tous ses participants ?')) return;
@@ -1376,12 +1346,7 @@ window.sessionStatutBadge = function(s) {
 };
 
 window.openModal = function(id) {
-  if (id === 'modal-add-formateur') {
-  if (!editingFormateurId) resetFormateurModal();
-  // Cacher le PIN info dans tous les cas si nouveau formateur
-  const pinInfo = document.getElementById('f-pin-info');
-  if (pinInfo && !editingFormateurId) pinInfo.classList.add('hidden');
-}
+  if (id === 'modal-add-formateur') resetFormateurModal();
   if (id === 'modal-add-stagiaire') {
     editingStagiaireId = null;
     document.getElementById('modal-s-title').textContent = 'Nouveau stagiaire';
@@ -1446,6 +1411,63 @@ window.assignFormateur = async function() {
   }
 };
 
+
+// ============================================================
+// AVIS & RETOURS
+// ============================================================
+window.loadAvis = async function() {
+  if (!CENTER) return;
+  try {
+    const { data } = await supabase.from('avis_retours')
+      .select('*').eq('center_id', CENTER.id).order('created_at', {ascending: false});
+    const el = document.getElementById('avis-list');
+    if (!data || !data.length) {
+      el.innerHTML = '<div style="text-align:center;color:var(--text3);padding:30px;">Aucun avis envoyé pour le moment.<br><small>Cliquez sur "+ Nouvel avis" pour partager votre retour.</small></div>';
+      return;
+    }
+    const typeIcons = {avis:'💬', demande:'📋', bug:'🐛', suggestion:'💡'};
+    const statutColors = {nouveau:'b-blue', en_cours:'b-orange', resolu:'b-green'};
+    el.innerHTML = data.map(a => {
+      const date = UTILS.dateStr(a.created_at);
+      const icon = typeIcons[a.type] || '💬';
+      const cls = statutColors[a.statut] || 'b-gray';
+      return '<div style="padding:16px;border-radius:14px;border:1.5px solid rgba(0,0,0,.07);margin-bottom:10px;background:linear-gradient(145deg,#f8faff,#eef1f8);">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'
+        + '<span style="font-size:.82rem;font-weight:700;">' + icon + ' ' + (a.type||'avis').charAt(0).toUpperCase()+(a.type||'avis').slice(1) + ' — ' + date + '</span>'
+        + '<span class="badge ' + cls + '">' + (a.statut||'nouveau') + '</span></div>'
+        + '<p style="font-size:.85rem;color:var(--text);">' + (a.message||'') + '</p>'
+        + (a.reponse ? '<div style="margin-top:10px;padding:10px;background:#eff6ff;border-radius:10px;font-size:.82rem;color:#1d4ed8;"><strong>Réponse MIB :</strong> ' + a.reponse + '</div>' : '')
+        + '</div>';
+    }).join('');
+  } catch(e) { console.error(e); }
+};
+
+window.sendAvis = async function() {
+  const type = document.getElementById('avis-type').value;
+  const message = document.getElementById('avis-message').value.trim();
+  const msgEl = document.getElementById('avis-msg');
+  msgEl.classList.add('hidden');
+  if (!message) { msgEl.innerHTML='<div class="alert-err">❌ Écrivez votre message.</div>'; msgEl.classList.remove('hidden'); return; }
+  const btnEl = document.getElementById('btn-send-avis');
+  btnEl.disabled = true; btnEl.innerHTML = '<span class="spin"></span>';
+  try {
+    const { error } = await supabase.from('avis_retours').insert({
+      center_id: CENTER.id, auteur_type: 'centre',
+      auteur_id: CENTER.id, auteur_nom: CENTER.nom,
+      type, message, statut: 'nouveau'
+    });
+    if (error) throw error;
+    msgEl.innerHTML = '<div class="alert-ok">✅ Votre avis a été envoyé !</div>';
+    msgEl.classList.remove('hidden');
+    document.getElementById('avis-message').value = '';
+    loadAvis();
+    setTimeout(() => closeModal('modal-avis'), 1500);
+  } catch(e) {
+    msgEl.innerHTML = '<div class="alert-err">❌ ' + e.message + '</div>';
+    msgEl.classList.remove('hidden');
+  } finally { btnEl.disabled = false; btnEl.textContent = 'Envoyer'; }
+};
+
 window.closeModal = function(id) {
   document.getElementById(id).classList.add('hidden');
 };
@@ -1460,5 +1482,36 @@ if (window.CENTER) {
   if (el2) el2.textContent = `Plan ${window.CENTER.plan||'—'}`;
 }
 </script>
+
+<!-- Modal Avis -->
+<div id="modal-avis" class="modal-bg hidden">
+  <div class="modal-box">
+    <div class="flex justify-between items-center mb-5">
+      <h3 style="font-size:1.05rem;font-weight:800;">💬 Nouvel avis / Demande</h3>
+      <button onclick="closeModal('modal-avis')" style="width:32px;height:32px;border-radius:50%;background:#f3f4f6;border:none;cursor:pointer;">✕</button>
+    </div>
+    <div class="space-y-3">
+      <div>
+        <label class="lbl">Type</label>
+        <select id="avis-type" class="inp">
+          <option value="avis">💬 Avis général</option>
+          <option value="demande">📋 Demande</option>
+          <option value="bug">🐛 Signalement bug</option>
+          <option value="suggestion">💡 Suggestion</option>
+        </select>
+      </div>
+      <div>
+        <label class="lbl">Message</label>
+        <textarea id="avis-message" class="inp" rows="4" placeholder="Décrivez votre avis, demande ou suggestion..."></textarea>
+      </div>
+      <div id="avis-msg" class="hidden"></div>
+      <div class="flex gap-3 mt-1">
+        <button onclick="closeModal('modal-avis')" class="btn btn-gray flex-1">Annuler</button>
+        <button onclick="sendAvis()" class="btn btn-blue flex-1" id="btn-send-avis">Envoyer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
