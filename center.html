@@ -218,7 +218,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
             <h2 style="font-size:1rem;font-weight:700;">Équipe de formateurs</h2>
             <p style="font-size:.78rem;color:var(--text2);margin-top:2px;">Gérez les accès PIN de vos formateurs</p>
           </div>
-          <button onclick="openModal('modal-add-formateur')" class="btn btn-green">+ Ajouter</button>
+          <button onclick="editingFormateurId=null; openModal('modal-add-formateur')" class="btn btn-green">+ Ajouter</button>
         </div>
         <div class="card p-5">
           <div class="overflow-x-auto">
@@ -913,6 +913,8 @@ function resetFormateurModal() {
   document.getElementById('f-msg').classList.add('hidden');
   document.getElementById('f-qr-code').innerHTML = '';
   document.getElementById('f-pin-generated').textContent = '';
+  const pinInfo = document.getElementById('f-pin-info');
+  if (pinInfo) pinInfo.classList.add('hidden');
 }
 
 function buildFormateurCard(prenom, nom, pin, url, role) {
@@ -1374,7 +1376,12 @@ window.sessionStatutBadge = function(s) {
 };
 
 window.openModal = function(id) {
-  if (id === 'modal-add-formateur' && !editingFormateurId) resetFormateurModal();
+  if (id === 'modal-add-formateur') {
+  if (!editingFormateurId) resetFormateurModal();
+  // Cacher le PIN info dans tous les cas si nouveau formateur
+  const pinInfo = document.getElementById('f-pin-info');
+  if (pinInfo && !editingFormateurId) pinInfo.classList.add('hidden');
+}
   if (id === 'modal-add-stagiaire') {
     editingStagiaireId = null;
     document.getElementById('modal-s-title').textContent = 'Nouveau stagiaire';
