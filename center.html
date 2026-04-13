@@ -1347,7 +1347,7 @@ window.sessionStatutBadge = function(s) {
 };
 
 window.openModal = function(id) {
-  if (id === 'modal-add-formateur') resetFormateurModal();
+  if (id === 'modal-add-formateur' && !editingFormateurId) resetFormateurModal();
   if (id === 'modal-add-stagiaire') {
     editingStagiaireId = null;
     document.getElementById('modal-s-title').textContent = 'Nouveau stagiaire';
