@@ -149,7 +149,8 @@ let preCentreId=null;
 
 // ── INIT ──
 window.addEventListener('DOMContentLoaded',async()=>{
-  if(SESSION.load('formateur')){window.location.href='formateur.html';return;}
+  // Session effacée à chaque chargement — login obligatoire
+  SESSION.clear('formateur');
   // Vérifier si center_id dans URL (depuis QR code)
   const p=new URLSearchParams(window.location.search);
   const cid=p.get('center');
