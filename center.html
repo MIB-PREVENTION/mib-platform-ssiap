@@ -825,38 +825,53 @@ window.loadFormateurs = async function() {
 
 window.saveFormateur = async function() {
   const prenom = document.getElementById('f-prenom').value.trim();
-  const nom = document.getElementById('f-nom').value.trim();
-  const email = document.getElementById('f-email').value.trim().toLowerCase();
-  const role = document.getElementById('f-role').value;
-  const msgEl = document.getElementById('f-msg');
+  const nom    = document.getElementById('f-nom').value.trim();
+  const email  = document.getElementById('f-email').value.trim().toLowerCase();
+  const role   = document.getElementById('f-role').value;
+  const msgEl  = document.getElementById('f-msg');
   msgEl.classList.add('hidden');
   if (!prenom || !nom) { msgEl.innerHTML='<div class="alert-err">❌ Prénom et nom obligatoires.</div>'; msgEl.classList.remove('hidden'); return; }
   const btnEl = document.getElementById('btn-save-f');
   btnEl.disabled = true; btnEl.innerHTML = '<span class="spin"></span>';
   try {
-    // Générer PIN 6 chiffres unique
-    let pin = '', pinHash = null;
-    for (let a = 0; a < 20; a++) {
-      const c = String(Math.floor(100000 + Math.random()*900000));
-      const ph = await UTILS.hash(c);
-      const { data: ex } = await supabase.from('formateurs').select('id').eq('center_id',CENTER.id).eq('pin_hash',ph).eq('actif',true);
-      if (!ex || !ex.length) { pin = c; pinHash = ph; break; }
+    if (editingFormateurId) {
+      // ── MODE ÉDITION ──
+      const payload = { prenom, nom, email: email||null, role };
+      const { error } = await supabase.from('formateurs').update(payload).eq('id', editingFormateurId);
+      if (error) throw error;
+      msgEl.innerHTML = '<div class="alert-ok">✅ Formateur modifié avec succès.</div>';
+      msgEl.classList.remove('hidden');
+      loadFormateurs(); loadAll();
+      setTimeout(() => closeModal('modal-add-formateur'), 1500);
+    } else {
+      // ── MODE CRÉATION ──
+      let pin = '', pinHash = null;
+      for (let a = 0; a < 20; a++) {
+        const c = String(Math.floor(100000 + Math.random()*900000));
+        const ph = await UTILS.hash(c);
+        const { data: ex } = await supabase.from('formateurs').select('id').eq('center_id',CENTER.id).eq('pin_hash',ph).eq('actif',true);
+        if (!ex || !ex.length) { pin = c; pinHash = ph; break; }
+      }
+      if (!pin) throw new Error('Impossible de générer un PIN unique');
+      const { error } = await supabase.from('formateurs').insert({
+        prenom, nom, email: email||null, role,
+        pin_hash: pinHash, pin_clair: pin,
+        center_id: CENTER.id, actif: true
+      });
+      if (error) throw error;
+      const base = window.location.origin + window.location.pathname.replace(/[^/]*$/, '');
+      const loginUrl = `${base}login-formateur.html?center=${CENTER.id}`;
+      document.getElementById('f-pin-generated').textContent = pin;
+      document.getElementById('f-qr-url-display').textContent = `🔗 ${loginUrl}`;
+      const qrEl = document.getElementById('f-qr-code');
+      qrEl.innerHTML = '';
+      if (typeof QRCode !== 'undefined') new QRCode(qrEl, {text:loginUrl,width:130,height:130,colorDark:'#1d4ed8',colorLight:'#ffffff'});
+      document.getElementById('f-print-zone').innerHTML = buildFormateurCard(prenom, nom, pin, loginUrl, role);
+      document.getElementById('f-msg-ok').textContent = `✅ ${prenom} ${nom} créé(e) ! PIN : ${pin}`;
+      document.getElementById('f-result').classList.remove('hidden');
+      document.getElementById('f-form-actions').classList.add('hidden');
+      loadFormateurs(); loadAll();
     }
-    if (!pin) throw new Error('Impossible de générer un PIN unique');
-    const { error } = await supabase.from('formateurs').insert({ prenom, nom, email: email||null, role, pin_hash: pinHash, center_id: CENTER.id, actif: true });
-    if (error) throw error;
-    const base = window.location.origin + window.location.pathname.replace(/[^/]*$/, '');
-    const loginUrl = `${base}login-formateur.html?center=${CENTER.id}`;
-    document.getElementById('f-pin-generated').textContent = pin;
-    document.getElementById('f-qr-url-display').textContent = `🔗 ${loginUrl}`;
-    const qrEl = document.getElementById('f-qr-code');
-    qrEl.innerHTML = '';
-    if (typeof QRCode !== 'undefined') new QRCode(qrEl, {text:loginUrl,width:130,height:130,colorDark:'#1d4ed8',colorLight:'#ffffff'});
-    document.getElementById('f-print-zone').innerHTML = buildFormateurCard(prenom, nom, pin, loginUrl, role);
-    document.getElementById('f-msg-ok').textContent = `✅ ${prenom} ${nom} créé(e) ! PIN : ${pin}`;
-    document.getElementById('f-result').classList.remove('hidden');
-    document.getElementById('f-form-actions').classList.add('hidden');
-    loadFormateurs(); loadAll();
   } catch(e) {
     msgEl.innerHTML = `<div class="alert-err">❌ ${e.message}</div>`;
     msgEl.classList.remove('hidden');
@@ -873,6 +888,17 @@ window.editFormateur = async function(id) {
   document.getElementById('f-email').value = data.email || '';
   document.getElementById('f-role').value = data.role;
   document.getElementById('f-msg').classList.add('hidden');
+  document.getElementById('f-result').classList.add('hidden');
+  document.getElementById('f-form-actions').classList.remove('hidden');
+
+  // Afficher le PIN actuel si disponible
+  const pinInfo = document.getElementById('f-pin-info');
+  if (pinInfo) {
+    pinInfo.textContent = data.pin_clair ? `PIN actuel : ${data.pin_clair}` : 'PIN non disponible (ancien compte)';
+    pinInfo.classList.remove('hidden');
+  }
+
+  document.getElementById(id === undefined ? '' : 'modal-add-formateur').classList?.remove('hidden');
   openModal('modal-add-formateur');
 };
 
