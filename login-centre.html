@@ -297,24 +297,43 @@ async function doFirst(){
 
 // ── MOT DE PASSE OUBLIÉ ──
 async function doReset(){
-  const email=document.getElementById('r-email').value.trim().toLowerCase();
-  const errEl=document.getElementById('r-err');
-  const okEl=document.getElementById('r-ok');
-  errEl.classList.add('hidden');okEl.classList.add('hidden');
-  if(!email){showErr(errEl,'❌ Entrez votre email.');return;}
-  setLoad('btn-reset',true);
+  const email = document.getElementById('r-email').value.trim().toLowerCase();
+  const errEl = document.getElementById('r-err');
+  const okEl  = document.getElementById('r-ok');
+  errEl.classList.add('hidden'); okEl.classList.add('hidden');
+  if(!email){ showErr(errEl,'❌ Entrez votre email.'); return; }
+  setLoad('btn-reset', true);
   try{
-    const{data}=await supabase.from('centers').select('id,nom').eq('email',email).single();
-    if(!data)throw new Error('nf');
+    const { data } = await supabase.from('centers').select('id,nom').eq('email',email).single();
+    if(!data) throw new Error('nf');
+
+    // Générer un token unique
+    const token = crypto.randomUUID();
+    const expiresAt = new Date(Date.now() + 24*60*60*1000).toISOString(); // 24h
+
     await supabase.from('password_reset_requests').insert({
-      center_id:data.id,email,status:'pending'
+      center_id: data.id, email, status: 'pending',
+      token, expires_at: expiresAt
     });
-    okEl.textContent='✅ Demande envoyée ! MIB Prévention va vous contacter pour réinitialiser votre mot de passe.';
+
+    // Construire le lien de reset
+    const base = window.location.origin + window.location.pathname;
+    const resetUrl = `${base}?reset=${token}`;
+
+    // Afficher le lien directement (pas d'email configuré)
+    okEl.innerHTML = `✅ Lien de réinitialisation généré :<br><br>
+      <a href="${resetUrl}" style="color:#1d4ed8;word-break:break-all;font-size:.78rem;">${resetUrl}</a><br><br>
+      <button onclick="navigator.clipboard.writeText('${resetUrl}').then(()=>alert('Copié !'))"
+        style="background:#1d4ed8;color:#fff;border:none;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:.78rem;font-weight:700;margin-top:6px;">
+        📋 Copier le lien
+      </button><br><br>
+      <small style="color:#6b7280;">Ouvrez ce lien dans votre navigateur pour choisir un nouveau mot de passe. Valable 24h.</small>`;
     okEl.classList.remove('hidden');
-    document.getElementById('btn-reset').disabled=true;
+    document.getElementById('btn-reset').disabled = true;
   }catch(e){
-    showErr(errEl,e.message==='nf'?'❌ Email introuvable.':'❌ Erreur lors de la demande.');
-    setLoad('btn-reset',false,'Demander un reset →');
+    showErr(errEl, e.message==='nf' ? '❌ Email introuvable.' : '❌ Erreur lors de la demande.');
+    setLoad('btn-reset', false);
+    document.getElementById('btn-reset').textContent = 'Demander un reset →';
   }
 }
 
