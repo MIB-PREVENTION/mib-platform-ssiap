@@ -941,6 +941,12 @@ window.saveStagiaire = async function() {
       if (!pin) throw new Error('Impossible de générer un PIN unique');
       const { error } = await supabase.from('stagiaires').insert({ prenom, nom, email:email||null, telephone:tel||null, niveau, center_id:CENTER.id, actif:true, pin_hash:pinHash, pin_clair:pin });
       if (error) throw error;
+      // Récupérer l'ID du stagiaire créé
+      const { data: newStag } = await supabase.from('stagiaires').select('id').eq('center_id',CENTER.id).eq('nom',nom).eq('prenom',prenom).order('created_at',{ascending:false}).limit(1).single();
+      // Si on est dans une session, inscrire automatiquement
+      if (newStag && currentSession) {
+        await supabase.from('session_participants').insert({session_id:currentSession.id, stagiaire_id:newStag.id, presence:false});
+      }
       // Afficher PIN + QR
       const base = window.location.origin + window.location.pathname.replace(/[^/]*$/, '');
       const loginUrl = base + 'login-stagiaire.html?center=' + CENTER.id;
@@ -948,10 +954,12 @@ window.saveStagiaire = async function() {
       const qrEl = document.getElementById('s-qr-code'); qrEl.innerHTML = '';
       if (typeof QRCode !== 'undefined') new QRCode(qrEl, {text:loginUrl,width:130,height:130,colorDark:'#059669',colorLight:'#ffffff'});
       document.getElementById('s-print-zone').innerHTML = buildStagiaireCard(prenom, nom, pin, loginUrl, niveau);
-      document.getElementById('s-msg-ok').textContent = '✅ ' + prenom + ' ' + nom + ' ajouté(e) ! PIN : ' + pin;
+      document.getElementById('s-msg-ok').textContent = '✅ ' + prenom + ' ' + nom + ' ajouté(e) ! PIN : ' + pin + (currentSession ? ' — inscrit(e) à la session' : '');
       document.getElementById('s-result').classList.remove('hidden');
       document.getElementById('s-form-actions').classList.add('hidden');
-      await loadStagiaires(); loadAll();
+      await loadStagiaires();
+      if (currentSession) await loadParticipants();
+      loadAll();
     }
   } catch(e) { msgEl.innerHTML = '<div class="alert-err">❌ ' + e.message + '</div>'; msgEl.classList.remove('hidden'); }
   finally { btnEl.disabled = false; btnEl.textContent = 'Enregistrer'; }
