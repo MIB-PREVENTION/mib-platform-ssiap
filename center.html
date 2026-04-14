@@ -300,41 +300,28 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
               <button onclick="openModal('modal-assign-formateur')" class="btn btn-blue btn-sm">✏️ Changer</button>
             </div>
           </div>
-          <!-- Stagiaires inscrits + gestion -->
-          <div class="card p-5 mb-5">
-            <div class="flex justify-between items-center mb-4">
-              <h3 style="font-size:.9rem;font-weight:700;">👨‍🎓 Stagiaires inscrits</h3>
-              <button onclick="openModal('modal-add-participants')" class="btn btn-green btn-sm">+ Ajouter à la session</button>
-            </div>
-            <div class="overflow-x-auto">
-              <table class="tbl">
-                <thead><tr><th>Nom</th><th>Prénom</th><th>Niveau</th><th>Présence</th><th>Action</th></tr></thead>
-                <tbody id="body-participants"><tr><td colspan="5" style="text-align:center;color:var(--text3);padding:20px;">Aucun stagiaire inscrit</td></tr></tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- Gestion des stagiaires du centre (dans la session) -->
+          <!-- Gestion des stagiaires de la session -->
           <div class="card p-5">
             <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
               <div>
-                <h3 style="font-size:.9rem;font-weight:700;">📋 Gestion des stagiaires du centre</h3>
+                <h3 style="font-size:.9rem;font-weight:700;">👨‍🎓 Stagiaires de la session</h3>
                 <p style="font-size:.72rem;color:var(--text2);margin-top:2px;" id="stag-sess-count">—</p>
               </div>
               <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                <button onclick="openModal('modal-add-participants')" class="btn btn-blue btn-sm">+ Ajouter existant</button>
                 <button onclick="editingStagiaireId=null;openModal('modal-add-stagiaire')" class="btn btn-green btn-sm">+ Nouveau stagiaire</button>
-                <button onclick="openModal('modal-csv')" class="btn btn-blue btn-sm">📥 Import CSV</button>
-                <button onclick="printStagiaires()" class="btn btn-gray btn-sm">🖨️ Imprimer liste</button>
-                <button onclick="exportCSV()" class="btn btn-gray btn-sm">📤 Export CSV</button>
+                <button onclick="openModal('modal-csv')" class="btn btn-gray btn-sm">📥 Import CSV</button>
+                <button onclick="printStagiaires()" class="btn btn-gray btn-sm">🖨️ Imprimer</button>
+                <button onclick="exportCSV()" class="btn btn-gray btn-sm">📤 Export</button>
               </div>
             </div>
             <div class="mb-3">
-              <input type="text" id="search-stag-sess" class="inp" style="max-width:260px;" placeholder="🔍 Rechercher un stagiaire..." oninput="filterStagiairesSession()">
+              <input type="text" id="search-stag-sess" class="inp" style="max-width:260px;" placeholder="🔍 Rechercher..." oninput="filterStagiairesSession()">
             </div>
             <div class="overflow-x-auto">
               <table class="tbl">
-                <thead><tr><th>Nom</th><th>Prénom</th><th>Email</th><th>Niveau</th><th>Actions</th></tr></thead>
-                <tbody id="body-stag-session"><tr><td colspan="5" style="text-align:center;color:var(--text3);padding:20px;">Chargement...</td></tr></tbody>
+                <thead><tr><th>Nom</th><th>Prénom</th><th>Niveau</th><th>Présence</th><th>Actions</th></tr></thead>
+                <tbody id="body-stag-session"><tr><td colspan="5" style="text-align:center;color:var(--text3);padding:20px;">Aucun stagiaire inscrit</td></tr></tbody>
               </table>
             </div>
           </div>
@@ -1063,45 +1050,67 @@ window.importCSV = async function() {
 
 
 // ============================================================
-// STAGIAIRES DANS LA SESSION (tableau de gestion)
+// STAGIAIRES DANS LA SESSION (participants uniquement)
 // ============================================================
 window.renderStagiairesInSession = function() {
   const tbody = document.getElementById('body-stag-session');
   if (!tbody) return;
-  document.getElementById('stag-sess-count').textContent = allStagiaires.length + ' stagiaire(s) dans le centre';
-  renderStagiairesSessionTable(allStagiaires);
+  const count = currentParticipants.length;
+  document.getElementById('stag-sess-count').textContent = count + ' stagiaire(s) inscrit(s) à cette session';
+  buildStagSessTable(currentParticipants);
 };
 
 window.filterStagiairesSession = function() {
   const q = document.getElementById('search-stag-sess').value.toLowerCase();
-  renderStagiairesSessionTable(allStagiaires.filter(s =>
-    (s.nom + ' ' + s.prenom).toLowerCase().includes(q) || (s.email||'').toLowerCase().includes(q)
+  buildStagSessTable(currentParticipants.filter(p =>
+    ((p.stagiaires?.nom||'') + ' ' + (p.stagiaires?.prenom||'')).toLowerCase().includes(q)
   ));
 };
 
-function renderStagiairesSessionTable(data) {
+function buildStagSessTable(data) {
   const tbody = document.getElementById('body-stag-session');
   if (!tbody) return;
-  if (!data.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:20px;">Aucun stagiaire</td></tr>'; return; }
-  tbody.innerHTML = data.map(s =>
-    '<tr><td><strong>' + (s.nom||'—') + '</strong></td>'
-    + '<td>' + (s.prenom||'—') + '</td>'
-    + '<td style="font-size:.8rem;color:var(--text2);">' + (s.email||'—') + '</td>'
-    + '<td><span class="badge ' + (s.niveau==='SSIAP1'?'b-blue':s.niveau==='SSIAP2'?'b-orange':'b-red') + '">' + (s.niveau||'—') + '</span></td>'
-    + '<td><div style="display:flex;gap:5px;"></div></td></tr>'
-  ).join('');
-  // Ajouter les boutons via DOM pour éviter les problèmes d'échappement
-  tbody.querySelectorAll('tr').forEach((tr, i) => {
-    const s = data[i];
-    const td = tr.lastElementChild.querySelector('div');
-    const b1 = document.createElement('button');
-    b1.className = 'btn btn-blue btn-xs'; b1.textContent = '✏️';
-    b1.onclick = function() { editStagiaire(s.id); };
-    const b2 = document.createElement('button');
-    b2.className = 'btn btn-red btn-xs'; b2.textContent = '🗑️';
-    b2.style.marginLeft = '5px';
-    b2.onclick = function() { deleteStagiaire(s.id); };
-    td.appendChild(b1); td.appendChild(b2);
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:20px;">Aucun stagiaire inscrit — cliquez sur "+ Ajouter existant" ou "+ Nouveau stagiaire"</td></tr>';
+    return;
+  }
+  tbody.innerHTML = '';
+  data.forEach(p => {
+    const s = p.stagiaires || {};
+    const tr = document.createElement('tr');
+    const nivCls = s.niveau==='SSIAP1'?'b-blue':s.niveau==='SSIAP2'?'b-orange':'b-red';
+    // Nom / Prénom / Niveau
+    tr.innerHTML = '<td><strong>' + (s.nom||'—') + '</strong></td>'
+      + '<td>' + (s.prenom||'—') + '</td>'
+      + '<td><span class="badge ' + nivCls + '">' + (s.niveau||'—') + '</span></td>'
+      + '<td></td><td></td>';
+    // Présence
+    const label = document.createElement('label');
+    label.style.cssText = 'display:flex;align-items:center;gap:6px;cursor:pointer;';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.checked = p.presence;
+    cb.style.cssText = 'width:16px;height:16px;cursor:pointer;';
+    const spanP = document.createElement('span');
+    spanP.style.fontSize = '.8rem';
+    spanP.textContent = p.presence ? 'Présent' : 'Absent';
+    cb.onchange = function() {
+      togglePresence(p.id, this.checked);
+      spanP.textContent = this.checked ? 'Présent' : 'Absent';
+    };
+    label.appendChild(cb); label.appendChild(spanP);
+    tr.cells[3].appendChild(label);
+    // Actions
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'display:flex;gap:5px;';
+    const bEdit = document.createElement('button');
+    bEdit.className = 'btn btn-blue btn-xs'; bEdit.textContent = '✏️';
+    bEdit.onclick = function() { editStagiaire(p.stagiaire_id); };
+    const bDel = document.createElement('button');
+    bDel.className = 'btn btn-red btn-xs'; bDel.textContent = '✕';
+    bDel.onclick = function() { removeParticipant(p.id); };
+    wrap.appendChild(bEdit); wrap.appendChild(bDel);
+    tr.cells[4].appendChild(wrap);
+    tbody.appendChild(tr);
   });
 }
 
@@ -1209,16 +1218,7 @@ window.loadParticipants = async function() {
   } catch(e) { console.error(e); }
 };
 
-window.renderParticipants = function() {
-  const tbody = document.getElementById('body-participants');
-  if (!currentParticipants.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:20px;">Aucun stagiaire inscrit — ajoutez-en !</td></tr>'; return; }
-  tbody.innerHTML = currentParticipants.map(p =>
-    '<tr><td><strong>' + (p.stagiaires?.nom||'—') + '</strong></td><td>' + (p.stagiaires?.prenom||'—') + '</td>'
-    + '<td><span class="badge b-blue" style="font-size:.68rem;">' + (p.stagiaires?.niveau||'—') + '</span></td>'
-    + '<td><label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" ' + (p.presence?'checked':'') + ' onchange="togglePresence(\'' + p.id + '\',this.checked)" style="width:16px;height:16px;cursor:pointer;"><span style="font-size:.8rem;">' + (p.presence?'Présent':'Absent') + '</span></label></td>'
-    + '<td><button onclick="removeParticipant(\'' + p.id + '\')" class="btn btn-red btn-xs">✕</button></td></tr>'
-  ).join('');
-};
+window.renderParticipants = function() { renderStagiairesInSession(); };
 
 window.togglePresence = async function(partId, presence) {
   await supabase.from('session_participants').update({presence}).eq('id',partId);
