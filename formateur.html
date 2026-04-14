@@ -149,10 +149,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
             </table>
           </div>
         </div>
-        <div class="card p-5">
-          <h2 style="font-size:.95rem;font-weight:700;margin-bottom:14px;">🚀 Lancer un module</h2>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-3" id="dash-modules"></div>
-        </div>
+
       </div>
 
       <!-- SESSIONS -->
@@ -207,7 +204,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
           <div class="card p-5 mb-5">
             <div class="flex justify-between items-center mb-4">
               <h3 style="font-size:.9rem;font-weight:700;">👨‍🎓 Liste des stagiaires</h3>
-              <button onclick="openAddParticipantsModal()" class="btn btn-green btn-sm">+ Ajouter des stagiaires</button>
+              <div style="display:flex;gap:6px;"><button onclick="openAddStagiaireModal()" class="btn btn-blue btn-sm">+ Nouveau stagiaire</button><button onclick="openAddParticipantsModal()" class="btn btn-green btn-sm">+ Ajouter à la session</button></div>
             </div>
             <div class="overflow-x-auto">
               <table class="tbl">
@@ -345,7 +342,6 @@ window.loadDashboard = async function() {
     document.getElementById('kpi-mois').textContent = sessMonth;
 
     buildDashSessions(allSessions.slice(0, 5));
-    buildDashModules();
   } catch(e) { console.error(e); }
 };
 
@@ -801,6 +797,17 @@ function sessionStatutBadge(s) {
         </select>
       </div>
       <div>
+        <label class="lbl">Note (étoiles)</label>
+        <div style="display:flex;gap:4px;align-items:center;">
+          <button class="star-btn-f" onclick="setStarsF(1)" style="background:none;border:none;font-size:1.6rem;cursor:pointer;padding:2px;">☆</button>
+          <button class="star-btn-f" onclick="setStarsF(2)" style="background:none;border:none;font-size:1.6rem;cursor:pointer;padding:2px;">☆</button>
+          <button class="star-btn-f" onclick="setStarsF(3)" style="background:none;border:none;font-size:1.6rem;cursor:pointer;padding:2px;">☆</button>
+          <button class="star-btn-f" onclick="setStarsF(4)" style="background:none;border:none;font-size:1.6rem;cursor:pointer;padding:2px;">☆</button>
+          <button class="star-btn-f" onclick="setStarsF(5)" style="background:none;border:none;font-size:1.6rem;cursor:pointer;padding:2px;">☆</button>
+          <span id="star-label-f" style="font-size:.8rem;color:#6b7280;margin-left:8px;">Non noté</span>
+        </div>
+      </div>
+      <div>
         <label class="lbl">Message</label>
         <textarea id="avis-message-f" class="inp" rows="4" placeholder="Décrivez votre avis ou demande..."></textarea>
       </div>
@@ -874,6 +881,184 @@ window.sendAvisFormateur = async function() {
     msgEl.innerHTML = '<div class="alert-err">❌ ' + e.message + '</div>';
     msgEl.classList.remove('hidden');
   } finally { btnEl.disabled = false; btnEl.textContent = 'Envoyer'; }
+};
+</script>
+
+<!-- Modal Nouveau Stagiaire (depuis formateur) -->
+<div id="modal-add-stagiaire-f" class="modal-bg hidden">
+  <div class="modal-box">
+    <div class="flex justify-between items-center mb-5">
+      <h3 style="font-size:1.05rem;font-weight:800;">&#128104;&#8205;&#127979; <span id="modal-sf-title">Nouveau stagiaire</span></h3>
+      <button onclick="document.getElementById('modal-add-stagiaire-f').classList.add('hidden')" style="width:32px;height:32px;border-radius:50%;background:#f3f4f6;border:none;cursor:pointer;">&#x2715;</button>
+    </div>
+    <div class="space-y-3">
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="lbl">Prénom</label><input type="text" id="sf-prenom" class="inp" placeholder="Marie"></div>
+        <div><label class="lbl">Nom</label><input type="text" id="sf-nom" class="inp" placeholder="DUPONT"></div>
+      </div>
+      <div><label class="lbl">Email (optionnel)</label><input type="email" id="sf-email" class="inp" placeholder="marie@email.fr"></div>
+      <div><label class="lbl">Niveau</label>
+        <select id="sf-niveau" class="inp">
+          <option value="SSIAP1">SSIAP 1 — Équipier</option>
+          <option value="SSIAP2">SSIAP 2 — Chef d'équipe</option>
+          <option value="SSIAP3">SSIAP 3 — Chef de service</option>
+        </select>
+      </div>
+      <!-- Résultat création -->
+      <div id="sf-result" class="hidden">
+        <div style="height:1px;background:linear-gradient(90deg,transparent,rgba(0,0,0,.07),transparent);margin:16px 0;"></div>
+        <div id="sf-msg-ok" class="alert-ok mb-4"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;">
+          <div style="text-align:center;">
+            <div style="font-size:.68rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;">Code PIN stagiaire</div>
+            <div id="sf-pin-generated" style="font-family:monospace;font-size:2.5rem;font-weight:900;letter-spacing:.4em;color:#059669;background:linear-gradient(145deg,#e8edf5,#f3f6fc);border-radius:12px;padding:14px;"></div>
+            <p style="font-size:.7rem;color:#9ca3af;margin-top:6px;">À remettre au stagiaire</p>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:.68rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;">QR Code connexion</div>
+            <div style="display:inline-block;padding:10px;background:#fff;border-radius:12px;box-shadow:3px 3px 10px rgba(100,116,139,.15);"><div id="sf-qr-code"></div></div>
+          </div>
+        </div>
+        <button onclick="window.print()" class="btn btn-green btn-sm" style="width:100%;margin-top:12px;">&#128424;&#65039; Imprimer la fiche stagiaire</button>
+        <div id="sf-print-zone" style="display:none;"></div>
+      </div>
+      <div id="sf-msg" class="hidden"></div>
+      <div class="flex gap-3 mt-1" id="sf-form-actions">
+        <button onclick="document.getElementById('modal-add-stagiaire-f').classList.add('hidden')" class="btn btn-gray flex-1">Annuler</button>
+        <button onclick="saveStagiaireFormateur()" class="btn btn-green flex-1" id="btn-save-sf">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// STAGIAIRE DEPUIS FORMATEUR
+// ============================================================
+let editingStagiaireF = null;
+
+window.openAddStagiaireModal = function(id) {
+  editingStagiaireF = id || null;
+  const isEdit = !!id;
+  document.getElementById('modal-sf-title').textContent = isEdit ? 'Modifier le stagiaire' : 'Nouveau stagiaire';
+  document.getElementById('sf-result').classList.add('hidden');
+  document.getElementById('sf-form-actions').classList.remove('hidden');
+  document.getElementById('sf-msg').classList.add('hidden');
+  if (isEdit) {
+    const s = allStagiaires.find(x => x.id === id);
+    if (s) {
+      document.getElementById('sf-prenom').value = s.prenom;
+      document.getElementById('sf-nom').value = s.nom;
+      document.getElementById('sf-email').value = s.email || '';
+      document.getElementById('sf-niveau').value = s.niveau || 'SSIAP1';
+    }
+  } else {
+    ['sf-prenom','sf-nom','sf-email'].forEach(i => document.getElementById(i).value = '');
+    document.getElementById('sf-niveau').value = 'SSIAP1';
+  }
+  document.getElementById('modal-add-stagiaire-f').classList.remove('hidden');
+};
+
+window.saveStagiaireFormateur = async function() {
+  const prenom = document.getElementById('sf-prenom').value.trim();
+  const nom    = document.getElementById('sf-nom').value.trim();
+  const email  = document.getElementById('sf-email').value.trim().toLowerCase();
+  const niveau = document.getElementById('sf-niveau').value;
+  const msgEl  = document.getElementById('sf-msg');
+  msgEl.classList.add('hidden');
+  if (!prenom || !nom) { msgEl.innerHTML='<div class="alert-err">&#10060; Prénom et nom obligatoires.</div>'; msgEl.classList.remove('hidden'); return; }
+  const btnEl = document.getElementById('btn-save-sf');
+  btnEl.disabled = true; btnEl.innerHTML = '<span class="spin"></span>';
+  try {
+    if (editingStagiaireF) {
+      await supabase.from('stagiaires').update({ prenom, nom, email:email||null, niveau }).eq('id', editingStagiaireF);
+      msgEl.innerHTML = '<div class="alert-ok">&#10003; Stagiaire modifié !</div>';
+      msgEl.classList.remove('hidden');
+      const { data } = await supabase.from('stagiaires').select('*').eq('center_id', FORMATEUR.center_id).eq('actif', true).order('nom');
+      allStagiaires = data || [];
+      setTimeout(() => document.getElementById('modal-add-stagiaire-f').classList.add('hidden'), 1500);
+    } else {
+      // Générer PIN 4 chiffres
+      let pin = '', pinHash = null;
+      for (let a = 0; a < 20; a++) {
+        const c = String(Math.floor(1000 + Math.random()*9000));
+        const ph = await UTILS.hash(c);
+        const { data: ex } = await supabase.from('stagiaires').select('id').eq('center_id', FORMATEUR.center_id).eq('pin_hash', ph).eq('actif', true);
+        if (!ex || !ex.length) { pin = c; pinHash = ph; break; }
+      }
+      if (!pin) throw new Error('Impossible de générer un PIN unique');
+      const { error } = await supabase.from('stagiaires').insert({
+        prenom, nom, email:email||null, niveau,
+        center_id: FORMATEUR.center_id, actif: true,
+        pin_hash: pinHash, pin_clair: pin
+      });
+      if (error) throw error;
+      // Afficher résultat
+      const base = window.location.origin + window.location.pathname.replace(/[^/]*$/, '');
+      const loginUrl = base + 'login-stagiaire.html?center=' + FORMATEUR.center_id;
+      document.getElementById('sf-pin-generated').textContent = pin;
+      const qrEl = document.getElementById('sf-qr-code'); qrEl.innerHTML = '';
+      if (typeof QRCode !== 'undefined') new QRCode(qrEl, {text:loginUrl,width:130,height:130,colorDark:'#059669',colorLight:'#ffffff'});
+      document.getElementById('sf-print-zone').innerHTML = buildStagFCard(prenom, nom, pin, loginUrl, niveau);
+      document.getElementById('sf-msg-ok').textContent = '&#10003; ' + prenom + ' ' + nom + ' ajouté(e) ! PIN : ' + pin;
+      document.getElementById('sf-result').classList.remove('hidden');
+      document.getElementById('sf-form-actions').classList.add('hidden');
+      const { data } = await supabase.from('stagiaires').select('*').eq('center_id', FORMATEUR.center_id).eq('actif', true).order('nom');
+      allStagiaires = data || [];
+    }
+  } catch(e) { msgEl.innerHTML = '<div class="alert-err">&#10060; ' + e.message + '</div>'; msgEl.classList.remove('hidden'); }
+  finally { btnEl.disabled = false; btnEl.textContent = 'Enregistrer'; }
+};
+
+function buildStagFCard(prenom, nom, pin, url, niveau) {
+  return '<div style="font-family:sans-serif;padding:24px;max-width:400px;border:2px solid #059669;border-radius:16px;">'
+    + '<div style="font-size:1.3rem;font-weight:900;">' + prenom + ' ' + nom + '</div>'
+    + '<div style="font-size:.82rem;color:#6b7280;">' + niveau + ' &#183; ' + FORMATEUR.center_nom + '</div>'
+    + '<div style="background:#f0fdf4;border-radius:10px;padding:14px;margin:14px 0;">'
+    + '<div style="font-size:.7rem;font-weight:700;color:#065f46;text-transform:uppercase;margin-bottom:6px;">Code PIN stagiaire</div>'
+    + '<div style="font-size:2.5rem;font-weight:900;letter-spacing:.4em;color:#059669;">' + pin + '</div>'
+    + '</div><div style="font-size:.68rem;word-break:break-all;">' + url + '</div>'
+    + '<div style="font-size:.65rem;color:#9ca3af;margin-top:12px;">MIB Prévention &#169; 2026</div></div>';
+}
+
+// Étoiles avis
+let _starsF = 0;
+window.setStarsF = function(n) {
+  _starsF = n;
+  const labels = ['','Médiocre','Passable','Bien','Très bien','Excellent !'];
+  document.querySelectorAll('.star-btn-f').forEach((btn, i) => { btn.textContent = i < n ? '&#11088;' : '&#9734;'; });
+  document.getElementById('star-label-f').textContent = labels[n] || 'Non noté';
+};
+
+// Surcharger sendAvisFormateur pour inclure les étoiles
+const _origSend = window.sendAvisFormateur;
+window.sendAvisFormateur = async function() {
+  const type    = document.getElementById('avis-type-f').value;
+  const message = document.getElementById('avis-message-f').value.trim();
+  const msgEl   = document.getElementById('avis-msg-f');
+  msgEl.classList.add('hidden');
+  if (!message) { msgEl.innerHTML='<div class="alert-err">&#10060; Écrivez votre message.</div>'; msgEl.classList.remove('hidden'); return; }
+  const btnEl = document.getElementById('btn-send-avis-f');
+  btnEl.disabled = true; btnEl.innerHTML = '<span class="spin"></span>';
+  try {
+    const { error } = await supabase.from('avis_retours').insert({
+      center_id: FORMATEUR.center_id,
+      auteur_type: 'formateur',
+      auteur_id: FORMATEUR.id,
+      auteur_nom: FORMATEUR.prenom + ' ' + FORMATEUR.nom,
+      type, message, note: _starsF || null, statut: 'nouveau'
+    });
+    if (error) throw error;
+    msgEl.innerHTML = '<div class="alert-ok">&#10003; Avis envoyé !</div>';
+    msgEl.classList.remove('hidden');
+    document.getElementById('avis-message-f').value = '';
+    _starsF = 0;
+    document.querySelectorAll('.star-btn-f').forEach(b => b.textContent = '&#9734;');
+    document.getElementById('star-label-f').textContent = 'Non noté';
+    loadAvisFormateur();
+    setTimeout(() => document.getElementById('modal-avis-f').classList.add('hidden'), 1500);
+  } catch(e) { msgEl.innerHTML = '<div class="alert-err">&#10060; ' + e.message + '</div>'; msgEl.classList.remove('hidden'); }
+  finally { btnEl.disabled = false; btnEl.textContent = 'Envoyer'; }
 };
 </script>
 </body>
