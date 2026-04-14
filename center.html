@@ -1017,26 +1017,57 @@ window.deleteStagiaire = async function(id) {
 };
 
 window.printStagiaires = function() {
-  // Utiliser les participants de la session si on est dans une session, sinon tous les stagiaires
+  const base = window.location.origin + window.location.pathname.replace(/[^\/]*$/, '');
+  const loginUrl = base + 'login-stagiaire.html?center=' + CENTER.id;
   let listeToPrint = [];
   let titre = 'Liste des stagiaires — ' + CENTER.nom;
+  let sessInfo = '';
   if (currentSession && currentParticipants.length) {
-    titre = 'Session ' + (document.getElementById('detail-sess-title').textContent||'') + ' — ' + CENTER.nom;
+    const sessTitle = document.getElementById('detail-sess-title')?.textContent || '';
+    titre = 'Session ' + sessTitle + ' — ' + CENTER.nom;
+    const d1 = currentSession.date_debut ? UTILS.dateStr(currentSession.date_debut) : '';
+    const d2 = currentSession.date_fin ? UTILS.dateStr(currentSession.date_fin) : '';
+    sessInfo = d1 ? 'Du ' + d1 + (d2 ? ' au ' + d2 : '') : '';
     listeToPrint = currentParticipants.map(p => ({
-      nom: p.stagiaires?.nom||'—', prenom: p.stagiaires?.prenom||'—',
-      niveau: p.stagiaires?.niveau||'—', pin_clair: null, email: ''
+      nom: p.stagiaires?.nom||'—',
+      prenom: p.stagiaires?.prenom||'—',
+      niveau: p.stagiaires?.niveau||'—',
+      pin_clair: p.stagiaires?.pin_clair||'—',
+      email: p.stagiaires?.email||''
     }));
   } else {
     listeToPrint = allStagiaires;
   }
-  const rows = ['<table border="1" cellpadding="8" style="border-collapse:collapse;width:100%;font-family:sans-serif;"><thead><tr><th>Nom</th><th>Prénom</th><th>Niveau</th><th>PIN</th><th>Email</th></tr></thead><tbody>'];
-  listeToPrint.forEach(s => {
-    rows.push('<tr><td>' + s.nom + '</td><td>' + s.prenom + '</td><td>' + s.niveau + '</td><td style="font-family:monospace;letter-spacing:.2em;">' + (s.pin_clair||'—') + '</td><td>' + (s.email||'') + '</td></tr>');
-  });
-  rows.push('</tbody></table>');
+  // Construire la page d'impression avec QR codes
+  const cards = listeToPrint.map((s, i) =>
+    '<div id="card-' + i + '" style="display:inline-block;width:45%;margin:1%;padding:16px;border:2px solid #059669;border-radius:12px;vertical-align:top;font-family:sans-serif;page-break-inside:avoid;">' +
+    '<div style="font-size:1.2rem;font-weight:900;">' + s.nom + ' ' + s.prenom + '</div>' +
+    '<div style="font-size:.8rem;color:#6b7280;margin-bottom:10px;">' + s.niveau + (s.email ? ' · ' + s.email : '') + '</div>' +
+    '<div style="display:flex;align-items:center;gap:12px;">' +
+    '<div><div style="font-size:.65rem;font-weight:700;color:#065f46;text-transform:uppercase;margin-bottom:4px;">Code PIN</div>' +
+    '<div style="font-size:2rem;font-weight:900;letter-spacing:.3em;color:#059669;background:#f0fdf4;padding:8px 12px;border-radius:8px;">' + s.pin_clair + '</div></div>' +
+    '<div><div style="font-size:.65rem;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:4px;">QR Code</div>' +
+    '<div id="qr-' + i + '"></div></div>' +
+    '</div>' +
+    (sessInfo ? '<div style="font-size:.65rem;color:#9ca3af;margin-top:8px;">Accès valable : ' + sessInfo + '</div>' : '') +
+    '</div>'
+  ).join('');
   const w = window.open('', '_blank');
-  w.document.write('<html><head><title>' + titre + '</title></head><body><h2>' + titre + '</h2><p>Généré le ' + new Date().toLocaleDateString('fr-FR') + '</p>' + rows.join('') + '</body></html>');
-  w.document.close(); w.print();
+  w.document.write('<html><head><title>' + titre + '</title>' +
+    '<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>' +
+    '<style>body{font-family:sans-serif;padding:20px;} @media print{button{display:none}}</style>' +
+    '</head><body>' +
+    '<h2 style="margin-bottom:4px;">' + titre + '</h2>' +
+    '<p style="color:#6b7280;margin-bottom:16px;">' + sessInfo + ' — Généré le ' + new Date().toLocaleDateString('fr-FR') + '</p>' +
+    '<p><button onclick="window.print()" style="background:#059669;color:#fff;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;font-size:.9rem;font-weight:700;">🖨️ Imprimer</button></p><br>' +
+    cards +
+    '<script>' +
+    listeToPrint.map((s, i) =>
+      'new QRCode(document.getElementById("qr-' + i + '"),{text:"' + loginUrl.replace(/"/g,'\"') + '",width:90,height:90,colorDark:"#059669",colorLight:"#ffffff"});'
+    ).join('') +
+    '<\/script>' +
+    '</body></html>');
+  w.document.close();
 };
 
 window.exportCSV = function() {
@@ -1094,6 +1125,38 @@ window.importCSV = async function() {
 };
 
 
+
+// ============================================================
+// MAIL STAGIAIRE
+// ============================================================
+window.sendMailStagiaire = function(p) {
+  const s = p.stagiaires || {};
+  const email = s.email || '';
+  const pin = s.pin_clair || '—';
+  const base = window.location.origin + window.location.pathname.replace(/[^/]*$/, '');
+  const loginUrl = base + 'login-stagiaire.html?center=' + CENTER.id;
+  const sessTitle = document.getElementById('detail-sess-title')?.textContent || 'votre session';
+  const dateDebut = currentSession?.date_debut ? UTILS.dateStr(currentSession.date_debut) : '';
+  const dateFin = currentSession?.date_fin ? UTILS.dateStr(currentSession.date_fin) : '';
+  const subject = encodeURIComponent('Vos accès formation SSIAP — ' + sessTitle);
+  const body = encodeURIComponent(
+    'Bonjour ' + (s.prenom||'') + ' ' + (s.nom||'') + ',\n\n'
+    + 'Voici vos accès pour la session de formation ' + sessTitle + (dateDebut ? ' du ' + dateDebut + (dateFin ? ' au ' + dateFin : '') : '') + '.\n\n'
+    + '🔐 Votre code PIN : ' + pin + '\n'
+    + '🔗 Lien de connexion : ' + loginUrl + '\n\n'
+    + 'Connectez-vous avec votre PIN pour accéder à vos modules de formation.\n\n'
+    + 'Cordialement,\n' + CENTER.nom
+  );
+  if (email) {
+    window.open('mailto:' + email + '?subject=' + subject + '&body=' + body);
+  } else {
+    // Pas d'email — afficher dans un alert copiable
+    alert('Aucun email pour ce stagiaire. Voici le message à transmettre :\n\n'
+      + 'PIN : ' + pin + '\n'
+      + 'Lien : ' + loginUrl);
+  }
+};
+
 // ============================================================
 // STAGIAIRES DANS LA SESSION (participants uniquement)
 // ============================================================
@@ -1150,10 +1213,14 @@ function buildStagSessTable(data) {
     const bEdit = document.createElement('button');
     bEdit.className = 'btn btn-blue btn-xs'; bEdit.textContent = '✏️';
     bEdit.onclick = function() { editStagiaire(p.stagiaire_id); };
+    const bMail = document.createElement('button');
+    bMail.className = 'btn btn-gray btn-xs'; bMail.textContent = '✉️';
+    bMail.title = 'Envoyer les accès par mail';
+    bMail.onclick = function() { sendMailStagiaire(p); };
     const bDel = document.createElement('button');
     bDel.className = 'btn btn-red btn-xs'; bDel.textContent = '✕';
     bDel.onclick = function() { removeParticipant(p.id); };
-    wrap.appendChild(bEdit); wrap.appendChild(bDel);
+    wrap.appendChild(bEdit); wrap.appendChild(bMail); wrap.appendChild(bDel);
     tr.cells[4].appendChild(wrap);
     tbody.appendChild(tr);
   });
@@ -1256,7 +1323,7 @@ window.updateSessionStatut = async function(statut) {
 window.loadParticipants = async function() {
   if (!currentSession) return;
   try {
-    const { data } = await supabase.from('session_participants').select('*, stagiaires(nom,prenom,niveau)').eq('session_id', currentSession.id);
+    const { data } = await supabase.from('session_participants').select('*, stagiaires(nom,prenom,niveau,email,pin_clair)').eq('session_id', currentSession.id);
     currentParticipants = data || [];
     renderParticipants();
     document.getElementById('detail-nb-stag').textContent = currentParticipants.length;
