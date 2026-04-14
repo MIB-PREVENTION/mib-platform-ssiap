@@ -1129,7 +1129,11 @@ window.importCSV = async function() {
 // ============================================================
 // MAIL STAGIAIRE
 // ============================================================
-window.sendMailStagiaire = function(p) {
+// Config Mailgun (à renseigner dans supabase.js ou ici)
+const MAILGUN_DOMAIN = window.MAILGUN_DOMAIN || '';
+const MAILGUN_API_KEY = window.MAILGUN_API_KEY || '';
+
+window.sendMailStagiaire = async function(p) {
   const s = p.stagiaires || {};
   const email = s.email || '';
   const pin = s.pin_clair || '—';
@@ -1138,23 +1142,61 @@ window.sendMailStagiaire = function(p) {
   const sessTitle = document.getElementById('detail-sess-title')?.textContent || 'votre session';
   const dateDebut = currentSession?.date_debut ? UTILS.dateStr(currentSession.date_debut) : '';
   const dateFin = currentSession?.date_fin ? UTILS.dateStr(currentSession.date_fin) : '';
+
+  if (!email) {
+    alert('Aucun email pour ce stagiaire.\nPIN : ' + pin + '\nLien : ' + loginUrl);
+    return;
+  }
+
+  // HTML du mail avec lien hypertexte
+  const htmlBody = '<div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;padding:24px;background:#f0fdf4;border-radius:12px;">'
+    + '<h2 style="color:#059669;margin-bottom:8px;">Formation SSIAP — Vos accès</h2>'
+    + '<p>Bonjour <strong>' + (s.prenom||'') + ' ' + (s.nom||'') + '</strong>,</p>'
+    + '<p>Voici vos accès pour la session <strong>' + sessTitle + '</strong>'
+    + (dateDebut ? ' du <strong>' + dateDebut + '</strong>' + (dateFin ? ' au <strong>' + dateFin + '</strong>' : '') : '') + '.</p>'
+    + '<div style="background:#fff;border-radius:10px;padding:20px;margin:20px 0;border:2px solid #10b981;">'
+    + '<p style="margin-bottom:8px;"><strong>🔐 Votre code PIN :</strong></p>'
+    + '<div style="font-size:2.5rem;font-weight:900;letter-spacing:.4em;color:#059669;font-family:monospace;">' + pin + '</div>'
+    + '</div>'
+    + '<p style="margin-bottom:12px;"><strong>🔗 Accéder à votre espace formation :</strong></p>'
+    + '<a href="' + loginUrl + '" style="display:inline-block;background:#059669;color:#fff;padding:14px 28px;border-radius:10px;text-decoration:none;font-weight:700;font-size:1rem;">Se connecter →</a>'
+    + '<p style="margin-top:20px;font-size:.8rem;color:#6b7280;">Ou copiez ce lien : <a href="' + loginUrl + '" style="color:#059669;">' + loginUrl + '</a></p>'
+    + '<hr style="margin:20px 0;border-color:#d1fae5;">'
+    + '<p style="font-size:.75rem;color:#9ca3af;">Envoyé par ' + CENTER.nom + ' via MIB Prévention</p>'
+    + '</div>';
+
+  // Essayer Mailgun si configuré
+  if (MAILGUN_DOMAIN && MAILGUN_API_KEY) {
+    try {
+      const formData = new FormData();
+      formData.append('from', CENTER.nom + ' <noreply@' + MAILGUN_DOMAIN + '>');
+      formData.append('to', email);
+      formData.append('subject', 'Vos accès formation SSIAP — ' + sessTitle);
+      formData.append('html', htmlBody);
+
+      const resp = await fetch('https://api.eu.mailgun.net/v3/' + MAILGUN_DOMAIN + '/messages', {
+        method: 'POST',
+        headers: { 'Authorization': 'Basic ' + btoa('api:' + MAILGUN_API_KEY) },
+        body: formData
+      });
+      if (resp.ok) {
+        alert('✅ Email envoyé à ' + email);
+        return;
+      }
+    } catch(e) { console.error('Mailgun error:', e); }
+  }
+
+  // Fallback : mailto avec lien dans le corps
   const subject = encodeURIComponent('Vos accès formation SSIAP — ' + sessTitle);
   const body = encodeURIComponent(
     'Bonjour ' + (s.prenom||'') + ' ' + (s.nom||'') + ',\n\n'
-    + 'Voici vos accès pour la session de formation ' + sessTitle + (dateDebut ? ' du ' + dateDebut + (dateFin ? ' au ' + dateFin : '') : '') + '.\n\n'
-    + '🔐 Votre code PIN : ' + pin + '\n'
-    + '🔗 Lien de connexion : ' + loginUrl + '\n\n'
-    + 'Connectez-vous avec votre PIN pour accéder à vos modules de formation.\n\n'
+    + 'Voici vos accès pour la session ' + sessTitle
+    + (dateDebut ? ' du ' + dateDebut + (dateFin ? ' au ' + dateFin : '') : '') + '.\n\n'
+    + 'Code PIN : ' + pin + '\n\n'
+    + 'Lien de connexion : ' + loginUrl + '\n\n'
     + 'Cordialement,\n' + CENTER.nom
   );
-  if (email) {
-    window.open('mailto:' + email + '?subject=' + subject + '&body=' + body);
-  } else {
-    // Pas d'email — afficher dans un alert copiable
-    alert('Aucun email pour ce stagiaire. Voici le message à transmettre :\n\n'
-      + 'PIN : ' + pin + '\n'
-      + 'Lien : ' + loginUrl);
-  }
+  window.open('mailto:' + email + '?subject=' + subject + '&body=' + body);
 };
 
 // ============================================================
