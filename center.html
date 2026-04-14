@@ -1129,10 +1129,6 @@ window.importCSV = async function() {
 // ============================================================
 // MAIL STAGIAIRE
 // ============================================================
-// Config Mailgun (à renseigner dans supabase.js ou ici)
-const MAILGUN_DOMAIN = window.MAILGUN_DOMAIN || '';
-const MAILGUN_API_KEY = window.MAILGUN_API_KEY || '';
-
 window.sendMailStagiaire = async function(p) {
   const s = p.stagiaires || {};
   const email = s.email || '';
@@ -1165,26 +1161,26 @@ window.sendMailStagiaire = async function(p) {
     + '<p style="font-size:.75rem;color:#9ca3af;">Envoyé par ' + CENTER.nom + ' via MIB Prévention</p>'
     + '</div>';
 
-  // Essayer Mailgun si configuré
-  if (MAILGUN_DOMAIN && MAILGUN_API_KEY) {
-    try {
-      const formData = new FormData();
-      formData.append('from', CENTER.nom + ' <noreply@' + MAILGUN_DOMAIN + '>');
-      formData.append('to', email);
-      formData.append('subject', 'Vos accès formation SSIAP — ' + sessTitle);
-      formData.append('html', htmlBody);
-
-      const resp = await fetch('https://api.eu.mailgun.net/v3/' + MAILGUN_DOMAIN + '/messages', {
-        method: 'POST',
-        headers: { 'Authorization': 'Basic ' + btoa('api:' + MAILGUN_API_KEY) },
-        body: formData
-      });
-      if (resp.ok) {
-        alert('✅ Email envoyé à ' + email);
-        return;
-      }
-    } catch(e) { console.error('Mailgun error:', e); }
-  }
+  // Envoyer via Supabase Edge Function (clé Mailgun sécurisée côté serveur)
+  try {
+    const resp = await fetch(SUPABASE_URL + '/functions/v1/send-email', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+      },
+      body: JSON.stringify({
+        to: email,
+        subject: 'Vos accès formation SSIAP — ' + sessTitle,
+        html: htmlBody,
+        from_name: CENTER.nom
+      })
+    });
+    if (resp.ok) {
+      alert('✅ Email envoyé à ' + email);
+      return;
+    }
+  } catch(e) { console.error('Edge function error:', e); }
 
   // Fallback : mailto avec lien dans le corps
   const subject = encodeURIComponent('Vos accès formation SSIAP — ' + sessTitle);
