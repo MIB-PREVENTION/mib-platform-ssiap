@@ -308,7 +308,6 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
                 <p style="font-size:.72rem;color:var(--text2);margin-top:2px;" id="stag-sess-count">—</p>
               </div>
               <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                <button onclick="openModal('modal-add-participants')" class="btn btn-blue btn-sm">+ Ajouter existant</button>
                 <button onclick="editingStagiaireId=null;openModal('modal-add-stagiaire')" class="btn btn-green btn-sm">+ Nouveau stagiaire</button>
                 <button onclick="openModal('modal-csv')" class="btn btn-gray btn-sm">📥 Import CSV</button>
                 <button onclick="printStagiaires()" class="btn btn-gray btn-sm">🖨️ Imprimer</button>
@@ -1181,7 +1180,8 @@ window.openSessionDetail = async function(id) {
   document.getElementById('sessions-list-view').classList.add('hidden');
   document.getElementById('sessions-detail-view').classList.remove('hidden');
   const tl = {INI:'Initial', REC:'Recyclage', RAN:'Remise à niveau'};
-  document.getElementById('detail-sess-title').textContent = currentSession.type_formation + ' ' + currentSession.niveau + ' — ' + (tl[currentSession.type_formation]||'');
+  const dateCode = currentSession.date_debut ? '.' + currentSession.date_debut.slice(8,10) + currentSession.date_debut.slice(5,7) + currentSession.date_debut.slice(2,4) : '';
+  document.getElementById('detail-sess-title').textContent = currentSession.type_formation + '_' + currentSession.niveau + dateCode;
   document.getElementById('detail-sess-sub').textContent = currentSession.formateurs ? 'Formateur : ' + currentSession.formateurs.prenom + ' ' + currentSession.formateurs.nom : 'Aucun formateur assigné';
   document.getElementById('detail-sess-statut').innerHTML = sessionStatutBadge(currentSession.statut);
   document.getElementById('detail-statut-select').value = currentSession.statut || 'planifiee';
@@ -1410,11 +1410,16 @@ window.openModal = function(id) {
     document.getElementById('csv-file').value='';
   }
   if (id === 'modal-add-session') {
-    const sel = document.getElementById('sess-formateur');
-    sel.innerHTML = '<option value="">— Sélectionner —</option>';
-    allFormateurs.forEach(f => { const opt=document.createElement('option'); opt.value=f.id; opt.textContent=f.prenom+' '+f.nom; sel.appendChild(opt); });
     document.getElementById('sess-msg').classList.add('hidden');
     ['sess-debut','sess-fin','sess-notes'].forEach(i => { const el=document.getElementById(i); if(el) el.value=''; });
+    const fillSess = () => {
+      const sel = document.getElementById('sess-formateur');
+      sel.innerHTML = '<option value="">— Sélectionner —</option>';
+      allFormateurs.forEach(f => { const opt=document.createElement('option'); opt.value=f.id; opt.textContent=f.prenom+' '+f.nom; sel.appendChild(opt); });
+    };
+    if (!allFormateurs.length) {
+      supabase.from('formateurs').select('*').eq('center_id',CENTER.id).eq('actif',true).order('nom').then(({data}) => { allFormateurs=data||[]; fillSess(); });
+    } else { fillSess(); }
   }
   if (id === 'modal-add-participants') {
     document.getElementById('search-participants').value='';
@@ -1422,10 +1427,15 @@ window.openModal = function(id) {
     openModal_participants();
   }
   if (id === 'modal-assign-formateur') {
-    const sel = document.getElementById('assign-formateur-select');
-    sel.innerHTML = '<option value="">— Aucun formateur —</option>';
-    allFormateurs.forEach(f => { const opt=document.createElement('option'); opt.value=f.id; opt.textContent=f.prenom+' '+f.nom; if(currentSession&&currentSession.formateur_id===f.id) opt.selected=true; sel.appendChild(opt); });
     document.getElementById('assign-f-msg').classList.add('hidden');
+    const fillAssign = () => {
+      const sel = document.getElementById('assign-formateur-select');
+      sel.innerHTML = '<option value="">— Aucun formateur —</option>';
+      allFormateurs.forEach(f => { const opt=document.createElement('option'); opt.value=f.id; opt.textContent=f.prenom+' '+f.nom; if(currentSession&&currentSession.formateur_id===f.id) opt.selected=true; sel.appendChild(opt); });
+    };
+    if (!allFormateurs.length) {
+      supabase.from('formateurs').select('*').eq('center_id',CENTER.id).eq('actif',true).order('nom').then(({data}) => { allFormateurs=data||[]; fillAssign(); });
+    } else { fillAssign(); }
   }
   if (id === 'modal-avis') {
     document.getElementById('avis-message').value='';
