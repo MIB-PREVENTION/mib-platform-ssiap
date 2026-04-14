@@ -1088,11 +1088,21 @@ function renderStagiairesSessionTable(data) {
     + '<td>' + (s.prenom||'—') + '</td>'
     + '<td style="font-size:.8rem;color:var(--text2);">' + (s.email||'—') + '</td>'
     + '<td><span class="badge ' + (s.niveau==='SSIAP1'?'b-blue':s.niveau==='SSIAP2'?'b-orange':'b-red') + '">' + (s.niveau||'—') + '</span></td>'
-    + '<td><div style="display:flex;gap:5px;">'
-    + '<button onclick="editStagiaire('' + s.id + '')" class="btn btn-blue btn-xs">✏️</button>'
-    + '<button onclick="deleteStagiaire('' + s.id + '')" class="btn btn-red btn-xs">🗑️</button>'
-    + '</div></td></tr>'
+    + '<td><div style="display:flex;gap:5px;"></div></td></tr>'
   ).join('');
+  // Ajouter les boutons via DOM pour éviter les problèmes d'échappement
+  tbody.querySelectorAll('tr').forEach((tr, i) => {
+    const s = data[i];
+    const td = tr.lastElementChild.querySelector('div');
+    const b1 = document.createElement('button');
+    b1.className = 'btn btn-blue btn-xs'; b1.textContent = '✏️';
+    b1.onclick = function() { editStagiaire(s.id); };
+    const b2 = document.createElement('button');
+    b2.className = 'btn btn-red btn-xs'; b2.textContent = '🗑️';
+    b2.style.marginLeft = '5px';
+    b2.onclick = function() { deleteStagiaire(s.id); };
+    td.appendChild(b1); td.appendChild(b2);
+  });
 }
 
 // ============================================================
