@@ -18,12 +18,6 @@ window.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, 
   }
 });
 
-// ============================================================
-// MAILGUN
-// ============================================================
-window.MAILGUN_DOMAIN = 'mib-prevention.fr';  // ex: mg.mib-prevention.fr
-window.MAILGUN_API_KEY = '3c581ed86d1b6b6e16756370c122b661-77c6c375-c9f2e8cc';
-
 
 // ============================================================
 // STORAGE — URLs publiques
