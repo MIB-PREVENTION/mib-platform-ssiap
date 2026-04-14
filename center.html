@@ -924,7 +924,9 @@ window.saveStagiaire = async function() {
     if (editingStagiaireId) {
       await supabase.from('stagiaires').update({ prenom, nom, email:email||null, telephone:tel||null, niveau }).eq('id', editingStagiaireId);
       msgEl.innerHTML = '<div class="alert-ok">✅ Stagiaire modifié !</div>'; msgEl.classList.remove('hidden');
-      await loadStagiaires(); loadAll();
+      await loadStagiaires();
+      if (currentSession) await loadParticipants();
+      loadAll();
       setTimeout(() => closeModal('modal-add-stagiaire'), 1500);
     } else {
       if (!editingStagiaireId) {
@@ -979,14 +981,18 @@ function buildStagiaireCard(prenom, nom, pin, url, niveau) {
 window.printStagiaireCard = function() { window.print(); };
 
 window.editStagiaire = function(id) {
-  const s = allStagiaires.find(x => x.id === id); if (!s) return;
-  editingStagiaireId = id;
+  const sid = id; const s = allStagiaires.find(x => x.id === sid);
+  // Si pas dans allStagiaires (chargé depuis participants), chercher dans currentParticipants
+  const stag = s || (currentParticipants.find(p=>p.stagiaire_id===sid)||{}).stagiaires;
+  if (!stag) return;
+  editingStagiaireId = sid;
   document.getElementById('modal-s-title').textContent = 'Modifier le stagiaire';
-  document.getElementById('s-prenom').value = s.prenom;
-  document.getElementById('s-nom').value = s.nom;
-  document.getElementById('s-email').value = s.email || '';
-  document.getElementById('s-tel').value = s.telephone || '';
-  document.getElementById('s-niveau').value = s.niveau || 'SSIAP1';
+  document.getElementById('s-prenom').value = stag.prenom||'';
+  document.getElementById('s-nom').value = stag.nom||'';
+  document.getElementById('s-email').value = stag.email || '';
+  document.getElementById('s-tel').value = stag.telephone || '';
+  document.getElementById('s-niveau').value = stag.niveau || 'SSIAP1';
+  document.getElementById('s-niveau').disabled = false; // toujours modifiable en édition
   document.getElementById('s-msg').classList.add('hidden');
   document.getElementById('s-result').classList.add('hidden');
   document.getElementById('s-form-actions').classList.remove('hidden');
@@ -1000,22 +1006,43 @@ window.deleteStagiaire = async function(id) {
 };
 
 window.printStagiaires = function() {
+  // Utiliser les participants de la session si on est dans une session, sinon tous les stagiaires
+  let listeToPrint = [];
+  let titre = 'Liste des stagiaires — ' + CENTER.nom;
+  if (currentSession && currentParticipants.length) {
+    titre = 'Session ' + (document.getElementById('detail-sess-title').textContent||'') + ' — ' + CENTER.nom;
+    listeToPrint = currentParticipants.map(p => ({
+      nom: p.stagiaires?.nom||'—', prenom: p.stagiaires?.prenom||'—',
+      niveau: p.stagiaires?.niveau||'—', pin_clair: null, email: ''
+    }));
+  } else {
+    listeToPrint = allStagiaires;
+  }
   const rows = ['<table border="1" cellpadding="8" style="border-collapse:collapse;width:100%;font-family:sans-serif;"><thead><tr><th>Nom</th><th>Prénom</th><th>Niveau</th><th>PIN</th><th>Email</th></tr></thead><tbody>'];
-  allStagiaires.forEach(s => {
+  listeToPrint.forEach(s => {
     rows.push('<tr><td>' + s.nom + '</td><td>' + s.prenom + '</td><td>' + s.niveau + '</td><td style="font-family:monospace;letter-spacing:.2em;">' + (s.pin_clair||'—') + '</td><td>' + (s.email||'') + '</td></tr>');
   });
   rows.push('</tbody></table>');
   const w = window.open('', '_blank');
-  w.document.write('<html><head><title>Liste stagiaires — ' + CENTER.nom + '</title></head><body><h2>Liste des stagiaires — ' + CENTER.nom + '</h2><p>Généré le ' + new Date().toLocaleDateString('fr-FR') + '</p>' + rows.join('') + '</body></html>');
+  w.document.write('<html><head><title>' + titre + '</title></head><body><h2>' + titre + '</h2><p>Généré le ' + new Date().toLocaleDateString('fr-FR') + '</p>' + rows.join('') + '</body></html>');
   w.document.close(); w.print();
 };
 
 window.exportCSV = function() {
-  const rows = [['Prenom','Nom','Email','Telephone','Niveau'], ...allStagiaires.map(s=>[s.prenom,s.nom,s.email||'',s.telephone||'',s.niveau])];
+  let listeToExport = allStagiaires;
+  let filename = 'stagiaires_' + CENTER.nom.replace(/\s/g,'_');
+  if (currentSession && currentParticipants.length) {
+    listeToExport = currentParticipants.map(p => ({
+      prenom: p.stagiaires?.prenom||'', nom: p.stagiaires?.nom||'',
+      email: '', telephone: '', niveau: p.stagiaires?.niveau||''
+    }));
+    filename = 'session_' + (document.getElementById('detail-sess-title').textContent||'').replace(/[^a-zA-Z0-9]/g,'_');
+  }
+  const rows = [['Prenom','Nom','Email','Telephone','Niveau'], ...listeToExport.map(s=>[s.prenom,s.nom,s.email||'',s.telephone||'',s.niveau])];
   const csv = rows.map(r=>r.join(';')).join('\n');
   const a = document.createElement('a');
   a.href = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(csv);
-  a.download = 'stagiaires_' + CENTER.nom.replace(/\s/g,'_') + '_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.download = filename + '_' + new Date().toISOString().slice(0,10) + '.csv';
   a.click();
 };
 
@@ -1405,7 +1432,15 @@ window.openModal = function(id) {
     editingStagiaireId = null;
     document.getElementById('modal-s-title').textContent = 'Nouveau stagiaire';
     ['s-prenom','s-nom','s-email','s-tel'].forEach(i => document.getElementById(i).value='');
-    document.getElementById('s-niveau').value = 'SSIAP1';
+    // Pré-remplir niveau depuis la session courante (non modifiable)
+    const niveauSel = document.getElementById('s-niveau');
+    if (currentSession && currentSession.niveau) {
+      niveauSel.value = currentSession.niveau;
+      niveauSel.disabled = true;
+    } else {
+      niveauSel.value = 'SSIAP1';
+      niveauSel.disabled = false;
+    }
     document.getElementById('s-msg').classList.add('hidden');
     document.getElementById('s-result').classList.add('hidden');
     document.getElementById('s-form-actions').classList.remove('hidden');
