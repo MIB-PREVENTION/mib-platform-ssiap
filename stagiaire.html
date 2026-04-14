@@ -1,1 +1,293 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>MIB — Espace Stagiaire</title>
+<meta name="theme-color" content="#f0fdf4">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="supabase.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Syne:wght@700;800;900&display=swap');
+:root{--bg:#f0fdf4;--text:#111827;--text2:#6b7280;--text3:#9ca3af;--green:#059669;}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);}
+.bg-wrap{position:fixed;inset:0;z-index:0;
+  background:radial-gradient(ellipse 70% 50% at 10% 0%,rgba(16,185,129,.1) 0%,transparent 60%),
+  radial-gradient(ellipse 50% 40% at 90% 100%,rgba(5,150,105,.08) 0%,transparent 60%),
+  linear-gradient(160deg,#f0fdf4 0%,#f9fffe 50%,#ecfdf5 100%);}
 
+.topbar{background:rgba(255,255,255,.9);backdrop-filter:blur(12px);border-bottom:1px solid rgba(16,185,129,.12);padding:14px 20px;
+  display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;
+  box-shadow:0 2px 12px rgba(16,185,129,.08);}
+
+.card{background:linear-gradient(145deg,#fff,#f9fffe);border-radius:20px;
+  border:1.5px solid rgba(255,255,255,.9);
+  box-shadow:6px 6px 20px rgba(16,185,129,.1),-3px -3px 10px rgba(255,255,255,.9),inset 0 1px 0 rgba(255,255,255,.8);
+  transition:all .25s;}
+
+.module-card{border-radius:22px;padding:28px;cursor:pointer;transition:all .3s;position:relative;overflow:hidden;}
+.module-card::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.15),transparent);pointer-events:none;}
+.module-card:hover{transform:translateY(-6px);box-shadow:0 20px 50px rgba(0,0,0,.15);}
+.module-card:active{transform:translateY(-2px);}
+
+.mod-auto{background:linear-gradient(135deg,#1d4ed8,#4f46e5);color:#fff;
+  box-shadow:0 8px 30px rgba(29,78,216,.4);}
+.mod-ssi{background:linear-gradient(135deg,#d97706,#b45309);color:#fff;
+  box-shadow:0 8px 30px rgba(217,119,6,.4);}
+
+.kpi{background:linear-gradient(145deg,#f0fdf4,#dcfce7);border-radius:16px;padding:16px;
+  border:1.5px solid rgba(16,185,129,.15);
+  box-shadow:3px 3px 10px rgba(16,185,129,.1),-2px -2px 8px rgba(255,255,255,.9);}
+.kpi-val{font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:800;line-height:1;color:#059669;}
+.kpi-lbl{font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-top:4px;}
+
+.logo-t{font-family:'Syne',sans-serif;font-weight:900;}
+.badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:.68rem;font-weight:700;}
+.b-green{background:#f0fdf4;color:#065f46;border:1px solid #bbf7d0;}
+.b-blue{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;}
+.b-orange{background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;}
+.hidden{display:none!important;}
+.spin{width:20px;height:20px;border:2.5px solid rgba(5,150,105,.2);border-top-color:#059669;border-radius:50%;animation:sp .6s linear infinite;display:inline-block;}
+@keyframes sp{to{transform:rotate(360deg)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.fade-up{animation:fadeUp .4s ease forwards;}
+.fade-up-2{animation:fadeUp .4s .1s ease both;}
+.fade-up-3{animation:fadeUp .4s .2s ease both;}
+</style>
+</head>
+<body>
+
+<!-- SESSION CHECK -->
+<script>
+(function(){
+  var _s;
+  try { _s = JSON.parse(localStorage.getItem('mib_stagiaire')); } catch(e) {}
+  if (!_s) {
+    document.addEventListener('DOMContentLoaded', function(){
+      window.location.href = 'login-stagiaire.html';
+    });
+    return;
+  }
+  window.STAGIAIRE = {
+    id: _s.stagiaire_id,
+    nom: _s.stagiaire_nom || '',
+    prenom: _s.stagiaire_prenom || '',
+    niveau: _s.stagiaire_niveau || 'SSIAP1',
+    center_id: _s.center_id,
+    center_nom: _s.center_nom || ''
+  };
+})();
+</script>
+
+<div class="bg-wrap"></div>
+
+<div class="relative z-10 min-h-screen flex flex-col">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="flex items-center gap-3">
+      <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;font-size:1rem;box-shadow:2px 2px 8px rgba(16,185,129,.35);">👨‍🎓</div>
+      <div>
+        <div class="logo-t" style="font-size:.95rem;color:var(--text);" id="top-nom">—</div>
+        <div style="font-size:.65rem;color:var(--text3);" id="top-centre">—</div>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <span class="badge b-green" id="top-niveau">—</span>
+      <button onclick="logout()" style="background:none;border:1.5px solid rgba(0,0,0,.1);border-radius:8px;padding:6px 12px;font-size:.75rem;font-weight:600;color:var(--text2);cursor:pointer;transition:all .2s;" onmouseover="this.style.background='#fee2e2';this.style.color='#b91c1c'" onmouseout="this.style.background='none';this.style.color='var(--text2)'">
+        🚪 Déco
+      </button>
+    </div>
+  </div>
+
+  <!-- CONTENU -->
+  <div class="flex-1 p-5" style="max-width:600px;width:100%;margin:0 auto;">
+
+    <!-- CHARGEMENT -->
+    <div id="loading-state" class="flex flex-col items-center justify-center" style="padding:60px 0;">
+      <div class="spin" style="width:32px;height:32px;"></div>
+      <p style="margin-top:12px;color:var(--text2);font-size:.85rem;">Chargement de votre espace...</p>
+    </div>
+
+    <!-- CONTENU PRINCIPAL -->
+    <div id="main-content" class="hidden">
+
+      <!-- ACCUEIL -->
+      <div style="margin-bottom:24px;" class="fade-up">
+        <h1 style="font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:900;color:var(--text);">Bonjour <span id="prenom-display">—</span> 👋</h1>
+        <p style="font-size:.82rem;color:var(--text2);margin-top:4px;" id="session-info">Chargement de vos sessions...</p>
+      </div>
+
+      <!-- KPIs -->
+      <div class="grid grid-cols-3 gap-3 mb-6 fade-up-2">
+        <div class="kpi">
+          <div class="kpi-val" id="kpi-sessions">—</div>
+          <div class="kpi-lbl">Sessions</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-val" id="kpi-presences">—</div>
+          <div class="kpi-lbl">Présences</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-val" id="kpi-niveau" style="font-size:1rem;">—</div>
+          <div class="kpi-lbl">Niveau</div>
+        </div>
+      </div>
+
+      <!-- SESSION EN COURS -->
+      <div id="session-card" class="card p-4 mb-6 hidden fade-up-2">
+        <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#059669;margin-bottom:8px;">📋 Session en cours</div>
+        <div style="font-size:.95rem;font-weight:700;" id="sess-nom">—</div>
+        <div style="font-size:.78rem;color:var(--text2);margin-top:4px;" id="sess-dates">—</div>
+        <div style="margin-top:10px;display:flex;align-items:center;gap:8px;">
+          <span style="font-size:.75rem;color:var(--text2);">Formateur :</span>
+          <span style="font-size:.78rem;font-weight:600;" id="sess-formateur">—</span>
+        </div>
+      </div>
+
+      <!-- MODULES -->
+      <div class="fade-up-3">
+        <h2 style="font-size:.85rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:14px;">🧩 Mes modules de formation</h2>
+
+        <div class="grid grid-cols-1 gap-4">
+
+          <!-- AUTO-ENTRAÎNEMENT -->
+          <div class="module-card mod-auto" id="card-auto" onclick="launchModule('auto')">
+            <div style="font-size:2.8rem;margin-bottom:12px;">🎯</div>
+            <div style="font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:900;margin-bottom:6px;">Auto-entraînement</div>
+            <div style="font-size:.82rem;opacity:.85;margin-bottom:16px;line-height:1.5;">Entraîne-toi à ton rythme avec des QCM SSIAP adaptés à ton niveau. Suivi de progression inclus.</div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="background:rgba(255,255,255,.2);border-radius:8px;padding:6px 14px;font-size:.8rem;font-weight:700;">▶ Commencer →</span>
+              <span id="badge-auto" style="background:rgba(255,255,255,.15);border-radius:6px;padding:4px 10px;font-size:.72rem;"></span>
+            </div>
+          </div>
+
+          <!-- SSI AUTO-FORMATION -->
+          <div class="module-card mod-ssi" id="card-ssi" onclick="launchModule('ssi')">
+            <div style="font-size:2.8rem;margin-bottom:12px;">🟡</div>
+            <div style="font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:900;margin-bottom:6px;">SSI Auto-formation</div>
+            <div style="font-size:.82rem;opacity:.85;margin-bottom:16px;line-height:1.5;">Découvre les systèmes de sécurité incendie avec des scénarios guidés en autonomie.</div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="background:rgba(255,255,255,.2);border-radius:8px;padding:6px 14px;font-size:.8rem;font-weight:700;">▶ Commencer →</span>
+              <span id="badge-ssi" style="background:rgba(255,255,255,.15);border-radius:6px;padding:4px 10px;font-size:.72rem;"></span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- MODULE DÉSACTIVÉ MESSAGE -->
+      <div id="module-disabled" class="hidden" style="margin-top:16px;padding:14px 18px;border-radius:14px;background:linear-gradient(145deg,#fff7ed,#ffedd5);border:1.5px solid #fed7aa;">
+        <p style="font-size:.82rem;color:#c2410c;font-weight:600;">⚠️ Ce module n'est pas activé sur votre centre.</p>
+        <p style="font-size:.78rem;color:#92400e;margin-top:4px;">Contactez votre formateur ou responsable de centre.</p>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+let STAGIAIRE = window.STAGIAIRE || null;
+let centerData = null;
+let currentSession = null;
+
+window.addEventListener('DOMContentLoaded', async () => {
+  if (!STAGIAIRE) { window.location.href = 'login-stagiaire.html'; return; }
+
+  // Remplir topbar
+  document.getElementById('top-nom').textContent = STAGIAIRE.nom + ' ' + (STAGIAIRE.prenom || '');
+  document.getElementById('top-centre').textContent = STAGIAIRE.center_nom || '—';
+  document.getElementById('top-niveau').textContent = STAGIAIRE.niveau;
+  document.getElementById('prenom-display').textContent = STAGIAIRE.prenom || STAGIAIRE.nom;
+  document.getElementById('kpi-niveau').textContent = STAGIAIRE.niveau;
+
+  try {
+    // Charger données centre (modules actifs)
+    const { data: centre } = await supabase.from('centers').select('*').eq('id', STAGIAIRE.center_id).single();
+    centerData = centre;
+
+    // Griser les modules non actifs
+    if (!centre?.module_auto_entrainement) {
+      document.getElementById('card-auto').style.opacity = '.45';
+      document.getElementById('card-auto').style.cursor = 'not-allowed';
+      document.getElementById('badge-auto').textContent = 'Non activé';
+    }
+    if (!centre?.module_ssi_autoformation) {
+      document.getElementById('card-ssi').style.opacity = '.45';
+      document.getElementById('card-ssi').style.cursor = 'not-allowed';
+      document.getElementById('badge-ssi').textContent = 'Non activé';
+    }
+
+    // Charger sessions du stagiaire
+    const { data: participations } = await supabase
+      .from('session_participants')
+      .select('*, sessions_formation(*, formateurs(nom,prenom))')
+      .eq('stagiaire_id', STAGIAIRE.id);
+
+    const parts = participations || [];
+    const presences = parts.filter(p => p.presence).length;
+
+    document.getElementById('kpi-sessions').textContent = parts.length;
+    document.getElementById('kpi-presences').textContent = presences;
+
+    // Session en cours (planifiee ou en_cours)
+    const active = parts.find(p =>
+      p.sessions_formation?.statut === 'en_cours' ||
+      p.sessions_formation?.statut === 'planifiee'
+    );
+    if (active?.sessions_formation) {
+      const s = active.sessions_formation;
+      document.getElementById('session-card').classList.remove('hidden');
+      document.getElementById('sess-nom').textContent = s.type_formation + '_' + s.niveau
+        + (s.date_debut ? '.' + s.date_debut.slice(8,10) + s.date_debut.slice(5,7) + s.date_debut.slice(2,4) : '');
+      document.getElementById('sess-dates').textContent =
+        (s.date_debut ? new Date(s.date_debut).toLocaleDateString('fr-FR') : '—') +
+        (s.date_fin ? ' → ' + new Date(s.date_fin).toLocaleDateString('fr-FR') : '');
+      const f = s.formateurs;
+      document.getElementById('sess-formateur').textContent = f ? f.prenom + ' ' + f.nom : '—';
+      currentSession = s;
+      document.getElementById('session-info').textContent = 'Session en cours — ' + s.niveau;
+    } else {
+      document.getElementById('session-info').textContent = parts.length
+        ? parts.length + ' session(s) enregistrée(s)'
+        : 'Aucune session pour le moment';
+    }
+
+  } catch(e) { console.error(e); }
+
+  document.getElementById('loading-state').classList.add('hidden');
+  document.getElementById('main-content').classList.remove('hidden');
+});
+
+window.launchModule = function(mod) {
+  const urls = {
+    auto: 'auto-entrainement.html',
+    ssi: 'ssi-autoformation.html'
+  };
+  const keys = {
+    auto: 'module_auto_entrainement',
+    ssi: 'module_ssi_autoformation'
+  };
+  if (centerData && !centerData[keys[mod]]) {
+    document.getElementById('module-disabled').classList.remove('hidden');
+    setTimeout(() => document.getElementById('module-disabled').classList.add('hidden'), 3000);
+    return;
+  }
+  const params = new URLSearchParams({
+    stagiaire: STAGIAIRE.id,
+    center: STAGIAIRE.center_id,
+    niveau: STAGIAIRE.niveau
+  });
+  if (currentSession) params.set('session', currentSession.id);
+  window.location.href = urls[mod] + '?' + params.toString();
+};
+
+window.logout = function() {
+  SESSION.clear('stagiaire');
+  window.location.href = 'login-stagiaire.html';
+};
+</script>
+</body>
+</html>
