@@ -404,8 +404,8 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
     </div>
     <div class="space-y-3">
       <div class="grid grid-cols-2 gap-3">
-        <div><label class="lbl">Prénom</label><input type="text" id="f-prenom" class="inp" placeholder="Jean"></div>
-        <div><label class="lbl">Nom</label><input type="text" id="f-nom" class="inp" placeholder="MARTIN"></div>
+        <div><label class="lbl">Prénom</label><input type="text" id="f-prenom" class="inp" placeholder="Jean" oninput="this.value=capitalizeWords(this.value)"></div>
+        <div><label class="lbl">Nom</label><input type="text" id="f-nom" class="inp" placeholder="MARTIN" oninput="this.value=this.value.toUpperCase()"></div>
       </div>
       <div><label class="lbl">Email (optionnel)</label><input type="email" id="f-email" class="inp" placeholder="jean.martin@centre.fr"></div>
       <div><label class="lbl">Rôle</label>
@@ -452,8 +452,8 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
     </div>
     <div class="space-y-3">
       <div class="grid grid-cols-2 gap-3">
-        <div><label class="lbl">Prénom</label><input type="text" id="s-prenom" class="inp" placeholder="Marie"></div>
-        <div><label class="lbl">Nom</label><input type="text" id="s-nom" class="inp" placeholder="DUPONT"></div>
+        <div><label class="lbl">Prénom</label><input type="text" id="s-prenom" class="inp" placeholder="Marie" oninput="this.value=capitalizeWords(this.value)"></div>
+        <div><label class="lbl">Nom</label><input type="text" id="s-nom" class="inp" placeholder="DUPONT" oninput="this.value=this.value.toUpperCase()"></div>
       </div>
       <div><label class="lbl">Email (optionnel)</label><input type="email" id="s-email" class="inp" placeholder="marie.dupont@email.fr"></div>
       <div><label class="lbl">Téléphone (optionnel)</label><input type="tel" id="s-tel" class="inp" placeholder="06 00 00 00 00"></div>
@@ -647,6 +647,11 @@ let editingFormateurId = null;
 let editingStagiaireId = null;
 let currentStars = 0;
 
+
+function capitalizeWords(str) {
+  return str.replace(/\b\w/g, l => l.toUpperCase());
+}
+
 window.addEventListener('DOMContentLoaded', async () => {
   const session = SESSION.load('centre');
   if (!session) { window.location.href = 'index.html'; return; }
@@ -697,7 +702,13 @@ window.showTab = function(t) {
   document.getElementById('top-title').textContent = ti[0];
   document.getElementById('top-sub').textContent = ti[1];
   if (t === 'formateurs') loadFormateurs();
-  if (t === 'sessions') loadSessions();
+  if (t === 'sessions') {
+    // Toujours revenir à la vue liste quand on clique sur Sessions
+    document.getElementById('sessions-list-view').classList.remove('hidden');
+    document.getElementById('sessions-detail-view').classList.add('hidden');
+    currentSession = null;
+    loadSessions();
+  }
   if (t === 'modules') renderModules();
   if (t === 'avis') loadAvis();
   if (t === 'compte') renderCompte();
