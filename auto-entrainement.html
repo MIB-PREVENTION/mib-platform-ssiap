@@ -236,8 +236,8 @@ async function loadThemes(){
   const el=document.getElementById('themes-list');
   el.innerHTML='<div style="text-align:center;padding:14px;color:#9ca3af;"><span class="spin"></span></div>';
   try{
-    const{data}=await supabase.from('entrainement_questions').select('theme').eq('niveau',selectedNiveau).eq('actif',true).not('theme','is',null);
-    allThemes=[...new Set((data||[]).map(q=>q.theme).filter(Boolean))].sort();
+    const{data}=await supabase.from('boites').select('id,nom,ordre').eq('niveau',selectedNiveau).order('ordre',{ascending:true});
+    allThemes=(data||[]).map(b=>({id:b.id,nom:b.nom}));
     renderThemes();
   }catch(e){el.innerHTML='<div style="color:#9ca3af;font-size:.82rem;padding:10px;">Erreur chargement th&#232;mes</div>';}
 }
@@ -248,25 +248,24 @@ function renderThemes(){
   let html='<div class="theme-item theme-all '+(allSel?'sel':'')+'" onclick="toggleAllThemes()" style="border-color:#6366f1;background:'+(allSel?'#ede9fe':'#f5f3ff')+';">'
     +'<input type="checkbox" class="chk" '+(allSel?'checked':'')+' readonly style="pointer-events:none;'+(allSel?'background:#6366f1;border-color:#6366f1;':'')+'">'
     +'<span style="font-size:.88rem;font-weight:700;">Tous les th&#232;mes</span></div>';
-  allThemes.forEach((t,i)=>{
-    const sel=selectedThemes.has(t);
-    html+='<div class="theme-item '+(sel?'sel':'')+'" onclick="toggleTheme(this,\''+t.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')">'
+  allThemes.forEach(t=>{
+    const sel=selectedThemes.has(t.id);
+    html+='<div class="theme-item '+(sel?'sel':'')+'" onclick="toggleThemeById(\''+(t.id||'').replace(/\'/g,\'\\\'\')+\'\',\''+(t.nom||'').replace(/\'/g,\'\\\'\')+\'\')">'
       +'<input type="checkbox" class="chk" '+(sel?'checked':'')+' readonly style="pointer-events:none;'+(sel?'background:#3b82f6;border-color:#3b82f6;':'')+'">'
-      +'<span style="font-size:.85rem;">'+t+'</span></div>';
+      +'<span style="font-size:.85rem;">'+(t.nom||t)+'</span></div>';
   });
   el.innerHTML=html;
 }
-
-function toggleAllThemes(){selectedThemes.clear();renderThemes();}
 function toggleTheme(el,t){if(selectedThemes.has(t))selectedThemes.delete(t);else selectedThemes.add(t);renderThemes();}
+function toggleThemeById(id,nom){if(selectedThemes.has(id))selectedThemes.delete(id);else selectedThemes.add(id);renderThemes();}
 
 async function startSession(){
   const errEl=document.getElementById('home-err');errEl.classList.add('hidden');
   const btn=document.getElementById('btn-start');btn.disabled=true;btn.innerHTML='<span class="spin"></span> Chargement...';
   lastConfig={niveau:selectedNiveau,nb:selectedNb,themes:new Set(selectedThemes)};
   try{
-    let q=supabase.from('entrainement_questions').select('*').eq('niveau',selectedNiveau).eq('actif',true);
-    if(selectedThemes.size>0)q=q.in('theme',[...selectedThemes]);
+    let q=supabase.from('questions').select('*, boites(nom)').eq('niveau',selectedNiveau).eq('actif',true);
+    if(selectedThemes.size>0)q=q.in('boite_id',[...selectedThemes]);
     const{data,error}=await q;
     if(error)throw error;
     if(!data||data.length<2)throw new Error('Pas assez de questions pour ce niveau/th&#232;me. V&#233;rifiez la table entrainement_questions dans Supabase.');
@@ -287,8 +286,9 @@ function renderQuestion(){
   document.getElementById('prog').style.width=Math.round(currentIdx/questions.length*100)+'%';
   document.getElementById('q-counter').textContent=(currentIdx+1)+'/'+questions.length;
   const meta=document.getElementById('q-meta');meta.innerHTML='';
-  if(q.theme){const b=document.createElement('span');b.className='badge b-blue';b.textContent=q.theme;meta.appendChild(b);}
-  if(q.difficulte){const cls=q.difficulte==='facile'?'b-green':q.difficulte==='difficile'?'b-red':'b-orange';const b=document.createElement('span');b.className='badge '+cls;b.textContent=q.difficulte;meta.appendChild(b);}
+  const theme = q.titre || (q.boites&&q.boites.nom) || q.theme || '';
+  if(theme){const b=document.createElement('span');b.className='badge b-blue';b.textContent=theme;meta.appendChild(b);}
+  if(q.type&&q.type!=='quiz'){const b=document.createElement('span');b.className='badge b-gray';b.textContent=q.type;meta.appendChild(b);}
   document.getElementById('q-enonce').textContent=q.question||q.enonce||'-';
   document.getElementById('q-expl').classList.add('hidden');
   document.getElementById('btn-next').classList.add('hidden');
@@ -304,11 +304,24 @@ function renderQuestion(){
 }
 
 function buildChoices(q){
-  if(q.choices&&Array.isArray(q.choices))return q.choices;
-  if(q.options&&Array.isArray(q.options))return q.options.map((o,i)=>({text:typeof o==='string'?o:o.text,correct:typeof o==='object'?o.correct:(String(i)===String(q.bonne_reponse)||o===q.bonne_reponse)}));
-  const opts=[];
-  ['a','b','c','d'].forEach(l=>{if(q['option_'+l])opts.push({text:q['option_'+l],correct:q.bonne_reponse===l||q.bonne_reponse===q['option_'+l]});});
-  return opts.length?shuffle(opts):[{text:'Format inconnu',correct:true}];
+  // Format table "questions" : données JSONB = {options:[...], correctAnswer: 0}
+  const d = q.données || q.data || q.donnees;
+  if(d){
+    const opts = d.options || [];
+    const correct = d.correctAnswer;
+    const correctAnswers = d.correctAnswers || (correct!==undefined?[correct]:[0]);
+    return shuffle(opts.map((o,i)=>({
+      text: typeof o==='string'?o:(o.text||o.fr||String(o)),
+      correct: correctAnswers.includes(i)
+    })));
+  }
+  // Formats alternatifs
+  if(q.option_a) {
+    const opts=[];
+    ['a','b','c','d'].forEach(l=>{if(q['option_'+l])opts.push({text:q['option_'+l],correct:q.bonne_reponse===l});});
+    return shuffle(opts);
+  }
+  return [{text:'Format inconnu',correct:true}];
 }
 
 function selectAnswer(btn,isCorrect,q,choices){
