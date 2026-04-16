@@ -221,62 +221,46 @@ function renderFilters() {
   var parties = STRUCT[selectedNiveau] || [];
   var allSel = selParties.size === 0 && selSeqs.size === 0;
   var html = '';
-  
-  html += '<div class="fi' + (allSel ? ' sel' : '') + '" onclick="selTout()" style="border-color:#6366f1;background:' + (allSel ? '#ede9fe' : '#f5f3ff') + ';">';
-  html += '<input type="checkbox" class="chk" ' + (allSel ? 'checked' : '') + ' readonly style="pointer-events:none;' + (allSel ? 'background:#6366f1;border-color:#6366f1;' : '') + '">';
+  html += '<div class="fi' + (allSel?' sel':'') + '" onclick="selTout()" style="border-color:#6366f1;background:' + (allSel?'#ede9fe':'#f5f3ff') + ';">';
+  html += '<input type="checkbox" class="chk" ' + (allSel?'checked':'') + ' readonly style="pointer-events:none;' + (allSel?'background:#6366f1;border-color:#6366f1;':'') + '">';
   html += '<span style="font-size:.88rem;font-weight:700;">Toutes les parties</span></div>';
-  
   for (var pi = 0; pi < parties.length; pi++) {
     var p = parties[pi];
     var pSel = selParties.has(p.id);
-    html += '<div class="fi' + (pSel ? ' sel' : '') + '" onclick="togglePartie('' + p.id + '')" style="' + (pSel ? 'border-color:#059669;background:#f0fdf4;' : '') + '">';
-    html += '<input type="checkbox" class="chk" ' + (pSel ? 'checked' : '') + ' readonly style="pointer-events:none;' + (pSel ? 'background:#059669;border-color:#059669;' : '') + '">';
+    html += '<div class="fi' + (pSel?' sel':'') + '" onclick="togglePartie(' + pi + ')" style="' + (pSel?'border-color:#059669;background:#f0fdf4;':'') + '">';
+    html += '<input type="checkbox" class="chk" ' + (pSel?'checked':'') + ' readonly style="pointer-events:none;' + (pSel?'background:#059669;border-color:#059669;':'') + '">';
     html += '<span style="font-size:.84rem;font-weight:700;color:#065f46;">' + p.nom + '</span></div>';
-    
     if (pSel && p.sequences) {
       for (var si = 0; si < p.sequences.length; si++) {
         var s = p.sequences[si];
         var sSel = selSeqs.has(s.nom);
-        var sId = 'seq_' + pi + '_' + si;
-        html += '<div class="fi' + (sSel ? ' sel' : '') + '" style="margin-left:16px;' + (sSel ? 'border-color:#3b82f6;background:#eff6ff;' : '') + '" onclick="toggleSeq('' + p.id + '',' + pi + ',' + si + ')">';
-        html += '<input type="checkbox" class="chk" ' + (sSel ? 'checked' : '') + ' readonly style="pointer-events:none;' + (sSel ? 'background:#3b82f6;border-color:#3b82f6;' : '') + '">';
+        html += '<div class="fi' + (sSel?' sel':'') + '" style="margin-left:16px;' + (sSel?'border-color:#3b82f6;background:#eff6ff;':'') + '" onclick="toggleSeq(' + pi + ',' + si + ')">';
+        html += '<input type="checkbox" class="chk" ' + (sSel?'checked':'') + ' readonly style="pointer-events:none;' + (sSel?'background:#3b82f6;border-color:#3b82f6;':'') + '">';
         html += '<span style="font-size:.82rem;">' + s.nom + '</span></div>';
       }
     }
   }
-  
   el.innerHTML = html;
-  
-  // Mettre à jour le bouton démarrer
-  var summary = allSel ? 'Toutes les questions' : selSeqs.size ? selSeqs.size + ' séquence(s)' : selParties.size + ' partie(s)';
-  var prenom = PRENOM ? PRENOM + ' — ' : '';
-  document.getElementById('btn-start').textContent = prenom + 'Démarrer — ' + summary;
+  var summary = allSel ? 'Toutes les questions' : (selSeqs.size ? selSeqs.size + ' s\u00e9quence(s)' : selParties.size + ' partie(s)');
+  var prenom = PRENOM ? PRENOM + ' \u2014 ' : '';
+  document.getElementById('btn-start').textContent = prenom + 'D\u00e9marrer \u2014 ' + summary;
 }
-
 function selTout() { selParties = new Set(); selSeqs = new Set(); renderFilters(); }
-
-function togglePartie(id) {
-  if (selParties.has(id)) {
-    selParties.delete(id);
-    var parties = STRUCT[selectedNiveau] || [];
-    for (var i = 0; i < parties.length; i++) {
-      if (parties[i].id === id && parties[i].sequences) {
-        for (var j = 0; j < parties[i].sequences.length; j++) selSeqs.delete(parties[i].sequences[j].nom);
-      }
-    }
-  } else {
-    selParties.add(id);
-  }
+function togglePartie(pi) {
+  var parties = STRUCT[selectedNiveau] || [];
+  var p = parties[pi]; if (!p) return;
+  if (selParties.has(p.id)) {
+    selParties.delete(p.id);
+    if (p.sequences) { for (var j=0;j<p.sequences.length;j++) selSeqs.delete(p.sequences[j].nom); }
+  } else { selParties.add(p.id); }
   renderFilters();
 }
-
-function toggleSeq(partieId, pi, si) {
+function toggleSeq(pi, si) {
   var parties = STRUCT[selectedNiveau] || [];
-  var seqNom = parties[pi] && parties[pi].sequences[si] ? parties[pi].sequences[si].nom : '';
-  if (!seqNom) return;
-  if (!selParties.has(partieId)) selParties.add(partieId);
-  if (selSeqs.has(seqNom)) selSeqs.delete(seqNom);
-  else selSeqs.add(seqNom);
+  var p = parties[pi]; if (!p||!p.sequences||!p.sequences[si]) return;
+  var seqNom = p.sequences[si].nom;
+  if (!selParties.has(p.id)) selParties.add(p.id);
+  if (selSeqs.has(seqNom)) selSeqs.delete(seqNom); else selSeqs.add(seqNom);
   renderFilters();
 }
 
