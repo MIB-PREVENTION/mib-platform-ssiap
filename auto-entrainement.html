@@ -533,7 +533,7 @@ async function openModalHisto() {
   html += '<div class="card p-3 text-center"><div class="logo-t" style="font-size:1.4rem;color:' + (moy>=60?'#059669':'#ef4444') + ';">' + moy + '%</div><div style="font-size:.68rem;color:#6b7280;">Moyenne</div></div>';
   html += '<div class="card p-3 text-center"><div class="logo-t" style="font-size:1.4rem;color:#059669;">' + reussis + '</div><div style="font-size:.68rem;color:#6b7280;">R\u00e9ussis</div></div></div>';
   // Conseil global
-  if (moy < 60) html += '<div style="background:#fff7ed;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:.82rem;color:#c2410c;"><strong>Axe d'am\u00e9lioration :</strong> Continuez l'entra\u00eenement r\u00e9guli\u00e8rement — la r\u00e9p\u00e9tition est la cl\u00e9 de la r\u00e9ussite.</div>';
+  if (moy < 60) html += '<div style="background:#fff7ed;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:.82rem;color:#c2410c;"><strong>Axe d&#39;am\u00e9lioration :</strong> Continuez l&#39;entra\u00eenement r\u00e9guli\u00e8rement — la r\u00e9p\u00e9tition est la cl\u00e9 de la r\u00e9ussite.</div>';
   else if (moy >= 80) html += '<div style="background:#f0fdf4;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:.82rem;color:#065f46;"><strong>Excellent niveau !</strong> Maintenez ce rythme et d\u00e9couvrez les th\u00e8mes non encore travaill\u00e9s.</div>';
   html += '<div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;margin-bottom:10px;">Historique d\u00e9taill\u00e9</div>';
   for (var i = 0; i < data.length; i++) {
