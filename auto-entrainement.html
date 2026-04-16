@@ -119,8 +119,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#eef2ff;color:#1
     <div style="font-size:.65rem;font-weight:700;color:#3b82f6;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px;">Explication</div>
     <p style="font-size:.84rem;line-height:1.6;" id="q-expl-txt"></p>
   </div>
-  <button onclick="nextQ()" class="btn btn-blue hidden" style="width:100%;padding:13px;" id="btn-next">Question suivante &#8594;</button>
-  <button onclick="showResults()" class="btn btn-green hidden" style="width:100%;padding:13px;" id="btn-fin">Voir mes r&#233;sultats</button>
+
 </div>
 <div id="scr-result" class="flex-1 p-4 hidden" style="max-width:560px;width:100%;margin:0 auto;">
   <div class="card p-5 text-center mb-4 fade-up">
@@ -163,6 +162,7 @@ var currentIdx = 0, correctCount = 0, wrongCount = 0;
 var reponses = [];
 var sessionId = null, startTime = null, answered = false;
 var lastConfig = {};
+var lastReponses = [];
 var histoSessions = [];
 
 window.addEventListener('DOMContentLoaded', function() {
@@ -336,8 +336,6 @@ function renderQuestion() {
   if (th) { var b = document.createElement('span'); b.className = 'badge b-blue'; b.textContent = th; meta.appendChild(b); }
   document.getElementById('q-enonce').textContent = q.question || '-';
   document.getElementById('q-expl').classList.add('hidden');
-  document.getElementById('btn-next').classList.add('hidden');
-  document.getElementById('btn-fin').classList.add('hidden');
   var choices = buildChoices(q);
   var el = document.getElementById('q-choices');
   el.innerHTML = '';
@@ -385,15 +383,16 @@ function selectAnswer(btn, isCorrect, q, choices) {
   for (var i = 0; i < allBtns.length; i++) allBtns[i].disabled = true;
   var bon = '';
   for (var i = 0; i < choices.length; i++) { if (choices[i].correct) { bon = choices[i].text; break; } }
-  if (isCorrect) { btn.classList.add('correct'); correctCount++; }
-  else { btn.classList.add('wrong'); wrongCount++; for (var i = 0; i < allBtns.length; i++) { if (allBtns[i].textContent === bon) allBtns[i].classList.add('show-ok'); } }
+  // Marquer discrètement (pour le récap final) sans feedback visible
+  btn.setAttribute('data-chosen', '1');
+  if (isCorrect) { correctCount++; } else { wrongCount++; }
   reponses.push({q: q, isCorrect: isCorrect, choisi: btn.textContent, bon: bon});
-  updateTopScore();
   if (sessionId) supabase.from('entrainement_reponses').insert({session_id: sessionId, question_id: q.id, est_correcte: isCorrect}).then(function(){});
-  var expl = q.explication || '';
-  if (expl) { document.getElementById('q-expl-txt').textContent = expl; document.getElementById('q-expl').classList.remove('hidden'); }
-  if (currentIdx + 1 < questions.length) document.getElementById('btn-next').classList.remove('hidden');
-  else document.getElementById('btn-fin').classList.remove('hidden');
+  // Passer directement à la suite sans délai
+  setTimeout(function() {
+    if (currentIdx + 1 < questions.length) nextQ();
+    else showResults();
+  }, 300);
 }
 
 function nextQ() { currentIdx++; renderQuestion(); }
@@ -409,6 +408,8 @@ async function showResults() {
   var pct = Math.round(correctCount / total * 100);
   var dur = Math.round((Date.now() - startTime) / 1000);
   if (sessionId) await supabase.from('entrainement_sessions').update({score: correctCount, statut: 'terminee', duree_secondes: dur}).eq('id', sessionId);
+  // Sauvegarder les réponses dans la session pour l'historique
+  lastReponses = reponses.slice();
   showScreen('scr-result');
   document.getElementById('r-pct').textContent = pct + '%';
   document.getElementById('r-ok').textContent = correctCount;
@@ -440,15 +441,22 @@ async function showResults() {
     }
   }
   var keys = Object.keys(byB);
-  if (keys.length > 1) {
+  if (keys.length >= 1) {
     document.getElementById('analyse-wrap').classList.remove('hidden');
     var aHtml = '';
+    var forces = [], axes = [];
     for (var k = 0; k < keys.length; k++) {
       var v = byB[keys[k]];
       var p2 = Math.round(v.ok / v.n * 100);
       var col = p2 >= 75 ? '#10b981' : p2 >= 50 ? '#f59e0b' : '#ef4444';
-      aHtml += '<div style="margin-bottom:10px;"><div style="display:flex;justify-content:space-between;font-size:.82rem;font-weight:600;margin-bottom:4px;"><span>' + v.nom + '</span><span style="color:' + col + ';">' + v.ok + '/' + v.n + ' - ' + p2 + '%</span></div><div class="prog-bar"><div class="prog-fill" style="width:' + p2 + '%;background:' + col + ';"></div></div></div>';
+      if (p2 >= 75) forces.push(v.nom);
+      else if (p2 < 60) axes.push(v.nom);
+      aHtml += '<div style="margin-bottom:10px;"><div style="display:flex;justify-content:space-between;font-size:.82rem;font-weight:600;margin-bottom:4px;"><span>' + v.nom + '</span><span style="color:' + col + ';">' + v.ok + '/' + v.n + ' · ' + p2 + '%</span></div><div class="prog-bar"><div class="prog-fill" style="width:' + p2 + '%;background:' + col + ';"></div></div></div>';
     }
+    // Forces
+    if (forces.length) aHtml = '<div style="background:#f0fdf4;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:.82rem;"><strong style="color:#065f46;">&#127775; Points forts :</strong> ' + forces.join(', ') + '</div>' + aHtml;
+    // Axes
+    if (axes.length) aHtml += '<div style="background:#fff7ed;border-radius:10px;padding:10px 14px;margin-top:8px;font-size:.82rem;"><strong style="color:#c2410c;">&#128218; &#192; retravailler :</strong> ' + axes.join(', ') + '</div>';
     document.getElementById('analyse-list').innerHTML = aHtml;
   }
   // Correction
@@ -457,14 +465,24 @@ async function showResults() {
   for (var i = 0; i < reponses.length; i++) {
     var r = reponses[i];
     var cls = r.isCorrect ? 'b-green' : 'b-red';
-    var lbl = r.isCorrect ? 'Correct' : 'Incorrect';
-    cHtml += '<div class="card p-4"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><span style="font-size:.75rem;font-weight:700;color:#6b7280;">Q' + (i+1) + '</span><span class="badge ' + cls + '">' + lbl + '</span></div>';
-    cHtml += '<p style="font-size:.88rem;font-weight:600;margin-bottom:8px;">' + (r.q.question || '') + '</p>';
+    var lbl = r.isCorrect ? '&#10003; Correct' : '&#10007; Incorrect';
+    var bg = r.isCorrect ? '#f0fdf4' : '#fff';
+    var border = r.isCorrect ? 'border-left:4px solid #10b981;' : 'border-left:4px solid #ef4444;';
+    cHtml += '<div class="card p-4" style="' + border + 'margin-bottom:10px;">';
+    cHtml += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">';
+    cHtml += '<span style="font-size:.72rem;font-weight:700;color:#6b7280;">Question ' + (i+1) + ' / ' + total + '</span>';
+    cHtml += '<span class="badge ' + cls + '">' + lbl + '</span></div>';
+    cHtml += '<p style="font-size:.9rem;font-weight:600;margin-bottom:10px;line-height:1.5;">' + (r.q.question || '') + '</p>';
+    cHtml += '<div style="background:#f0fdf4;border-radius:8px;padding:8px 12px;margin-bottom:6px;font-size:.82rem;">';
+    cHtml += '<strong style="color:#065f46;">&#10003; Bonne r&#233;ponse :</strong> ' + r.bon + '</div>';
     if (!r.isCorrect) {
-      cHtml += '<div style="background:#fff1f2;border-radius:8px;padding:8px 12px;margin-bottom:6px;font-size:.82rem;"><strong style="color:#b91c1c;">Votre r&#233;ponse :</strong> ' + r.choisi + '</div>';
-      cHtml += '<div style="background:#f0fdf4;border-radius:8px;padding:8px 12px;margin-bottom:6px;font-size:.82rem;"><strong style="color:#065f46;">Bonne r&#233;ponse :</strong> ' + r.bon + '</div>';
+      cHtml += '<div style="background:#fff1f2;border-radius:8px;padding:8px 12px;margin-bottom:6px;font-size:.82rem;">';
+      cHtml += '<strong style="color:#b91c1c;">Votre r&#233;ponse :</strong> ' + r.choisi + '</div>';
     }
-    if (r.q.explication) cHtml += '<div style="background:#eff6ff;border-radius:8px;padding:8px 12px;font-size:.8rem;color:#1d4ed8;"><strong>Explication :</strong> ' + r.q.explication + '</div>';
+    if (r.q.explication) {
+      cHtml += '<div style="background:#eff6ff;border-radius:8px;padding:8px 12px;font-size:.8rem;color:#1d4ed8;line-height:1.5;">';
+      cHtml += '<strong>&#128161; Explication :</strong> ' + r.q.explication + '</div>';
+    }
     cHtml += '</div>';
   }
   document.getElementById('correction-list').innerHTML = cHtml;
@@ -502,15 +520,22 @@ async function openModalHisto() {
   if (!STAGIAIRE_ID) return;
   var res = await supabase.from('entrainement_sessions').select('*').eq('stagiaire_id', STAGIAIRE_ID).order('created_at', {ascending:false}).limit(20);
   var data = res.data;
-  if (!data) return;
+  if (!data || !data.length) { alert('Aucun entraînement trouvé.'); return; }
+  histoSessions = data;
   var total = data.length;
-  var sum = 0; for (var i = 0; i < data.length; i++) sum += data[i].total ? data[i].score/data[i].total*100 : 0;
+  var sum = 0;
+  for (var i = 0; i < data.length; i++) sum += data[i].total ? data[i].score/data[i].total*100 : 0;
   var moy = total ? Math.round(sum/total) : 0;
-  var reussis = 0; for (var i = 0; i < data.length; i++) { if (data[i].total && data[i].score/data[i].total >= 0.6) reussis++; }
+  var reussis = 0;
+  for (var i = 0; i < data.length; i++) { if (data[i].total && data[i].score/data[i].total >= 0.6) reussis++; }
   var html = '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;">';
-  html += '<div class="card p-3 text-center"><div class="logo-t" style="font-size:1.4rem;color:#3b82f6;">' + total + '</div><div style="font-size:.68rem;color:#6b7280;">Entr.</div></div>';
+  html += '<div class="card p-3 text-center"><div class="logo-t" style="font-size:1.4rem;color:#3b82f6;">' + total + '</div><div style="font-size:.68rem;color:#6b7280;">Entra\u00eenements</div></div>';
   html += '<div class="card p-3 text-center"><div class="logo-t" style="font-size:1.4rem;color:' + (moy>=60?'#059669':'#ef4444') + ';">' + moy + '%</div><div style="font-size:.68rem;color:#6b7280;">Moyenne</div></div>';
-  html += '<div class="card p-3 text-center"><div class="logo-t" style="font-size:1.4rem;color:#059669;">' + reussis + '</div><div style="font-size:.68rem;color:#6b7280;">R&#233;ussis</div></div></div>';
+  html += '<div class="card p-3 text-center"><div class="logo-t" style="font-size:1.4rem;color:#059669;">' + reussis + '</div><div style="font-size:.68rem;color:#6b7280;">R\u00e9ussis</div></div></div>';
+  // Conseil global
+  if (moy < 60) html += '<div style="background:#fff7ed;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:.82rem;color:#c2410c;"><strong>Axe d'am\u00e9lioration :</strong> Continuez l'entra\u00eenement r\u00e9guli\u00e8rement — la r\u00e9p\u00e9tition est la cl\u00e9 de la r\u00e9ussite.</div>';
+  else if (moy >= 80) html += '<div style="background:#f0fdf4;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:.82rem;color:#065f46;"><strong>Excellent niveau !</strong> Maintenez ce rythme et d\u00e9couvrez les th\u00e8mes non encore travaill\u00e9s.</div>';
+  html += '<div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;margin-bottom:10px;">Historique d\u00e9taill\u00e9</div>';
   for (var i = 0; i < data.length; i++) {
     var s = data[i];
     var p = s.total ? Math.round(s.score/s.total*100) : 0;
@@ -519,41 +544,50 @@ async function openModalHisto() {
     var dt = new Date(s.created_at).toLocaleDateString('fr-FR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
     html += '<div class="card p-3 mb-2" style="display:flex;align-items:center;gap:12px;">';
     html += '<div style="font-family:Syne,sans-serif;font-size:1.1rem;font-weight:900;color:' + col + ';min-width:40px;">' + p + '%</div>';
-    html += '<div style="flex:1;"><div style="font-size:.82rem;font-weight:700;">' + s.niveau + ' - ' + s.total + ' q - ' + (s.duree_secondes||0) + 's</div>';
+    html += '<div style="flex:1;"><div style="font-size:.82rem;font-weight:700;">' + s.niveau + ' \u00b7 ' + s.total + ' q \u00b7 ' + (s.duree_secondes||0) + 's</div>';
     html += '<div style="font-size:.7rem;color:#9ca3af;">' + dt + '</div>';
-    if (p < 60) html += '<button onclick="reviewErrIdx(' + i + ')" style="margin-top:4px;background:#fff7ed;border:1px solid #fed7aa;color:#c2410c;border-radius:6px;padding:3px 8px;font-size:.68rem;font-weight:700;cursor:pointer;">Revoir les erreurs &#8594;</button>';
-    else html += '<div style="font-size:.68rem;color:#059669;margin-top:2px;">Aucune erreur !</div>';
+    if (p < 100) html += '<button onclick="reviewErrIdx(' + i + ')" style="margin-top:4px;background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;border-radius:6px;padding:3px 10px;font-size:.7rem;font-weight:700;cursor:pointer;">Revoir les erreurs \u2192</button>';
+    else html += '<div style="font-size:.68rem;color:#059669;margin-top:2px;">Score parfait !</div>';
     html += '</div><span class="badge ' + cls + '">' + s.score + '/' + s.total + '</span></div>';
   }
   document.getElementById('modal-histo-content').innerHTML = html;
   document.getElementById('modal-histo').classList.remove('hidden');
 }
+
 function closeModalHisto() { document.getElementById('modal-histo').classList.add('hidden'); }
 
 function reviewErrIdx(i) { reviewErrors(histoSessions[i].id); }
 async function reviewErrors(sessId) {
-  var res = await supabase.from('entrainement_reponses').select('question_id').eq('session_id', sessId).eq('est_correcte', false);
+  var res = await supabase.from('entrainement_reponses').select('question_id, est_correcte').eq('session_id', sessId);
   var reps = res.data;
-  if (!reps || !reps.length) { alert('Aucune erreur.'); return; }
-  var ids = reps.map(function(r) { return r.question_id; });
-  var res2 = await supabase.from('questions').select('*').in('id', ids);
+  if (!reps || !reps.length) { alert('Aucune donn\u00e9e pour cette session.'); return; }
+  var errIds = reps.filter(function(r) { return !r.est_correcte; }).map(function(r) { return r.question_id; });
+  if (!errIds.length) { alert('Bravo ! Aucune erreur dans cette session.'); return; }
+  var res2 = await supabase.from('questions').select('*').in('id', errIds);
   var qs = res2.data;
   if (!qs || !qs.length) return;
-  document.getElementById('modal-erreurs-sub').textContent = qs.length + ' question(s) à retravailler';
-  var html = '';
+  var totalQ = reps.length;
+  var okQ = reps.filter(function(r) { return r.est_correcte; }).length;
+  var pctQ = Math.round(okQ/totalQ*100);
+  document.getElementById('modal-erreurs-sub').textContent = pctQ + '% · ' + errIds.length + ' erreur(s) sur ' + totalQ + ' questions';
+  var html = '<div style="background:#fff7ed;border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:.82rem;color:#c2410c;">';
+  html += '<strong>Conseil :</strong> Relisez bien les explications avant de refaire ces th\u00e8mes.</div>';
   for (var i = 0; i < qs.length; i++) {
     var q = qs[i];
-    var bon = buildChoices(q).filter(function(c) { return c.correct; });
-    html += '<div class="card p-4 mb-3"><div style="font-size:.65rem;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:6px;">Q' + (i+1) + '</div>';
-    html += '<p style="font-size:.88rem;font-weight:600;margin-bottom:10px;">' + (q.question||'') + '</p>';
-    html += '<div style="background:#f0fdf4;border-radius:8px;padding:8px 12px;font-size:.82rem;color:#065f46;margin-bottom:6px;"><strong>Bonne r&#233;ponse :</strong> ' + (bon.length ? bon[0].text : '-') + '</div>';
-    if (q.explication) html += '<div style="background:#eff6ff;border-radius:8px;padding:8px 12px;font-size:.8rem;color:#1d4ed8;"><strong>Explication :</strong> ' + q.explication + '</div>';
+    var bon = buildChoices(q).filter(function(ch) { return ch.correct; });
+    html += '<div class="card p-4" style="border-left:4px solid #ef4444;margin-bottom:10px;">';
+    if (q.titre) html += '<span class="badge b-blue" style="font-size:.68rem;margin-bottom:6px;display:inline-block;">' + q.titre + '</span><br>';
+    html += '<p style="font-size:.88rem;font-weight:600;margin-bottom:10px;line-height:1.5;">' + (q.question||'') + '</p>';
+    html += '<div style="background:#f0fdf4;border-radius:8px;padding:8px 12px;font-size:.82rem;color:#065f46;margin-bottom:6px;">';
+    html += '<strong>Bonne r\u00e9ponse :</strong> ' + (bon.length ? bon[0].text : '-') + '</div>';
+    if (q.explication) html += '<div style="background:#eff6ff;border-radius:8px;padding:8px 12px;font-size:.8rem;color:#1d4ed8;line-height:1.5;"><strong>Explication :</strong> ' + q.explication + '</div>';
     html += '</div>';
   }
   document.getElementById('modal-erreurs-content').innerHTML = html;
   closeModalHisto();
   document.getElementById('modal-erreurs').classList.remove('hidden');
 }
+
 function closeModalErreurs() { document.getElementById('modal-erreurs').classList.add('hidden'); }
 
 function restartSame() {
