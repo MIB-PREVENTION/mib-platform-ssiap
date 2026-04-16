@@ -492,7 +492,7 @@ async function loadHistorique() {
       html += '<div style="font-size:.72rem;color:#9ca3af;">' + dt + '</div></div>';
       html += '<span class="badge ' + cls + '">' + s.score + '/' + s.total + '</span></div>';
     }
-    if (data.length > 3) html += '<button onclick="openModalHisto()" class="btn btn-gray btn-sm" style="width:100%;margin-top:6px;">Voir tout l'historique</button>';
+    if (data.length > 3) html += '<button onclick="openModalHisto()" class="btn btn-gray btn-sm" style="width:100%;margin-top:6px;">Voir tout l&#39;historique</button>';
     list.innerHTML = html;
   } catch(e) { console.error(e); }
 }
