@@ -1,1 +1,651 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>MIB - Auto-entrainement SSIAP</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="supabase.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Syne:wght@700;800;900&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;font-family:'Inter',sans-serif;background:#eef2ff;color:#111827;}
+.card{background:#fff;border-radius:18px;border:1px solid rgba(0,0,0,.06);box-shadow:0 4px 16px rgba(0,0,0,.07);}
+.btn{padding:10px 20px;border-radius:11px;border:none;font-weight:700;font-size:.84rem;cursor:pointer;transition:all .2s;}
+.btn:hover{transform:translateY(-1px);}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+.btn-blue{background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;box-shadow:0 4px 12px rgba(37,99,235,.3);}
+.btn-green{background:linear-gradient(135deg,#10b981,#059669);color:#fff;box-shadow:0 4px 12px rgba(16,185,129,.3);}
+.btn-gray{background:#f3f4f6;color:#374151;border:1px solid #e5e7eb;}
+.btn-sm{padding:7px 14px;font-size:.78rem;border-radius:9px;}
+.nb-btn{padding:10px 0;border-radius:10px;border:2px solid #e5e7eb;background:#fff;font-weight:700;font-size:.88rem;cursor:pointer;transition:all .2s;color:#374151;text-align:center;}
+.nb-btn.sel{border-color:#3b82f6;background:#eff6ff;color:#1d4ed8;}
+.nb-btn:hover:not(.sel):not(:disabled){border-color:#93c5fd;background:#f8faff;}
+.nb-btn:disabled{opacity:.5;cursor:default;}
+.fi{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:9px;cursor:pointer;transition:all .2s;border:1.5px solid #e5e7eb;background:#fff;margin-bottom:5px;}
+.fi:hover{border-color:#93c5fd;background:#f8faff;}
+.fi.sel{border-color:#3b82f6;background:#eff6ff;}
+.choice-btn{width:100%;padding:13px 16px;border-radius:11px;border:2px solid #e5e7eb;background:#fff;font-size:.88rem;font-weight:500;text-align:left;cursor:pointer;transition:all .2s;color:#111827;line-height:1.4;}
+.choice-btn:hover:not(:disabled){border-color:#3b82f6;background:#eff6ff;}
+.choice-btn.correct{border-color:#10b981!important;background:#f0fdf4!important;color:#065f46!important;font-weight:700;}
+.choice-btn.wrong{border-color:#ef4444!important;background:#fff1f2!important;color:#b91c1c!important;}
+.choice-btn.show-ok{border-color:#10b981!important;background:#f0fdf4!important;}
+.badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:.68rem;font-weight:700;}
+.b-blue{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;}
+.b-green{background:#f0fdf4;color:#065f46;border:1px solid #bbf7d0;}
+.b-orange{background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;}
+.b-red{background:#fff1f2;color:#b91c1c;border:1px solid #fecdd3;}
+.prog-bar{height:6px;border-radius:999px;background:#e5e7eb;overflow:hidden;}
+.prog-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,#3b82f6,#1d4ed8);transition:width .4s;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{display:inline-block;width:18px;height:18px;border:2.5px solid rgba(37,99,235,.2);border-top-color:#3b82f6;border-radius:50%;animation:spin .6s linear infinite;}
+.logo-t{font-family:Syne,sans-serif;font-weight:900;}
+.hidden{display:none!important;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.fade-up{animation:fadeUp .3s ease forwards;}
+.score-ring{position:relative;width:120px;height:120px;}
+.score-ring svg{transform:rotate(-90deg);}
+.ring-bg{fill:none;stroke:#e5e7eb;stroke-width:10;}
+.ring-fill{fill:none;stroke-width:10;stroke-linecap:round;transition:stroke-dasharray 1s ease;}
+.score-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.3);backdrop-filter:blur(6px);z-index:50;display:flex;align-items:flex-end;justify-content:center;}
+.modal-box{background:#fff;border-radius:20px 20px 0 0;padding:24px;width:100%;max-width:560px;max-height:85vh;overflow-y:auto;box-shadow:0 -10px 40px rgba(0,0,0,.15);}
+.chk{width:16px;height:16px;border-radius:4px;border:2px solid #d1d5db;cursor:pointer;appearance:none;-webkit-appearance:none;transition:all .2s;flex-shrink:0;background:#fff;}
+.chk:checked{background:#3b82f6;border-color:#3b82f6;}
+@keyframes cf{to{transform:translateY(110vh) rotate(720deg);opacity:0}}
+</style>
+</head>
+<body>
+<div style="position:fixed;inset:0;z-index:0;background:linear-gradient(160deg,#eef2ff 0%,#f5f7ff 100%);"></div>
+<div class="relative z-10 min-h-screen flex flex-col">
+<div style="background:rgba(255,255,255,.92);backdrop-filter:blur(12px);border-bottom:1px solid rgba(0,0,0,.06);padding:11px 18px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;box-shadow:0 2px 10px rgba(0,0,0,.05);">
+  <div class="flex items-center gap-3">
+    <button onclick="goBack()" style="background:none;border:none;cursor:pointer;font-size:1.1rem;color:#6b7280;padding:4px;">&#8592;</button>
+    <span class="logo-t" style="font-size:.92rem;">Auto-entra&#238;nement</span>
+  </div>
+  <div class="flex items-center gap-2">
+    <span id="top-stag" style="font-size:.78rem;font-weight:600;color:#374151;"></span>
+    <span id="top-badge" class="badge b-blue hidden"></span>
+    <div id="top-score" class="hidden" style="display:flex;gap:10px;font-size:.78rem;font-weight:700;">
+      <span style="color:#059669;" id="sc-ok">OK: 0</span>
+      <span style="color:#ef4444;" id="sc-ko">KO: 0</span>
+    </div>
+  </div>
+</div>
+<div id="scr-home" class="flex-1 p-4" style="max-width:560px;width:100%;margin:0 auto;">
+  <div style="margin:12px 0 16px;" class="fade-up">
+    <div class="logo-t" style="font-size:1.3rem;" id="home-titre">Quiz SSIAP</div>
+    <div style="font-size:.82rem;color:#6b7280;margin-top:3px;">Entra&#238;ne-toi &#224; ton rythme</div>
+  </div>
+  <div class="card p-4 mb-3">
+    <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;margin-bottom:10px;">Niveau</div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="selectNiveau('SSIAP1')" id="bn1" class="nb-btn" style="flex:1;">SSIAP 1</button>
+      <button onclick="selectNiveau('SSIAP2')" id="bn2" class="nb-btn" style="flex:1;">SSIAP 2</button>
+      <button onclick="selectNiveau('SSIAP3')" id="bn3" class="nb-btn" style="flex:1;">SSIAP 3</button>
+    </div>
+  </div>
+  <div class="card p-4 mb-3">
+    <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;margin-bottom:10px;">Nombre de questions</div>
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;">
+      <button onclick="selectNb(5)" id="bnb5" class="nb-btn">5</button>
+      <button onclick="selectNb(10)" id="bnb10" class="nb-btn sel">10</button>
+      <button onclick="selectNb(15)" id="bnb15" class="nb-btn">15</button>
+      <button onclick="selectNb(20)" id="bnb20" class="nb-btn">20</button>
+      <button onclick="selectNb(30)" id="bnb30" class="nb-btn">30</button>
+      <button onclick="selectNb(40)" id="bnb40" class="nb-btn">40</button>
+    </div>
+  </div>
+  <div class="card p-4 mb-4">
+    <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;margin-bottom:10px;">Parties / S&#233;quences</div>
+    <div id="filter-list"></div>
+  </div>
+  <div id="home-err" class="hidden" style="background:#fff1f2;border:1.5px solid #fecdd3;border-radius:10px;padding:10px 14px;font-size:.82rem;color:#b91c1c;margin-bottom:12px;"></div>
+  <button onclick="startSession()" class="btn btn-blue" style="width:100%;padding:14px;font-size:.95rem;margin-bottom:16px;" id="btn-start">D&#233;marrer l&#8217;entra&#238;nement</button>
+  <div id="histo-wrap" class="hidden">
+    <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;margin-bottom:10px;">Mon historique</div>
+    <div id="histo-list"></div>
+  </div>
+</div>
+<div id="scr-question" class="flex-1 p-4 hidden" style="max-width:560px;width:100%;margin:0 auto;">
+  <div class="flex items-center gap-3 mb-4"><div class="prog-bar flex-1"><div class="prog-fill" id="prog" style="width:0%;"></div></div><span style="font-size:.75rem;font-weight:700;color:#6b7280;" id="q-counter">1/10</span></div>
+  <div class="card p-5 mb-3 fade-up" id="q-card">
+    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px;" id="q-meta"></div>
+    <p style="font-size:.95rem;font-weight:600;line-height:1.6;margin-bottom:18px;" id="q-enonce">-</p>
+    <div id="q-choices" class="space-y-2"></div>
+  </div>
+  <div id="q-expl" class="hidden card p-4 mb-3" style="border-left:4px solid #3b82f6;">
+    <div style="font-size:.65rem;font-weight:700;color:#3b82f6;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px;">Explication</div>
+    <p style="font-size:.84rem;line-height:1.6;" id="q-expl-txt"></p>
+  </div>
 
+</div>
+<div id="scr-result" class="flex-1 p-4 hidden" style="max-width:560px;width:100%;margin:0 auto;">
+  <div class="card p-5 text-center mb-4 fade-up">
+    <div class="score-ring mx-auto mb-3"><svg viewBox="0 0 120 120" width="120" height="120"><circle class="ring-bg" cx="60" cy="60" r="52"/><circle class="ring-fill" id="ring-fill" cx="60" cy="60" r="52" stroke="#3b82f6" style="stroke-dasharray:0 327;"/></svg><div class="score-center"><div class="logo-t" style="font-size:1.7rem;" id="r-pct">0%</div><div style="font-size:.7rem;color:#6b7280;">Score</div></div></div>
+    <div style="font-size:1.8rem;margin-bottom:6px;" id="r-emoji"></div>
+    <div class="logo-t" style="font-size:1.05rem;margin-bottom:4px;" id="r-msg"></div>
+    <div style="font-size:.8rem;color:#6b7280;margin-bottom:16px;" id="r-detail"></div>
+    <div style="display:flex;justify-content:center;gap:24px;">
+      <div><div class="logo-t" style="font-size:1.4rem;color:#059669;" id="r-ok">0</div><div style="font-size:.68rem;color:#6b7280;">Correctes</div></div>
+      <div><div class="logo-t" style="font-size:1.4rem;color:#ef4444;" id="r-ko">0</div><div style="font-size:.68rem;color:#6b7280;">Incorrectes</div></div>
+      <div><div class="logo-t" style="font-size:1.4rem;color:#6b7280;" id="r-time">0s</div><div style="font-size:.68rem;color:#6b7280;">Dur&#233;e</div></div>
+    </div>
+  </div>
+  <div id="analyse-wrap" class="card p-4 mb-4 hidden"><div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;margin-bottom:12px;">Analyse par partie</div><div id="analyse-list"></div></div>
+  <div id="correction-wrap" class="hidden"><div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;margin-bottom:10px;">Correction d&#233;taill&#233;e</div><div id="correction-list" class="space-y-3"></div></div>
+  <div style="display:flex;gap:8px;margin-top:16px;margin-bottom:24px;">
+    <button onclick="restartSame()" class="btn btn-blue flex-1">Recommencer</button>
+    <button onclick="goHome()" class="btn btn-gray flex-1">Accueil</button>
+  </div>
+</div>
+</div>
+<div id="modal-histo" class="modal-bg hidden"><div class="modal-box"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;"><div class="logo-t" style="font-size:1rem;">Mon historique</div><button onclick="closeModalHisto()" style="background:none;border:none;font-size:1.2rem;cursor:pointer;">&#x2715;</button></div><div id="modal-histo-content"></div></div></div>
+<div id="modal-erreurs" class="modal-bg hidden"><div class="modal-box"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;"><div class="logo-t" style="font-size:1rem;">Questions &#224; retravailler</div><button onclick="closeModalErreurs()" style="background:none;border:none;font-size:1.2rem;cursor:pointer;">&#x2715;</button></div><div id="modal-erreurs-sub" style="font-size:.78rem;color:#6b7280;margin-bottom:16px;"></div><div id="modal-erreurs-content"></div></div></div>
+<div id="confetti" style="position:fixed;inset:0;pointer-events:none;z-index:999;overflow:hidden;"></div>
+<script>
+var STRUCT = {"SSIAP1": [{"id": "b72c21e1-8a46-473d-aa0e-1b2f83fa889b", "nom": "Le feu et ses conséquences", "sequences": [{"nom": "LE FEU", "themes": ["Éclosion et développement du feu", "Théorie du feu", "La fumée et ses dangers", "Propagation du feu"]}, {"nom": "COMPORTEMENT AU FEU", "themes": ["Réaction et résistance au feu", "Principe de la résistance au feu", "Réaction au feu des matériaux"]}]}, {"id": "82a43263-efb6-400c-8146-8e2bdb2fc3d1", "nom": "La sécurité incendie", "sequences": [{"nom": "PRINCIPES GENERAUX DE SECURITE", "themes": ["Fondamentaux de sécurité", "Évacuation des occupants", "Accessibilité et moyens de secours"]}, {"nom": "DESSERTE DES BATIMENTS", "themes": ["Dessertes et Voiries"]}, {"nom": "CLOISONNEMENT", "themes": ["Intérêt du cloisonnement", "Portes coupe-feu et compartimentage"]}, {"nom": "EVACUATION", "themes": ["Vérification des dégagements", "Organisation et conduite de l'évacuation"]}, {"nom": "DÉSENFUMAGE", "themes": ["Rôle et mise en œuvre du désenfumage", "Désenfumage naturel et mécanique"]}, {"nom": "ECLAIRAGE DE SECURITE", "themes": ["Intérêt de l'éclairage de sécurité"]}, {"nom": "MOYENS DE SECOURS", "themes": ["Extincteurs - types et utilisation", "RIA et colonnes sèches/humides", "Issues de secours et dégagements", "Catégories et types d'ERP"]}]}, {"id": "32dfa113-a8f4-4301-9d72-69bae128d83e", "nom": "Les installations techniques", "sequences": [{"nom": "INSTALLATIONS ELECTRIQUES", "themes": ["Les installations électriques"]}, {"nom": "ASCENSEURS ET NACELLES", "themes": ["Ascenseurs et nacelles"]}, {"nom": "EXTINCTION AUTOMATIQUE", "themes": ["Système sprinkler", "Types de détecteurs automatiques"]}, {"nom": "COLONNES SECHES ET HUMIDES", "themes": ["RIA et colonnes sèches/humides"]}, {"nom": "SYSTEME DE SECURITE INCENDIE", "themes": ["SSI - composants et fonctionnement"]}]}, {"id": "aa3abe3d-c1df-44cf-828d-d2a2fc8192db", "nom": "Rôle et missions de l'agent SSIAP 1", "sequences": [{"nom": "LE SERVICE DE SECURITE", "themes": ["Organisation et conduite de l'évacuation"]}, {"nom": "CONSIGNES ET MAIN COURANTE", "themes": ["Main courante et registre de sécurité", "Conduite à tenir en cas d'incendie"]}, {"nom": "RONDES DE SECURITE", "themes": ["Rondes de sécurité"]}]}, {"id": "6a1f52f2-beeb-43e7-a3c5-a00c4ac01529", "nom": "Concrétisation des acquis", "sequences": [{"nom": "MISES EN SITUATION", "themes": ["POI, exercices d'évacuation, plans"]}]}], "SSIAP2": [{"id": "6c53221e-2340-4954-acc6-1558c5109ebd", "nom": "Approfondissement - Le feu", "sequences": [{"nom": "PROPAGATION ET INTERVENTION", "themes": ["Propagation et développement de l'incendie", "Risques particuliers d'intervention", "Agents extincteurs et leur mode d'action"]}]}, {"id": "d63d0e3e-3c12-4f1e-b066-d5fee18ce64d", "nom": "Réglementation approfondie", "sequences": [{"nom": "DOSSIER DE SECURITE", "themes": ["Dossier de sécurité et obligations réglementaires", "Communications et coordination"]}]}, {"id": "7b1fdf85-f9de-4b25-acc4-967130776158", "nom": "Installations techniques approfondies", "sequences": [{"nom": "SSI AVANCE", "themes": ["Catégories SSI et fonctionnement avancé", "Maintenance et vérification des installations", "Exploitation du désenfumage", "Groupe électrogène et AES", "Protections passives des structures"]}]}, {"id": "b31b41a6-d4bf-4b5f-8812-3bed86d5f090", "nom": "Management et organisation", "sequences": [{"nom": "MANAGEMENT OPERATIONNEL", "themes": ["Management opérationnel de l'équipe SSIAP", "Gestion des compétences et formations", "Planification des rondes et surveillance", "Coordination avec équipiers et secours", "Interface avec les sapeurs-pompiers", "Indicateurs de performance"]}, {"nom": "RAPPORTS ET DOCUMENTATION", "themes": ["Rapports et documentation"]}]}], "SSIAP3": [{"id": "cb1af25f-4b7f-42e6-8efb-7e6348efaed3", "nom": "Réglementation et expertise avancée", "sequences": [{"nom": "REGLEMENTATION", "themes": ["Responsabilités du chef de service", "Avis techniques et dossiers travaux", "Commission de sécurité - pouvoirs et procédures", "Catégories ERP et seuils", "ERP multi-locataires - coordination"]}]}, {"id": "812195d2-29cb-423c-ba05-90b706c0e72c", "nom": "Direction du service - Management stratégique", "sequences": [{"nom": "MANAGEMENT STRATEGIQUE", "themes": ["Stratégie de prévention incendie", "Budget et ressources du service", "Coordination SSIAP à l'échelle d'un groupe", "Dimensionnement des équipes SSIAP", "Gestion des conflits direction/sécurité", "RSE appliquée à la sécurité incendie", "Sélection et évaluation des prestataires"]}]}, {"id": "19a715a0-6bb6-454d-b77a-1055f519a354", "nom": "Expertise technique et ingénierie", "sequences": [{"nom": "INGENIERIE AVANCEE", "themes": ["Ingénierie de sécurité incendie avancée", "Systèmes d'extinction spéciaux", "IGH - Exigences techniques avancées", "Innovation et nouvelles technologies", "Intégration de la sécurité en phase conception", "Réception technique des installations"]}]}, {"id": "1fbea3d8-f252-44c1-a1f8-69ded49d7afd", "nom": "Coordination institutionnelle", "sequences": [{"nom": "PARTENARIATS ET CRISE", "themes": ["Éthique du chef de service SSIAP 3", "Partenariat SSIAP 3 - SDIS", "Communication de crise", "Exercices de grande ampleur", "Gestion des relations avec bureaux de contrôle"]}]}, {"id": "a46da774-3736-451d-a6bb-af7e3fe12610", "nom": "Analyse des risques et amélioration continue", "sequences": [{"nom": "ANALYSE RISQUES", "themes": ["REX et veille sécurité", "AMDEC et méthodes d'analyse systémique", "Études de danger ICPE", "Outils d'analyse des risques avancés"]}]}]};
+
+var urlP = new URLSearchParams(window.location.search);
+var STAGIAIRE_ID = urlP.get('stagiaire');
+var CENTER_ID = urlP.get('center');
+var SESSION_ID = urlP.get('session');
+var NIVEAU_PARAM = urlP.get('niveau');
+var PRENOM = '';
+var selectedNiveau = 'SSIAP1';
+var selectedNb = 10;
+var selParties = new Set();
+var selSeqs = new Set();
+var questions = [];
+var currentIdx = 0, correctCount = 0, wrongCount = 0;
+var reponses = [];
+var sessionId = null, startTime = null, answered = false;
+var lastConfig = {};
+var lastReponses = [];
+var histoSessions = [];
+
+window.addEventListener('DOMContentLoaded', function() {
+  var s = SESSION.load('stagiaire');
+  if (s) {
+    STAGIAIRE_ID = STAGIAIRE_ID || s.stagiaire_id;
+    CENTER_ID = CENTER_ID || s.center_id;
+    NIVEAU_PARAM = NIVEAU_PARAM || s.stagiaire_niveau;
+    PRENOM = s.stagiaire_prenom || s.stagiaire_nom || '';
+    document.getElementById('top-stag').textContent = s.stagiaire_nom || '';
+    document.getElementById('home-titre').textContent = 'Bonjour ' + PRENOM + ' !';
+  }
+  if (NIVEAU_PARAM) {
+    selectedNiveau = NIVEAU_PARAM;
+    var btns = ['bn1','bn2','bn3'];
+    var niveaux = ['SSIAP1','SSIAP2','SSIAP3'];
+    for (var i = 0; i < 3; i++) {
+      var b = document.getElementById(btns[i]);
+      if (b) b.disabled = niveaux[i] !== NIVEAU_PARAM;
+    }
+    document.getElementById('top-badge').textContent = NIVEAU_PARAM;
+    document.getElementById('top-badge').classList.remove('hidden');
+  }
+  updateNiveauUI();
+  renderFilters();
+  loadHistorique();
+});
+
+function selectNiveau(n) {
+  if (NIVEAU_PARAM) return;
+  selectedNiveau = n;
+  selParties = new Set();
+  selSeqs = new Set();
+  updateNiveauUI();
+  renderFilters();
+}
+
+function updateNiveauUI() {
+  var niveaux = ['SSIAP1','SSIAP2','SSIAP3'];
+  for (var i = 0; i < 3; i++) {
+    var b = document.getElementById('bn' + (i+1));
+    if (b) b.className = 'nb-btn' + (niveaux[i] === selectedNiveau ? ' sel' : '');
+  }
+}
+
+function selectNb(n) {
+  selectedNb = n;
+  var vals = [5,10,15,20,30,40];
+  for (var i = 0; i < vals.length; i++) {
+    var b = document.getElementById('bnb' + vals[i]);
+    if (b) b.className = 'nb-btn' + (vals[i] === n ? ' sel' : '');
+  }
+}
+
+function renderFilters() {
+  var el = document.getElementById('filter-list');
+  var parties = STRUCT[selectedNiveau] || [];
+  var allSel = selParties.size === 0 && selSeqs.size === 0;
+  var html = '';
+  html += '<div class="fi' + (allSel?' sel':'') + '" onclick="selTout()" style="border-color:#6366f1;background:' + (allSel?'#ede9fe':'#f5f3ff') + ';">';
+  html += '<input type="checkbox" class="chk" ' + (allSel?'checked':'') + ' readonly style="pointer-events:none;' + (allSel?'background:#6366f1;border-color:#6366f1;':'') + '">';
+  html += '<span style="font-size:.88rem;font-weight:700;">Toutes les parties</span></div>';
+  for (var pi = 0; pi < parties.length; pi++) {
+    var p = parties[pi];
+    var pSel = selParties.has(p.id);
+    html += '<div class="fi' + (pSel?' sel':'') + '" onclick="togglePartie(' + pi + ')" style="' + (pSel?'border-color:#059669;background:#f0fdf4;':'') + '">';
+    html += '<input type="checkbox" class="chk" ' + (pSel?'checked':'') + ' readonly style="pointer-events:none;' + (pSel?'background:#059669;border-color:#059669;':'') + '">';
+    html += '<span style="font-size:.84rem;font-weight:700;color:#065f46;">' + p.nom + '</span></div>';
+    if (pSel && p.sequences) {
+      for (var si = 0; si < p.sequences.length; si++) {
+        var s = p.sequences[si];
+        var sSel = selSeqs.has(s.nom);
+        html += '<div class="fi' + (sSel?' sel':'') + '" style="margin-left:16px;' + (sSel?'border-color:#3b82f6;background:#eff6ff;':'') + '" onclick="toggleSeq(' + pi + ',' + si + ')">';
+        html += '<input type="checkbox" class="chk" ' + (sSel?'checked':'') + ' readonly style="pointer-events:none;' + (sSel?'background:#3b82f6;border-color:#3b82f6;':'') + '">';
+        html += '<span style="font-size:.82rem;">' + s.nom + '</span></div>';
+      }
+    }
+  }
+  el.innerHTML = html;
+  var summary = allSel ? 'Toutes les questions' : (selSeqs.size ? selSeqs.size + ' s\u00e9quence(s)' : selParties.size + ' partie(s)');
+  var prenom = PRENOM ? PRENOM + ' \u2014 ' : '';
+  document.getElementById('btn-start').textContent = prenom + 'D\u00e9marrer \u2014 ' + summary;
+}
+function selTout() { selParties = new Set(); selSeqs = new Set(); renderFilters(); }
+function togglePartie(pi) {
+  var parties = STRUCT[selectedNiveau] || [];
+  var p = parties[pi]; if (!p) return;
+  if (selParties.has(p.id)) {
+    selParties.delete(p.id);
+    if (p.sequences) { for (var j=0;j<p.sequences.length;j++) selSeqs.delete(p.sequences[j].nom); }
+  } else { selParties.add(p.id); }
+  renderFilters();
+}
+function toggleSeq(pi, si) {
+  var parties = STRUCT[selectedNiveau] || [];
+  var p = parties[pi]; if (!p||!p.sequences||!p.sequences[si]) return;
+  var seqNom = p.sequences[si].nom;
+  if (!selParties.has(p.id)) selParties.add(p.id);
+  if (selSeqs.has(seqNom)) selSeqs.delete(seqNom); else selSeqs.add(seqNom);
+  renderFilters();
+}
+
+async function startSession() {
+  var errEl = document.getElementById('home-err');
+  errEl.classList.add('hidden');
+  var btn = document.getElementById('btn-start');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> Chargement...';
+  lastConfig = {niveau: selectedNiveau, nb: selectedNb, parties: new Set(selParties), seqs: new Set(selSeqs)};
+  
+  try {
+    var q = supabase.from('questions').select('*, question_boites(titre)').eq('niveau', selectedNiveau).eq('actif', true);
+    
+    if (selSeqs.size > 0) {
+      // Filtrer par thèmes des séquences sélectionnées
+      var themes = [];
+      var parties = STRUCT[selectedNiveau] || [];
+      for (var i = 0; i < parties.length; i++) {
+        if (parties[i].sequences) {
+          for (var j = 0; j < parties[i].sequences.length; j++) {
+            var seq = parties[i].sequences[j];
+            if (selSeqs.has(seq.nom) && seq.themes) {
+              for (var k = 0; k < seq.themes.length; k++) themes.push(seq.themes[k]);
+            }
+          }
+        }
+      }
+      if (themes.length > 0) q = q.in('titre', themes);
+    } else if (selParties.size > 0) {
+      q = q.in('boite_id', Array.from(selParties));
+    }
+    
+    var result = await q;
+    var data = result.data, error = result.error;
+    if (error) throw error;
+    if (!data || data.length < 2) throw new Error('Pas assez de questions. Essayez un filtre plus large.');
+    
+    questions = shuffle(data).slice(0, Math.min(selectedNb, data.length));
+    currentIdx = 0; correctCount = 0; wrongCount = 0; reponses = []; answered = false; startTime = Date.now();
+    
+    if (STAGIAIRE_ID) {
+      var ins = await supabase.from('entrainement_sessions').insert({
+        stagiaire_id: STAGIAIRE_ID, center_id: CENTER_ID || null,
+        session_formation_id: SESSION_ID || null,
+        niveau: selectedNiveau, total: questions.length, score: 0, statut: 'en_cours'
+      }).select().single();
+      sessionId = ins.data ? ins.data.id : null;
+    }
+    
+    updateTopScore();
+    showScreen('scr-question');
+    renderQuestion();
+  } catch(e) {
+    errEl.textContent = 'Erreur : ' + e.message;
+    errEl.classList.remove('hidden');
+  } finally {
+    btn.disabled = false;
+    renderFilters();
+  }
+}
+
+function renderQuestion() {
+  var q = questions[currentIdx];
+  if (!q) { showResults(); return; }
+  answered = false;
+  document.getElementById('prog').style.width = Math.round(currentIdx / questions.length * 100) + '%';
+  document.getElementById('q-counter').textContent = (currentIdx + 1) + '/' + questions.length;
+  var meta = document.getElementById('q-meta');
+  meta.innerHTML = '';
+  var th = (q.question_boites && q.question_boites.titre) || q.titre || '';
+  if (th) { var b = document.createElement('span'); b.className = 'badge b-blue'; b.textContent = th; meta.appendChild(b); }
+  document.getElementById('q-enonce').textContent = q.question || '-';
+  document.getElementById('q-expl').classList.add('hidden');
+  var choices = buildChoices(q);
+  var el = document.getElementById('q-choices');
+  el.innerHTML = '';
+  for (var i = 0; i < choices.length; i++) {
+    (function(ch) {
+      var btn = document.createElement('button');
+      btn.className = 'choice-btn';
+      btn.textContent = ch.text;
+      btn.onclick = function() { selectAnswer(btn, ch.correct, q, choices); };
+      el.appendChild(btn);
+    })(choices[i]);
+  }
+  var card = document.getElementById('q-card');
+  card.classList.remove('fade-up');
+  void card.offsetWidth;
+  card.classList.add('fade-up');
+}
+
+function buildChoices(q) {
+  var d = q.data || q.donnees;
+  if (d) {
+    var opts = d.options || [];
+    var corrects = d.correctAnswers || (d.correctAnswer !== undefined ? [d.correctAnswer] : [0]);
+    var result = [];
+    for (var i = 0; i < opts.length; i++) {
+      result.push({text: typeof opts[i] === 'string' ? opts[i] : (opts[i].text || String(opts[i])), correct: corrects.indexOf(i) >= 0});
+    }
+    return shuffle(result);
+  }
+  if (q.option_a) {
+    var opts2 = [];
+    var lets = ['a','b','c','d'];
+    for (var i = 0; i < lets.length; i++) {
+      if (q['option_'+lets[i]]) opts2.push({text: q['option_'+lets[i]], correct: q.bonne_reponse === lets[i]});
+    }
+    return shuffle(opts2);
+  }
+  return [{text: 'Format inconnu', correct: true}];
+}
+
+function selectAnswer(btn, isCorrect, q, choices) {
+  if (answered) return;
+  answered = true;
+  var allBtns = document.querySelectorAll('.choice-btn');
+  for (var i = 0; i < allBtns.length; i++) allBtns[i].disabled = true;
+  var bon = '';
+  for (var i = 0; i < choices.length; i++) { if (choices[i].correct) { bon = choices[i].text; break; } }
+  // Marquer discrètement (pour le récap final) sans feedback visible
+  btn.setAttribute('data-chosen', '1');
+  if (isCorrect) { correctCount++; } else { wrongCount++; }
+  reponses.push({q: q, isCorrect: isCorrect, choisi: btn.textContent, bon: bon});
+  if (sessionId) supabase.from('entrainement_reponses').insert({session_id: sessionId, question_id: q.id, est_correcte: isCorrect}).then(function(){});
+  // Passer directement à la suite sans délai
+  setTimeout(function() {
+    if (currentIdx + 1 < questions.length) nextQ();
+    else showResults();
+  }, 300);
+}
+
+function nextQ() { currentIdx++; renderQuestion(); }
+
+function updateTopScore() {
+  document.getElementById('top-score').style.display = 'flex';
+  document.getElementById('sc-ok').textContent = 'OK: ' + correctCount;
+  document.getElementById('sc-ko').textContent = 'KO: ' + wrongCount;
+}
+
+async function showResults() {
+  var total = questions.length;
+  var pct = Math.round(correctCount / total * 100);
+  var dur = Math.round((Date.now() - startTime) / 1000);
+  if (sessionId) await supabase.from('entrainement_sessions').update({score: correctCount, statut: 'terminee', duree_secondes: dur}).eq('id', sessionId);
+  // Sauvegarder les réponses dans la session pour l'historique
+  lastReponses = reponses.slice();
+  showScreen('scr-result');
+  document.getElementById('r-pct').textContent = pct + '%';
+  document.getElementById('r-ok').textContent = correctCount;
+  document.getElementById('r-ko').textContent = wrongCount;
+  var m = Math.floor(dur/60), s = dur%60;
+  document.getElementById('r-time').textContent = (m > 0 ? m + 'm ' : '') + s + 's';
+  document.getElementById('r-detail').textContent = correctCount + ' / ' + total + ' correctes';
+  var msgs = ['A retravailler','Des progres a faire','Continuez !','Tres bien !','Excellent !'];
+  var emojis = ['&#x1F504;','&#x1F4AA;','&#x1F4AA;','&#x1F389;','&#x1F947;'];
+  var idx2 = pct >= 90 ? 4 : pct >= 75 ? 3 : pct >= 60 ? 2 : pct >= 50 ? 1 : 0;
+  document.getElementById('r-msg').textContent = msgs[idx2];
+  document.getElementById('r-emoji').innerHTML = emojis[idx2];
+  var circ = 2 * Math.PI * 52;
+  var ring = document.getElementById('ring-fill');
+  ring.style.stroke = pct >= 75 ? '#10b981' : pct >= 50 ? '#f59e0b' : '#ef4444';
+  setTimeout(function() { ring.style.strokeDasharray = (circ * pct / 100) + ' ' + circ; }, 100);
+  if (pct >= 75) createConfetti();
+  // Analyse par partie
+  var byB = {};
+  for (var i = 0; i < reponses.length; i++) {
+    var r = reponses[i];
+    var bid = r.q.boite_id || '?';
+    if (!byB[bid]) byB[bid] = {ok:0, n:0, nom:''};
+    byB[bid].n++;
+    if (r.isCorrect) byB[bid].ok++;
+    if (!byB[bid].nom) {
+      var qb = r.q.question_boites;
+      byB[bid].nom = qb && qb.titre ? qb.titre : 'Partie';
+    }
+  }
+  var keys = Object.keys(byB);
+  if (keys.length >= 1) {
+    document.getElementById('analyse-wrap').classList.remove('hidden');
+    var aHtml = '';
+    var forces = [], axes = [];
+    for (var k = 0; k < keys.length; k++) {
+      var v = byB[keys[k]];
+      var p2 = Math.round(v.ok / v.n * 100);
+      var col = p2 >= 75 ? '#10b981' : p2 >= 50 ? '#f59e0b' : '#ef4444';
+      if (p2 >= 75) forces.push(v.nom);
+      else if (p2 < 60) axes.push(v.nom);
+      aHtml += '<div style="margin-bottom:10px;"><div style="display:flex;justify-content:space-between;font-size:.82rem;font-weight:600;margin-bottom:4px;"><span>' + v.nom + '</span><span style="color:' + col + ';">' + v.ok + '/' + v.n + ' · ' + p2 + '%</span></div><div class="prog-bar"><div class="prog-fill" style="width:' + p2 + '%;background:' + col + ';"></div></div></div>';
+    }
+    // Forces
+    if (forces.length) aHtml = '<div style="background:#f0fdf4;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:.82rem;"><strong style="color:#065f46;">&#127775; Points forts :</strong> ' + forces.join(', ') + '</div>' + aHtml;
+    // Axes
+    if (axes.length) aHtml += '<div style="background:#fff7ed;border-radius:10px;padding:10px 14px;margin-top:8px;font-size:.82rem;"><strong style="color:#c2410c;">&#128218; &#192; retravailler :</strong> ' + axes.join(', ') + '</div>';
+    document.getElementById('analyse-list').innerHTML = aHtml;
+  }
+  // Correction
+  document.getElementById('correction-wrap').classList.remove('hidden');
+  var cHtml = '';
+  for (var i = 0; i < reponses.length; i++) {
+    var r = reponses[i];
+    var cls = r.isCorrect ? 'b-green' : 'b-red';
+    var lbl = r.isCorrect ? '&#10003; Correct' : '&#10007; Incorrect';
+    var bg = r.isCorrect ? '#f0fdf4' : '#fff';
+    var border = r.isCorrect ? 'border-left:4px solid #10b981;' : 'border-left:4px solid #ef4444;';
+    cHtml += '<div class="card p-4" style="' + border + 'margin-bottom:10px;">';
+    cHtml += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">';
+    cHtml += '<span style="font-size:.72rem;font-weight:700;color:#6b7280;">Question ' + (i+1) + ' / ' + total + '</span>';
+    cHtml += '<span class="badge ' + cls + '">' + lbl + '</span></div>';
+    cHtml += '<p style="font-size:.9rem;font-weight:600;margin-bottom:10px;line-height:1.5;">' + (r.q.question || '') + '</p>';
+    cHtml += '<div style="background:#f0fdf4;border-radius:8px;padding:8px 12px;margin-bottom:6px;font-size:.82rem;">';
+    cHtml += '<strong style="color:#065f46;">&#10003; Bonne r&#233;ponse :</strong> ' + r.bon + '</div>';
+    if (!r.isCorrect) {
+      cHtml += '<div style="background:#fff1f2;border-radius:8px;padding:8px 12px;margin-bottom:6px;font-size:.82rem;">';
+      cHtml += '<strong style="color:#b91c1c;">Votre r&#233;ponse :</strong> ' + r.choisi + '</div>';
+    }
+    if (r.q.explication) {
+      cHtml += '<div style="background:#eff6ff;border-radius:8px;padding:8px 12px;font-size:.8rem;color:#1d4ed8;line-height:1.5;">';
+      cHtml += '<strong>&#128161; Explication :</strong> ' + r.q.explication + '</div>';
+    }
+    cHtml += '</div>';
+  }
+  document.getElementById('correction-list').innerHTML = cHtml;
+  loadHistorique();
+}
+
+async function loadHistorique() {
+  if (!STAGIAIRE_ID) return;
+  try {
+    var res = await supabase.from('entrainement_sessions').select('*').eq('stagiaire_id', STAGIAIRE_ID).order('created_at', {ascending: false}).limit(10);
+    var data = res.data;
+    if (!data || !data.length) return;
+    document.getElementById('histo-wrap').classList.remove('hidden');
+    var list = document.getElementById('histo-list');
+    var html = '';
+    var shown = data.slice(0, 3);
+    for (var i = 0; i < shown.length; i++) {
+      var s = shown[i];
+      var p = s.total ? Math.round(s.score / s.total * 100) : 0;
+      var col = p >= 75 ? '#059669' : p >= 50 ? '#d97706' : '#b91c1c';
+      var dt = new Date(s.created_at).toLocaleDateString('fr-FR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+      var cls = p >= 75 ? 'b-green' : p >= 50 ? 'b-orange' : 'b-red';
+      html += '<div class="card p-3 mb-2" style="display:flex;align-items:center;gap:12px;">';
+      html += '<div style="font-family:Syne,sans-serif;font-size:1.2rem;font-weight:900;color:' + col + ';min-width:44px;">' + p + '%</div>';
+      html += '<div style="flex:1;"><div style="font-size:.82rem;font-weight:700;">' + s.niveau + ' - ' + s.total + ' questions</div>';
+      html += '<div style="font-size:.72rem;color:#9ca3af;">' + dt + '</div></div>';
+      html += '<span class="badge ' + cls + '">' + s.score + '/' + s.total + '</span></div>';
+    }
+    if (data.length > 3) html += '<button onclick="openModalHisto()" class="btn btn-gray btn-sm" style="width:100%;margin-top:6px;">Voir tout l&#39;historique</button>';
+    list.innerHTML = html;
+  } catch(e) { console.error(e); }
+}
+
+async function openModalHisto() {
+  if (!STAGIAIRE_ID) return;
+  var res = await supabase.from('entrainement_sessions').select('*').eq('stagiaire_id', STAGIAIRE_ID).order('created_at', {ascending:false}).limit(20);
+  var data = res.data;
+  if (!data || !data.length) { alert('Aucun entraînement trouvé.'); return; }
+  histoSessions = data;
+  var total = data.length;
+  var sum = 0;
+  for (var i = 0; i < data.length; i++) sum += data[i].total ? data[i].score/data[i].total*100 : 0;
+  var moy = total ? Math.round(sum/total) : 0;
+  var reussis = 0;
+  for (var i = 0; i < data.length; i++) { if (data[i].total && data[i].score/data[i].total >= 0.6) reussis++; }
+  var html = '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;">';
+  html += '<div class="card p-3 text-center"><div class="logo-t" style="font-size:1.4rem;color:#3b82f6;">' + total + '</div><div style="font-size:.68rem;color:#6b7280;">Entra\u00eenements</div></div>';
+  html += '<div class="card p-3 text-center"><div class="logo-t" style="font-size:1.4rem;color:' + (moy>=60?'#059669':'#ef4444') + ';">' + moy + '%</div><div style="font-size:.68rem;color:#6b7280;">Moyenne</div></div>';
+  html += '<div class="card p-3 text-center"><div class="logo-t" style="font-size:1.4rem;color:#059669;">' + reussis + '</div><div style="font-size:.68rem;color:#6b7280;">R\u00e9ussis</div></div></div>';
+  // Conseil global
+  if (moy < 60) html += '<div style="background:#fff7ed;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:.82rem;color:#c2410c;"><strong>Axe d'am\u00e9lioration :</strong> Continuez l'entra\u00eenement r\u00e9guli\u00e8rement — la r\u00e9p\u00e9tition est la cl\u00e9 de la r\u00e9ussite.</div>';
+  else if (moy >= 80) html += '<div style="background:#f0fdf4;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:.82rem;color:#065f46;"><strong>Excellent niveau !</strong> Maintenez ce rythme et d\u00e9couvrez les th\u00e8mes non encore travaill\u00e9s.</div>';
+  html += '<div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;margin-bottom:10px;">Historique d\u00e9taill\u00e9</div>';
+  for (var i = 0; i < data.length; i++) {
+    var s = data[i];
+    var p = s.total ? Math.round(s.score/s.total*100) : 0;
+    var col = p >= 75 ? '#059669' : p >= 50 ? '#d97706' : '#b91c1c';
+    var cls = p >= 75 ? 'b-green' : p >= 50 ? 'b-orange' : 'b-red';
+    var dt = new Date(s.created_at).toLocaleDateString('fr-FR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+    html += '<div class="card p-3 mb-2" style="display:flex;align-items:center;gap:12px;">';
+    html += '<div style="font-family:Syne,sans-serif;font-size:1.1rem;font-weight:900;color:' + col + ';min-width:40px;">' + p + '%</div>';
+    html += '<div style="flex:1;"><div style="font-size:.82rem;font-weight:700;">' + s.niveau + ' \u00b7 ' + s.total + ' q \u00b7 ' + (s.duree_secondes||0) + 's</div>';
+    html += '<div style="font-size:.7rem;color:#9ca3af;">' + dt + '</div>';
+    if (p < 100) html += '<button onclick="reviewErrIdx(' + i + ')" style="margin-top:4px;background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;border-radius:6px;padding:3px 10px;font-size:.7rem;font-weight:700;cursor:pointer;">Revoir les erreurs \u2192</button>';
+    else html += '<div style="font-size:.68rem;color:#059669;margin-top:2px;">Score parfait !</div>';
+    html += '</div><span class="badge ' + cls + '">' + s.score + '/' + s.total + '</span></div>';
+  }
+  document.getElementById('modal-histo-content').innerHTML = html;
+  document.getElementById('modal-histo').classList.remove('hidden');
+}
+
+function closeModalHisto() { document.getElementById('modal-histo').classList.add('hidden'); }
+
+function reviewErrIdx(i) { reviewErrors(histoSessions[i].id); }
+async function reviewErrors(sessId) {
+  var res = await supabase.from('entrainement_reponses').select('question_id, est_correcte').eq('session_id', sessId);
+  var reps = res.data;
+  if (!reps || !reps.length) { alert('Aucune donn\u00e9e pour cette session.'); return; }
+  var errIds = reps.filter(function(r) { return !r.est_correcte; }).map(function(r) { return r.question_id; });
+  if (!errIds.length) { alert('Bravo ! Aucune erreur dans cette session.'); return; }
+  var res2 = await supabase.from('questions').select('*').in('id', errIds);
+  var qs = res2.data;
+  if (!qs || !qs.length) return;
+  var totalQ = reps.length;
+  var okQ = reps.filter(function(r) { return r.est_correcte; }).length;
+  var pctQ = Math.round(okQ/totalQ*100);
+  document.getElementById('modal-erreurs-sub').textContent = pctQ + '% · ' + errIds.length + ' erreur(s) sur ' + totalQ + ' questions';
+  var html = '<div style="background:#fff7ed;border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:.82rem;color:#c2410c;">';
+  html += '<strong>Conseil :</strong> Relisez bien les explications avant de refaire ces th\u00e8mes.</div>';
+  for (var i = 0; i < qs.length; i++) {
+    var q = qs[i];
+    var bon = buildChoices(q).filter(function(ch) { return ch.correct; });
+    html += '<div class="card p-4" style="border-left:4px solid #ef4444;margin-bottom:10px;">';
+    if (q.titre) html += '<span class="badge b-blue" style="font-size:.68rem;margin-bottom:6px;display:inline-block;">' + q.titre + '</span><br>';
+    html += '<p style="font-size:.88rem;font-weight:600;margin-bottom:10px;line-height:1.5;">' + (q.question||'') + '</p>';
+    html += '<div style="background:#f0fdf4;border-radius:8px;padding:8px 12px;font-size:.82rem;color:#065f46;margin-bottom:6px;">';
+    html += '<strong>Bonne r\u00e9ponse :</strong> ' + (bon.length ? bon[0].text : '-') + '</div>';
+    if (q.explication) html += '<div style="background:#eff6ff;border-radius:8px;padding:8px 12px;font-size:.8rem;color:#1d4ed8;line-height:1.5;"><strong>Explication :</strong> ' + q.explication + '</div>';
+    html += '</div>';
+  }
+  document.getElementById('modal-erreurs-content').innerHTML = html;
+  closeModalHisto();
+  document.getElementById('modal-erreurs').classList.remove('hidden');
+}
+
+function closeModalErreurs() { document.getElementById('modal-erreurs').classList.add('hidden'); }
+
+function restartSame() {
+  selectedNiveau = lastConfig.niveau;
+  selectedNb = lastConfig.nb;
+  selParties = new Set(lastConfig.parties);
+  selSeqs = new Set(lastConfig.seqs);
+  updateNiveauUI();
+  var vals = [5,10,15,20,30,40];
+  for (var i = 0; i < vals.length; i++) {
+    var b = document.getElementById('bnb' + vals[i]);
+    if (b) b.className = 'nb-btn' + (vals[i] === selectedNb ? ' sel' : '');
+  }
+  renderFilters();
+  startSession();
+}
+
+function goHome() {
+  showScreen('scr-home');
+  document.getElementById('top-score').style.display = 'none';
+  currentIdx = 0; correctCount = 0; wrongCount = 0;
+}
+
+function goBack() {
+  if (!document.getElementById('scr-home').classList.contains('hidden')) {
+    if (STAGIAIRE_ID) window.location.href = 'stagiaire.html';
+    else window.history.back();
+  } else if (confirm('Abandonner la session ?')) {
+    goHome();
+  }
+}
+
+function showScreen(id) {
+  var screens = ['scr-home','scr-question','scr-result'];
+  for (var i = 0; i < screens.length; i++) {
+    document.getElementById(screens[i]).classList.toggle('hidden', screens[i] !== id);
+  }
+}
+
+function shuffle(arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
+}
+
+function createConfetti() {
+  var cols = ['#6366f1','#3b82f6','#10b981','#f59e0b','#ef4444'];
+  for (var i = 0; i < 60; i++) {
+    var d = document.createElement('div');
+    d.style.cssText = 'position:fixed;width:' + (5+Math.random()*8) + 'px;height:' + (5+Math.random()*8) + 'px;background:' + cols[Math.floor(Math.random()*cols.length)] + ';left:' + Math.random()*100 + 'vw;top:-10px;z-index:9999;border-radius:' + (Math.random()>.5?'50%':'2px') + ';animation:cf ' + (2+Math.random()*2) + 's linear forwards;';
+    document.getElementById('confetti').appendChild(d);
+    setTimeout(function(el) { return function() { el.remove(); }; }(d), 4000);
+  }
+}
+
+</script>
+</body>
+</html>
