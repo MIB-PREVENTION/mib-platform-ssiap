@@ -163,6 +163,7 @@ var currentIdx = 0, correctCount = 0, wrongCount = 0;
 var reponses = [];
 var sessionId = null, startTime = null, answered = false;
 var lastConfig = {};
+var histoSessions = [];
 
 window.addEventListener('DOMContentLoaded', function() {
   var s = SESSION.load('stagiaire');
@@ -520,7 +521,7 @@ async function openModalHisto() {
     html += '<div style="font-family:Syne,sans-serif;font-size:1.1rem;font-weight:900;color:' + col + ';min-width:40px;">' + p + '%</div>';
     html += '<div style="flex:1;"><div style="font-size:.82rem;font-weight:700;">' + s.niveau + ' - ' + s.total + ' q - ' + (s.duree_secondes||0) + 's</div>';
     html += '<div style="font-size:.7rem;color:#9ca3af;">' + dt + '</div>';
-    if (p < 60) html += '<button onclick="reviewErrors('' + s.id + '')" style="margin-top:4px;background:#fff7ed;border:1px solid #fed7aa;color:#c2410c;border-radius:6px;padding:3px 8px;font-size:.68rem;font-weight:700;cursor:pointer;">Revoir les erreurs &#8594;</button>';
+    if (p < 60) html += '<button onclick="reviewErrIdx(' + i + ')" style="margin-top:4px;background:#fff7ed;border:1px solid #fed7aa;color:#c2410c;border-radius:6px;padding:3px 8px;font-size:.68rem;font-weight:700;cursor:pointer;">Revoir les erreurs &#8594;</button>';
     else html += '<div style="font-size:.68rem;color:#059669;margin-top:2px;">Aucune erreur !</div>';
     html += '</div><span class="badge ' + cls + '">' + s.score + '/' + s.total + '</span></div>';
   }
@@ -529,6 +530,7 @@ async function openModalHisto() {
 }
 function closeModalHisto() { document.getElementById('modal-histo').classList.add('hidden'); }
 
+function reviewErrIdx(i) { reviewErrors(histoSessions[i].id); }
 async function reviewErrors(sessId) {
   var res = await supabase.from('entrainement_reponses').select('question_id').eq('session_id', sessId).eq('est_correcte', false);
   var reps = res.data;
