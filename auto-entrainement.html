@@ -170,9 +170,7 @@ var lastReponses = [];
 var histoSessions = [];
 
 window.addEventListener('DOMContentLoaded', function() {
-  // Masquer bouton historique si pas connecté (sera révélé après loadHistorique)
-  var bh = document.getElementById('btn-histo');
-  if (bh) bh.style.display = 'none';
+
   var s = SESSION.load('stagiaire');
   if (s) {
     STAGIAIRE_ID = STAGIAIRE_ID || s.stagiaire_id;
@@ -313,8 +311,7 @@ async function startSession() {
     if (STAGIAIRE_ID) {
       var ins = await supabase.from('entrainement_sessions').insert({
         stagiaire_id: STAGIAIRE_ID, center_id: CENTER_ID || null,
-        session_formation_id: SESSION_ID || null,
-        niveau: selectedNiveau, total: questions.length, score: 0, statut: 'en_cours'
+        niveau: selectedNiveau, nb_questions: questions.length, score: 0, max_score: questions.length, status: 'en_cours'
       }).select().single();
       sessionId = ins.data ? ins.data.id : null;
     }
@@ -394,7 +391,7 @@ function selectAnswer(btn, isCorrect, q, choices) {
   btn.setAttribute('data-chosen', '1');
   if (isCorrect) { correctCount++; } else { wrongCount++; }
   reponses.push({q: q, isCorrect: isCorrect, choisi: btn.textContent, bon: bon});
-  if (sessionId) supabase.from('entrainement_reponses').insert({session_id: sessionId, question_id: q.id, est_correcte: isCorrect}).then(function(){});
+  if (sessionId) supabase.from('entrainement_reponses').insert({session_id: sessionId, question_id: q.id, reponse: btn.textContent, est_correcte: isCorrect}).then(function(){});
   // Passer directement à la suite sans délai
   setTimeout(function() {
     if (currentIdx + 1 < questions.length) nextQ();
@@ -414,7 +411,7 @@ async function showResults() {
   var total = questions.length;
   var pct = Math.round(correctCount / total * 100);
   var dur = Math.round((Date.now() - startTime) / 1000);
-  if (sessionId) await supabase.from('entrainement_sessions').update({score: correctCount, statut: 'terminee', duree_secondes: dur}).eq('id', sessionId);
+  if (sessionId) await supabase.from('entrainement_sessions').update({score: correctCount, status: 'terminee', duree_secondes: dur}).eq('id', sessionId);
   // Sauvegarder les réponses dans la session pour l'historique
   lastReponses = reponses.slice();
   showScreen('scr-result');
@@ -499,12 +496,11 @@ async function showResults() {
 async function loadHistorique() {
   if (!STAGIAIRE_ID) return;
   try {
-    var res = await supabase.from('entrainement_sessions').select('*').eq('stagiaire_id', STAGIAIRE_ID).order('created_at', {ascending: false}).limit(10);
+    var res = await supabase.from('entrainement_sessions').select('*').eq('stagiaire_id', STAGIAIRE_ID).order('started_at', {ascending: false}).limit(10);
+    if (res.error) { console.warn('Historique:', res.error.message); return; }
     var data = res.data;
     if (!data || !data.length) return;
     document.getElementById('histo-wrap').classList.remove('hidden');
-    var bh2 = document.getElementById('btn-histo');
-    if (bh2) bh2.style.display = 'flex';
     var list = document.getElementById('histo-list');
     var html = '';
     var shown = data.slice(0, 3);
@@ -512,13 +508,13 @@ async function loadHistorique() {
       var s = shown[i];
       var p = s.total ? Math.round(s.score / s.total * 100) : 0;
       var col = p >= 75 ? '#059669' : p >= 50 ? '#d97706' : '#b91c1c';
-      var dt = new Date(s.created_at).toLocaleDateString('fr-FR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+      var dt = new Date(s.started_at || s.ended_at).toLocaleDateString('fr-FR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
       var cls = p >= 75 ? 'b-green' : p >= 50 ? 'b-orange' : 'b-red';
       html += '<div class="card p-3 mb-2" style="display:flex;align-items:center;gap:12px;">';
       html += '<div style="font-family:Syne,sans-serif;font-size:1.2rem;font-weight:900;color:' + col + ';min-width:44px;">' + p + '%</div>';
       html += '<div style="flex:1;"><div style="font-size:.82rem;font-weight:700;">' + s.niveau + ' - ' + s.total + ' questions</div>';
       html += '<div style="font-size:.72rem;color:#9ca3af;">' + dt + '</div></div>';
-      html += '<span class="badge ' + cls + '">' + s.score + '/' + s.total + '</span></div>';
+      html += '<span class="badge ' + cls + '">' + s.score + '/' + s.nb_questions + '</span></div>';
     }
     if (data.length > 3) html += '<button onclick="openModalHisto()" class="btn btn-gray btn-sm" style="width:100%;margin-top:6px;">Voir tout l&#39;historique</button>';
     list.innerHTML = html;
@@ -527,16 +523,17 @@ async function loadHistorique() {
 
 async function openModalHisto() {
   if (!STAGIAIRE_ID) return;
-  var res = await supabase.from('entrainement_sessions').select('*').eq('stagiaire_id', STAGIAIRE_ID).order('created_at', {ascending:false}).limit(20);
+  var res = await supabase.from('entrainement_sessions').select('*').eq('stagiaire_id', STAGIAIRE_ID).order('started_at', {ascending:false}).limit(20);
+  if (res.error) { alert('Erreur: ' + res.error.message); return; }
   var data = res.data;
   if (!data || !data.length) { alert('Aucun entraînement trouvé.'); return; }
   histoSessions = data;
   var total = data.length;
   var sum = 0;
-  for (var i = 0; i < data.length; i++) sum += data[i].total ? data[i].score/data[i].total*100 : 0;
+  for (var i = 0; i < data.length; i++) sum += data[i].nb_questions ? data[i].score/data[i].nb_questions*100 : 0;
   var moy = total ? Math.round(sum/total) : 0;
   var reussis = 0;
-  for (var i = 0; i < data.length; i++) { if (data[i].total && data[i].score/data[i].total >= 0.6) reussis++; }
+  for (var i = 0; i < data.length; i++) { if (data[i].nb_questions && data[i].score/data[i].nb_questions >= 0.6) reussis++; }
   var html = '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;">';
   html += '<div class="card p-3 text-center"><div class="logo-t" style="font-size:1.4rem;color:#3b82f6;">' + total + '</div><div style="font-size:.68rem;color:#6b7280;">Entra\u00eenements</div></div>';
   html += '<div class="card p-3 text-center"><div class="logo-t" style="font-size:1.4rem;color:' + (moy>=60?'#059669':'#ef4444') + ';">' + moy + '%</div><div style="font-size:.68rem;color:#6b7280;">Moyenne</div></div>';
@@ -547,17 +544,17 @@ async function openModalHisto() {
   html += '<div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;margin-bottom:10px;">Historique d\u00e9taill\u00e9</div>';
   for (var i = 0; i < data.length; i++) {
     var s = data[i];
-    var p = s.total ? Math.round(s.score/s.total*100) : 0;
+    var p = s.nb_questions ? Math.round(s.score/s.nb_questions*100) : 0;
     var col = p >= 75 ? '#059669' : p >= 50 ? '#d97706' : '#b91c1c';
     var cls = p >= 75 ? 'b-green' : p >= 50 ? 'b-orange' : 'b-red';
-    var dt = new Date(s.created_at).toLocaleDateString('fr-FR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+    var dt = new Date(s.started_at || s.ended_at).toLocaleDateString('fr-FR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
     html += '<div class="card p-3 mb-2" style="display:flex;align-items:center;gap:12px;">';
     html += '<div style="font-family:Syne,sans-serif;font-size:1.1rem;font-weight:900;color:' + col + ';min-width:40px;">' + p + '%</div>';
-    html += '<div style="flex:1;"><div style="font-size:.82rem;font-weight:700;">' + s.niveau + ' \u00b7 ' + s.total + ' q \u00b7 ' + (s.duree_secondes||0) + 's</div>';
+    html += '<div style="flex:1;"><div style="font-size:.82rem;font-weight:700;">' + s.niveau + ' \u00b7 ' + s.nb_questions THIS_SHOULD_NOT_MATCH (s.duree_secondes||0) + 's</div>';
     html += '<div style="font-size:.7rem;color:#9ca3af;">' + dt + '</div>';
     if (p < 100) html += '<button onclick="reviewErrIdx(' + i + ')" style="margin-top:4px;background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;border-radius:6px;padding:3px 10px;font-size:.7rem;font-weight:700;cursor:pointer;">Revoir les erreurs \u2192</button>';
     else html += '<div style="font-size:.68rem;color:#059669;margin-top:2px;">Score parfait !</div>';
-    html += '</div><span class="badge ' + cls + '">' + s.score + '/' + s.total + '</span></div>';
+    html += '</div><span class="badge ' + cls + '">' + s.score + '/' + s.nb_questions + '</span></div>';
   }
   document.getElementById('modal-histo-content').innerHTML = html;
   document.getElementById('modal-histo').classList.remove('hidden');
