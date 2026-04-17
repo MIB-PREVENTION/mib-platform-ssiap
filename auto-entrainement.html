@@ -49,17 +49,43 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#eef2ff;color:#1
 .ring-bg{fill:none;stroke:#e5e7eb;stroke-width:10;}
 .ring-fill{fill:none;stroke-width:10;stroke-linecap:round;transition:stroke-dasharray 1s ease;}
 .score-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.3);backdrop-filter:blur(6px);z-index:50;display:flex;align-items:flex-end;justify-content:center;}
-.modal-box{background:#fff;border-radius:20px 20px 0 0;padding:24px;width:100%;max-width:560px;max-height:85vh;overflow-y:auto;box-shadow:0 -10px 40px rgba(0,0,0,.15);}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);backdrop-filter:blur(6px);z-index:50;display:flex;align-items:center;justify-content:center;padding:16px;}
+.modal-box{background:#fff;border-radius:20px;padding:24px;width:100%;max-width:560px;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25);}
 .chk{width:16px;height:16px;border-radius:4px;border:2px solid #d1d5db;cursor:pointer;appearance:none;-webkit-appearance:none;transition:all .2s;flex-shrink:0;background:#fff;}
 .chk:checked{background:#3b82f6;border-color:#3b82f6;}
+.choice-btn.selected{border-color:#6366f1!important;background:#f5f3ff!important;color:#4f46e5!important;font-weight:600;}
+.choice-btn.selected .chk-multi{background:#6366f1;border-color:#6366f1;}
+.chk-multi{width:18px;height:18px;border-radius:5px;border:2px solid #d1d5db;flex-shrink:0;transition:all .2s;background:#fff;display:inline-flex;align-items:center;justify-content:center;}
+.chk-multi.checked{background:#6366f1;border-color:#6366f1;}
+.chk-multi.checked::after{content:'';width:10px;height:10px;background:white;border-radius:2px;clip-path:polygon(14% 44%,0 65%,50% 100%,100% 16%,80% 0%,43% 62%);}
+.btn-valider{width:100%;padding:13px;border-radius:11px;border:none;font-weight:700;font-size:.88rem;cursor:pointer;transition:all .2s;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;box-shadow:0 4px 12px rgba(99,102,241,.3);margin-top:10px;}
+.btn-valider:disabled{opacity:.3;cursor:not-allowed;}
+/* RESPONSIVE MOBILE */
+@media(max-width:520px){
+  .card{border-radius:14px;}
+  .nb-btn{font-size:.75rem;padding:7px 0;}
+  .fi{padding:7px 10px;font-size:.82rem;}
+  #scr-home,#scr-question,#scr-result{padding:10px;}
+  .score-ring{width:100px;height:100px;}
+  .score-ring svg{width:100px;height:100px;}
+  .score-center .logo-t{font-size:1.4rem;}
+  .choice-btn{padding:11px 12px;font-size:.84rem;}
+  .modal-box{padding:18px;border-radius:16px;}
+  .modal-bg{padding:10px;}
+  #top-stag{display:none;}
+  div[style*="grid-template-columns:repeat(6"]{grid-template-columns:repeat(6,1fr);gap:4px;}
+  .logo-t[style*="1.3rem"]{font-size:1.1rem;}
+}
+@media(max-width:360px){
+  div[style*="grid-template-columns:repeat(6"]{grid-template-columns:repeat(3,1fr);}
+}
 @keyframes cf{to{transform:translateY(110vh) rotate(720deg);opacity:0}}
 </style>
 </head>
 <body>
 <div style="position:fixed;inset:0;z-index:0;background:linear-gradient(160deg,#eef2ff 0%,#f5f7ff 100%);"></div>
 <div class="relative z-10 min-h-screen flex flex-col">
-<div style="background:rgba(255,255,255,.92);backdrop-filter:blur(12px);border-bottom:1px solid rgba(0,0,0,.06);padding:11px 18px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;box-shadow:0 2px 10px rgba(0,0,0,.05);">
+<div style="background:rgba(255,255,255,.92);backdrop-filter:blur(12px);border-bottom:1px solid rgba(0,0,0,.06);padding:11px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;box-shadow:0 2px 10px rgba(0,0,0,.05);">
   <div class="flex items-center gap-3">
     <button onclick="goBack()" style="background:none;border:none;cursor:pointer;font-size:1.1rem;color:#6b7280;padding:4px;">&#8592;</button>
     <span class="logo-t" style="font-size:.92rem;">Auto-entra&#238;nement</span>
@@ -107,10 +133,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#eef2ff;color:#1
     <span>&#128202;</span> Mon historique &amp; progression
   </button>
 
-  <div id="histo-wrap" class="hidden">
-    <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;margin-bottom:10px;">Derniers entra&#238;nements</div>
-    <div id="histo-list"></div>
-  </div>
+
 </div>
 <div id="scr-question" class="flex-1 p-4 hidden" style="max-width:560px;width:100%;margin:0 auto;">
   <div class="flex items-center gap-3 mb-4"><div class="prog-bar flex-1"><div class="prog-fill" id="prog" style="width:0%;"></div></div><span style="font-size:.75rem;font-weight:700;color:#6b7280;" id="q-counter">1/10</span></div>
@@ -119,6 +142,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#eef2ff;color:#1
     <p style="font-size:.95rem;font-weight:600;line-height:1.6;margin-bottom:18px;" id="q-enonce">-</p>
     <div id="q-choices" class="space-y-2"></div>
   </div>
+  <button id="btn-valider" class="btn-valider hidden" onclick="validerMulti()">Valider ma r&#233;ponse</button>
   <div id="q-expl" class="hidden card p-4 mb-3" style="border-left:4px solid #3b82f6;">
     <div style="font-size:.65rem;font-weight:700;color:#3b82f6;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px;">Explication</div>
     <p style="font-size:.84rem;line-height:1.6;" id="q-expl-txt"></p>
@@ -193,7 +217,6 @@ window.addEventListener('DOMContentLoaded', function() {
   }
   updateNiveauUI();
   renderFilters();
-  loadHistorique();
 });
 
 function selectNiveau(n) {
@@ -328,10 +351,17 @@ async function startSession() {
   }
 }
 
+var isMultiQ = false;
+var multiChoices = [];
+var multiSelected = new Set();
+
 function renderQuestion() {
   var q = questions[currentIdx];
   if (!q) { showResults(); return; }
   answered = false;
+  isMultiQ = false;
+  multiChoices = [];
+  multiSelected = new Set();
   document.getElementById('prog').style.width = Math.round(currentIdx / questions.length * 100) + '%';
   document.getElementById('q-counter').textContent = (currentIdx + 1) + '/' + questions.length;
   var meta = document.getElementById('q-meta');
@@ -340,22 +370,119 @@ function renderQuestion() {
   if (th) { var b = document.createElement('span'); b.className = 'badge b-blue'; b.textContent = th; meta.appendChild(b); }
   document.getElementById('q-enonce').textContent = q.question || '-';
   document.getElementById('q-expl').classList.add('hidden');
+  document.getElementById('btn-valider').classList.add('hidden');
+  
   var choices = buildChoices(q);
+  multiChoices = choices;
+  
+  // Détecter question multi-réponses (plus d'une bonne réponse)
+  var nbCorrects = choices.filter(function(c) { return c.correct; }).length;
+  isMultiQ = nbCorrects > 1;
+  
   var el = document.getElementById('q-choices');
   el.innerHTML = '';
-  for (var i = 0; i < choices.length; i++) {
-    (function(ch) {
-      var btn = document.createElement('button');
-      btn.className = 'choice-btn';
-      btn.textContent = ch.text;
-      btn.onclick = function() { selectAnswer(btn, ch.correct, q, choices); };
-      el.appendChild(btn);
-    })(choices[i]);
+  
+  if (isMultiQ) {
+    // Afficher indice
+    var hint = document.createElement('p');
+    hint.style.cssText = 'font-size:.75rem;color:#6366f1;font-weight:600;margin-bottom:10px;';
+    hint.textContent = '\u2611\ufe0f ' + nbCorrects + ' r\u00e9ponses correctes \u2014 s\u00e9lectionnez-les toutes';
+    el.appendChild(hint);
+    
+    for (var i = 0; i < choices.length; i++) {
+      (function(ch, idx) {
+        var btn = document.createElement('button');
+        btn.className = 'choice-btn';
+        btn.style.display = 'flex';
+        btn.style.alignItems = 'center';
+        btn.style.gap = '10px';
+        var chk = document.createElement('span');
+        chk.className = 'chk-multi';
+        chk.id = 'chk-' + idx;
+        var txt = document.createElement('span');
+        txt.textContent = ch.text;
+        btn.appendChild(chk);
+        btn.appendChild(txt);
+        btn.onclick = function() { toggleMulti(idx, btn, chk); };
+        el.appendChild(btn);
+      })(choices[i], i);
+    }
+    document.getElementById('btn-valider').classList.remove('hidden');
+    document.getElementById('btn-valider').disabled = true;
+  } else {
+    // Question simple - comportement original
+    for (var i = 0; i < choices.length; i++) {
+      (function(ch) {
+        var btn = document.createElement('button');
+        btn.className = 'choice-btn';
+        btn.textContent = ch.text;
+        btn.onclick = function() { selectAnswer(btn, ch.correct, q, choices); };
+        el.appendChild(btn);
+      })(choices[i]);
+    }
   }
+  
   var card = document.getElementById('q-card');
   card.classList.remove('fade-up');
   void card.offsetWidth;
   card.classList.add('fade-up');
+}
+
+function toggleMulti(idx, btn, chk) {
+  if (answered) return;
+  if (multiSelected.has(idx)) {
+    multiSelected.delete(idx);
+    btn.classList.remove('selected');
+    chk.classList.remove('checked');
+  } else {
+    multiSelected.add(idx);
+    btn.classList.add('selected');
+    chk.classList.add('checked');
+  }
+  // Activer bouton valider si au moins 1 sélectionné
+  document.getElementById('btn-valider').disabled = multiSelected.size === 0;
+}
+
+function validerMulti() {
+  if (answered || multiSelected.size === 0) return;
+  var q = questions[currentIdx];
+  // Vérifier si les bonnes réponses sont exactement les sélectionnées
+  var correctIndices = [];
+  for (var i = 0; i < multiChoices.length; i++) {
+    if (multiChoices[i].correct) correctIndices.push(i);
+  }
+  var selectedArr = Array.from(multiSelected).sort();
+  var correctArr = correctIndices.sort();
+  var isCorrect = JSON.stringify(selectedArr) === JSON.stringify(correctArr);
+  
+  // Afficher le feedback visuel
+  answered = true;
+  document.getElementById('btn-valider').classList.add('hidden');
+  var allBtns = document.querySelectorAll('.choice-btn');
+  for (var i = 0; i < allBtns.length; i++) allBtns[i].disabled = true;
+  
+  // Colorier correctement
+  var choiceEls = document.getElementById('q-choices').querySelectorAll('.choice-btn');
+  for (var i = 0; i < multiChoices.length; i++) {
+    var el = choiceEls[i+1]; // +1 car le hint est le premier enfant
+    if (!el) continue;
+    el.classList.remove('selected');
+    if (multiChoices[i].correct) el.classList.add('correct');
+    else if (multiSelected.has(i) && !multiChoices[i].correct) el.classList.add('wrong');
+  }
+  
+  var bon = correctIndices.map(function(i) { return multiChoices[i].text; }).join(', ');
+  if (isCorrect) correctCount++; else wrongCount++;
+  reponses.push({q: q, isCorrect: isCorrect, choisi: selectedArr.map(function(i){return multiChoices[i].text;}).join(', '), bon: bon});
+  if (sessionId) supabase.from('entrainement_reponses').insert({session_id: sessionId, question_id: q.id, reponse: bon, est_correcte: isCorrect}).then(function(){});
+  
+  var expl = q.explication || '';
+  if (expl) { document.getElementById('q-expl-txt').textContent = expl; document.getElementById('q-expl').classList.remove('hidden'); }
+  
+  setTimeout(function() {
+    if (currentIdx + 1 < questions.length) nextQ();
+    else showResults();
+  }, 1200);
 }
 
 function buildChoices(q) {
@@ -491,34 +618,6 @@ async function showResults() {
   }
   document.getElementById('correction-list').innerHTML = cHtml;
   loadHistorique();
-}
-
-async function loadHistorique() {
-  if (!STAGIAIRE_ID) return;
-  try {
-    var res = await supabase.from('entrainement_sessions').select('*').eq('stagiaire_id', STAGIAIRE_ID).order('started_at', {ascending: false}).limit(10);
-    if (res.error) { console.warn('Historique:', res.error.message); return; }
-    var data = res.data;
-    if (!data || !data.length) return;
-    document.getElementById('histo-wrap').classList.remove('hidden');
-    var list = document.getElementById('histo-list');
-    var html = '';
-    var shown = data.slice(0, 3);
-    for (var i = 0; i < shown.length; i++) {
-      var s = shown[i];
-      var p = s.total ? Math.round(s.score / s.total * 100) : 0;
-      var col = p >= 75 ? '#059669' : p >= 50 ? '#d97706' : '#b91c1c';
-      var dt = new Date(s.started_at || s.ended_at).toLocaleDateString('fr-FR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
-      var cls = p >= 75 ? 'b-green' : p >= 50 ? 'b-orange' : 'b-red';
-      html += '<div class="card p-3 mb-2" style="display:flex;align-items:center;gap:12px;">';
-      html += '<div style="font-family:Syne,sans-serif;font-size:1.2rem;font-weight:900;color:' + col + ';min-width:44px;">' + p + '%</div>';
-      html += '<div style="flex:1;"><div style="font-size:.82rem;font-weight:700;">' + s.niveau + ' - ' + s.total + ' questions</div>';
-      html += '<div style="font-size:.72rem;color:#9ca3af;">' + dt + '</div></div>';
-      html += '<span class="badge ' + cls + '">' + s.score + '/' + s.nb_questions + '</span></div>';
-    }
-    if (data.length > 3) html += '<button onclick="openModalHisto()" class="btn btn-gray btn-sm" style="width:100%;margin-top:6px;">Voir tout l&#39;historique</button>';
-    list.innerHTML = html;
-  } catch(e) { console.error(e); }
 }
 
 async function openModalHisto() {
