@@ -550,7 +550,7 @@ async function openModalHisto() {
     var dt = new Date(s.started_at || s.ended_at).toLocaleDateString('fr-FR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
     html += '<div class="card p-3 mb-2" style="display:flex;align-items:center;gap:12px;">';
     html += '<div style="font-family:Syne,sans-serif;font-size:1.1rem;font-weight:900;color:' + col + ';min-width:40px;">' + p + '%</div>';
-    html += '<div style="flex:1;"><div style="font-size:.82rem;font-weight:700;">' + s.niveau + ' \u00b7 ' + s.nb_questions THIS_SHOULD_NOT_MATCH (s.duree_secondes||0) + 's</div>';
+    html += '<div style="font-size:.82rem;font-weight:700;">' + s.niveau + ' \u00b7 ' + s.nb_questions + ' q \u00b7 ' + (s.duree_secondes||0) + 's</div>';
     html += '<div style="font-size:.7rem;color:#9ca3af;">' + dt + '</div>';
     if (p < 100) html += '<button onclick="reviewErrIdx(' + i + ')" style="margin-top:4px;background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;border-radius:6px;padding:3px 10px;font-size:.7rem;font-weight:700;cursor:pointer;">Revoir les erreurs \u2192</button>';
     else html += '<div style="font-size:.68rem;color:#059669;margin-top:2px;">Score parfait !</div>';
