@@ -103,8 +103,12 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#eef2ff;color:#1
   </div>
   <div id="home-err" class="hidden" style="background:#fff1f2;border:1.5px solid #fecdd3;border-radius:10px;padding:10px 14px;font-size:.82rem;color:#b91c1c;margin-bottom:12px;"></div>
   <button onclick="startSession()" class="btn btn-blue" style="width:100%;padding:14px;font-size:.95rem;margin-bottom:16px;" id="btn-start">D&#233;marrer l&#8217;entra&#238;nement</button>
+  <button onclick="openModalHisto()" class="btn btn-gray" style="width:100%;padding:13px;font-size:.88rem;margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:8px;" id="btn-histo">
+    <span>&#128202;</span> Mon historique &amp; progression
+  </button>
+
   <div id="histo-wrap" class="hidden">
-    <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;margin-bottom:10px;">Mon historique</div>
+    <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;margin-bottom:10px;">Derniers entra&#238;nements</div>
     <div id="histo-list"></div>
   </div>
 </div>
@@ -166,6 +170,9 @@ var lastReponses = [];
 var histoSessions = [];
 
 window.addEventListener('DOMContentLoaded', function() {
+  // Masquer bouton historique si pas connecté (sera révélé après loadHistorique)
+  var bh = document.getElementById('btn-histo');
+  if (bh) bh.style.display = 'none';
   var s = SESSION.load('stagiaire');
   if (s) {
     STAGIAIRE_ID = STAGIAIRE_ID || s.stagiaire_id;
@@ -496,6 +503,8 @@ async function loadHistorique() {
     var data = res.data;
     if (!data || !data.length) return;
     document.getElementById('histo-wrap').classList.remove('hidden');
+    var bh2 = document.getElementById('btn-histo');
+    if (bh2) bh2.style.display = 'flex';
     var list = document.getElementById('histo-list');
     var html = '';
     var shown = data.slice(0, 3);
