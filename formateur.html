@@ -594,27 +594,51 @@ async function loadAll() {
   const cid = FSESSION.centerId || FSESSION.center_id;
   const fid = FSESSION.formateurId;
 
-  const eq = cid ? { center_id: cid } : {};
-  if (fid) eq.formateur_id = fid;
+  // 1. Sessions du formateur
+  let sessReq = window.supabase.from('sessions_formation').select('*').order('created_at', {ascending: false});
+  if (cid) sessReq = sessReq.eq('center_id', cid);
+  if (fid) sessReq = sessReq.eq('formateur_id', fid);
+  const { data: sessData } = await sessReq;
+  allSessions = sessData || [];
 
-  const sessions = await dbq('sessions', { eq, order: 'created_at' });
-  allSessions = sessions;
+  const sessIds = allSessions.map(s => s.id);
 
-  const sessIds = sessions.map(s => s.id);
-  const [stags, entr] = sessIds.length ? await Promise.all([
-    dbq('stagiaires', { in: { session_id: sessIds } }),
-    dbq('entrainements', { in: { session_id: sessIds }, order: 'created_at' })
-  ]) : [[], []];
-  allStagiaires = stags;
+  // 2. Participants (stagiaires) via session_participants + jointure stagiaires
+  let allParts = [];
+  if (sessIds.length) {
+    const { data: partsData } = await window.supabase
+      .from('session_participants')
+      .select('*, stagiaires(id, nom, prenom, email, niveau, pin_clair)')
+      .in('session_id', sessIds);
+    allParts = partsData || [];
+  }
+  // Normaliser pour ressembler à des stagiaires avec session_id
+  allStagiaires = allParts.map(p => ({
+    ...p.stagiaires,
+    session_id: p.session_id,
+    participant_id: p.id,
+    presence: p.presence
+  })).filter(s => s && s.id);
 
-  document.getElementById('kpi-sessions').textContent = sessions.length;
-  document.getElementById('kpi-stagiaires').textContent = stags.length;
-  document.getElementById('kpi-entr').textContent = entr.length;
+  // 3. Entraînements
+  let allEntr = [];
+  if (sessIds.length) {
+    const { data: entrData } = await window.supabase
+      .from('entrainement_sessions')
+      .select('*')
+      .in('session_id', sessIds)
+      .order('created_at', {ascending: true});
+    allEntr = entrData || [];
+  }
 
-  renderOvSessions(sessions.slice(0,5));
-  renderOvTop(stags, entr);
-  renderSessionsList(sessions, stags, entr);
-  populateStatsSel(sessions);
+  document.getElementById('kpi-sessions').textContent = allSessions.length;
+  document.getElementById('kpi-stagiaires').textContent = allStagiaires.length;
+  document.getElementById('kpi-entr').textContent = allEntr.length;
+
+  renderOvSessions(allSessions.slice(0,5));
+  renderOvTop(allStagiaires, allEntr);
+  renderSessionsList(allSessions, allStagiaires, allEntr);
+  populateStatsSel(allSessions);
 }
 
 /* ══════════════════════════════════════
@@ -627,7 +651,7 @@ function renderOvSessions(sessions) {
     <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;
       ${i < sessions.length-1 ? 'border-bottom:1px solid var(--border);' : ''}gap:10px;">
       <div>
-        <div style="font-size:.85rem;font-weight:700;">${esc(s.nom||s.session_id||s.id)}</div>
+        <div style="font-size:.85rem;font-weight:700;">${esc(s.titre||s.nom||s.type_formation+' '+s.niveau||s.id)}</div>
         <div style="font-size:.71rem;color:var(--text3);margin-top:1px;">${s.niveau||''} · ${fmtDate(s.date_debut||s.created_at)}</div>
       </div>
       <span class="badge ${s.statut==='actif'?'badge-green':'badge-gray'}">${s.statut||'en cours'}</span>
@@ -693,7 +717,7 @@ function buildSessCard(sess, allStags, allEntr) {
   return `<div class="sess-card">
     <div class="sess-hdr" onclick="toggleSess('${sess.id}')">
       <div>
-        <div class="sess-name">${esc(sess.nom||sess.session_id||sess.id)}</div>
+        <div class="sess-name">${esc(sess.titre||sess.nom||(sess.type_formation?sess.type_formation+' '+sess.niveau:sess.id))}</div>
         <div class="sess-meta">${sess.niveau||''} · ${fmtDate(sess.date_debut||sess.created_at)}</div>
       </div>
       <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
@@ -737,7 +761,13 @@ async function showEchecs(stagId, sessId, nom) {
   document.getElementById('echecs-body').innerHTML = '<div class="loader"><span class="spin"></span>Chargement...</div>';
   openModal('modal-echecs');
 
-  const entr = await dbq('entrainements', { eq: { stagiaire_id: stagId, session_id: sessId }, order: 'created_at' });
+  const { data: entrRaw } = await window.supabase
+    .from('entrainement_sessions')
+    .select('*')
+    .eq('stagiaire_id', stagId)
+    .eq('session_id', sessId)
+    .order('created_at', {ascending: true});
+  const entr = entrRaw || [];
   const map = {};
   entr.forEach(e => (e.details_questions||[]).forEach(d => {
     if (!d.correct) {
@@ -779,10 +809,19 @@ async function loadStatsSess(sessId) {
   }
   el.innerHTML = '<div class="loader"><span class="spin"></span>Chargement...</div>';
 
-  const [stags, entr] = await Promise.all([
-    dbq('stagiaires', { eq: { session_id: sessId } }),
-    dbq('entrainements', { eq: { session_id: sessId }, order: 'created_at' })
-  ]);
+  // Charger via session_participants + jointure
+  const { data: partsData } = await window.supabase
+    .from('session_participants')
+    .select('*, stagiaires(id, nom, prenom, email, niveau)')
+    .eq('session_id', sessId);
+  const stags = (partsData || []).map(p => ({ ...p.stagiaires, session_id: sessId })).filter(s => s && s.id);
+
+  const { data: entrData } = await window.supabase
+    .from('entrainement_sessions')
+    .select('*')
+    .eq('session_id', sessId)
+    .order('created_at', {ascending: true});
+  const entr = entrData || [];
 
   const avgG = entr.length ? Math.round(entr.reduce((a,e)=>a+(e.score||0),0)/entr.length) : null;
 
@@ -878,7 +917,11 @@ async function loadGlobalQ(niv) {
   const el = document.getElementById('global-q-list');
   el.innerHTML = '<div class="loader"><span class="spin"></span>Chargement...</div>';
   const sessIds = allSessions.map(s => s.id);
-  const entr = sessIds.length ? await dbq('entrainements', { in: { session_id: sessIds } }) : [];
+  let entr = [];
+  if (sessIds.length) {
+    const { data } = await window.supabase.from('entrainement_sessions').select('*').in('session_id', sessIds);
+    entr = data || [];
+  }
 
   const map = {};
   const totalEntr = entr.length || 1;
