@@ -6,7 +6,7 @@
 <title>Espace Formateur — MIB Prévention</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../supabase.js"></script>
 <style>
 /* ═══════════ TOKENS ═══════════ */
 :root {
@@ -418,19 +418,7 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); colo
 <div class="toast" id="toast"></div>
 
 <script>
-/* ══════════════════════════════════════
-   SUPABASE CONFIG
-══════════════════════════════════════ */
-const SUPA_URL = 'https://ozfkmlokovxigfnwjeuk.supabase.co';
-// Remplace METTRE_CLE_ANON_ICI par ta cle depuis Supabase Dashboard -> Project Settings -> API
-const SUPA_KEY = 'METTRE_CLE_ANON_ICI';
-let sb;
-try {
-  sb = supabase.createClient(SUPA_URL, SUPA_KEY, { auth: { detectSessionInUrl: false, persistSession: false, autoRefreshToken: false } });
-} catch(e) {
-  document.body.innerHTML = '<div style="padding:40px;font-family:sans-serif;color:#c0392b;"><h2>Erreur config Supabase</h2><pre>'+e.message+'</pre></div>';
-}
-
+/* Supabase client partagé depuis ../supabase.js */
 /* ══════════════════════════════════════
    SESSION
 ══════════════════════════════════════ */
