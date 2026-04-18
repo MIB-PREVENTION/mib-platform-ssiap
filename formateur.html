@@ -419,7 +419,12 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); colo
 <div class="toast" id="toast"></div>
 
 <script>
-/* Supabase client partagé depuis ../supabase.js */
+/* Supabase client partagé depuis ../supabase.js
+   window.supabase = client créé par supabase.js
+══════════════════════════════════════════════════ */
+// Alias local pour simplicité
+const sb = window.supabase;
+
 /* ══════════════════════════════════════
    SESSION
 ══════════════════════════════════════ */
