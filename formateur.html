@@ -423,10 +423,10 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); colo
 ══════════════════════════════════════ */
 const SUPA_URL = 'https://ozfkmlokovxigfnwjeuk.supabase.co';
 // Remplace METTRE_CLE_ANON_ICI par ta cle depuis Supabase Dashboard -> Project Settings -> API
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im96ZmttbG9rb3Z4aWdmbndqZXVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODUzODUsImV4cCI6MjA5MTE2MTM4NX0.zu5V20Nz7vO3dSYhOtr7mqS7VAMaUDVS2Ibs01xS9Fk';
+const SUPA_KEY = 'METTRE_CLE_ANON_ICI';
 let sb;
 try {
-  sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+  sb = supabase.createClient(SUPA_URL, SUPA_KEY, { auth: { detectSessionInUrl: false, persistSession: false, autoRefreshToken: false } });
 } catch(e) {
   document.body.innerHTML = '<div style="padding:40px;font-family:sans-serif;color:#c0392b;"><h2>Erreur config Supabase</h2><pre>'+e.message+'</pre></div>';
 }
@@ -440,63 +440,69 @@ let allStagiaires = [];
 let statsQData = [];
 
 (function boot() {
-  // 1. Logger TOUTES les clés localStorage pour diagnostic
-  console.log('=== MIB Formateur Boot ===');
-  console.log('Clés localStorage:', Object.keys(localStorage));
-  Object.keys(localStorage).forEach(k => {
-    try { console.log(k, '->', JSON.parse(localStorage.getItem(k))); }
-    catch(e) { console.log(k, '->', localStorage.getItem(k)); }
+  // Logger toutes les clés
+  const allKeys = Object.keys(localStorage);
+  const allData = {};
+  allKeys.forEach(k => {
+    try { allData[k] = JSON.parse(localStorage.getItem(k)); }
+    catch(e) { allData[k] = localStorage.getItem(k); }
   });
+  console.log('=== MIB Boot - localStorage:', allData);
 
-  // 2. Chercher dans toutes les clés possibles
-  const knownKeys = ['mib_formateur_session','SESSION','formateur_session','mib_session','user_session'];
+  // Chercher dans toutes les clés possibles (ajouter FORMATEUR, FORM, formateur)
+  const knownKeys = [
+    'mib_formateur_session','SESSION','formateur_session',
+    'FORMATEUR','FORM','formateur','mib_session','user_session',
+    'mib_formateur','currentFormateur','current_formateur'
+  ];
   let raw = null;
   let foundKey = null;
 
-  // D'abord les clés connues
   for (const k of knownKeys) {
     raw = localStorage.getItem(k);
-    if (raw) { foundKey = k; break; }
+    if (raw && raw !== 'null') { foundKey = k; break; }
   }
 
-  // Sinon, chercher dans TOUTES les clés une qui contient des données formateur
+  // Sinon scanner toutes les clés
   if (!raw) {
-    for (const k of Object.keys(localStorage)) {
+    for (const k of allKeys) {
       const v = localStorage.getItem(k);
-      if (!v) continue;
+      if (!v || v === 'null') continue;
       try {
         const obj = JSON.parse(v);
-        // Si l'objet a un rôle formateur ou un formateurId ou un id avec role
-        if (obj && (obj.formateurId || obj.role === 'formateur' || obj.type === 'formateur' ||
-            (obj.id && (obj.nom || obj.prenom || obj.email)))) {
-          raw = v; foundKey = k;
-          break;
-        }
+        if (obj && typeof obj === 'object' && (
+          obj.formateurId || obj.formateur_id ||
+          obj.role === 'formateur' || obj.type === 'formateur' ||
+          obj.role === 'FORMATEUR' ||
+          (obj.id && (obj.nom || obj.prenom || obj.email || obj.pin))
+        )) { raw = v; foundKey = k; break; }
       } catch(e) {}
     }
   }
 
-  console.log('Clé trouvée:', foundKey, '| Contenu:', raw ? JSON.parse(raw) : null);
+  console.log('Clé session trouvée:', foundKey, '→', raw ? JSON.parse(raw) : null);
 
-  if (!raw) {
-    console.warn('Aucune session formateur trouvée → redirect');
-    redirect(); return;
+  if (!raw || raw === 'null') {
+    showDebug('Aucune session formateur trouvée dans localStorage.<br>Clés présentes: <b>' + allKeys.join(', ') + '</b>');
+    return;
   }
 
-  try { SESSION = JSON.parse(raw); } catch(e) { console.error('JSON invalide:', e); redirect(); return; }
+  try { SESSION = JSON.parse(raw); } catch(e) {
+    showDebug('Erreur JSON dans la session: ' + e.message + '<br>Valeur: ' + raw.substring(0, 200));
+    return;
+  }
 
-  // 3. Normaliser les champs selon ce que la page de login a stocké
-  // Accepter id OU formateurId OU userId
-  SESSION.formateurId = SESSION.formateurId || SESSION.id || SESSION.userId || SESSION.user_id;
-  SESSION.centerId    = SESSION.centerId    || SESSION.center_id || SESSION.centreId;
-  SESSION.centreName  = SESSION.centreName  || SESSION.center_name || SESSION.centreName || '';
-  SESSION.niveau      = SESSION.niveau      || SESSION.level || '';
+  // Normaliser
+  SESSION.formateurId = SESSION.formateurId || SESSION.formateur_id || SESSION.id || SESSION.userId || SESSION.user_id;
+  SESSION.centerId    = SESSION.centerId    || SESSION.center_id   || SESSION.centreId || SESSION.centre_id;
+  SESSION.centreName  = SESSION.centreName  || SESSION.center_name || SESSION.centre_name || '';
+  SESSION.niveau      = SESSION.niveau      || SESSION.level       || SESSION.niveauSSIAP || '';
 
   console.log('SESSION normalisé:', SESSION);
 
   if (!SESSION.formateurId) {
-    console.warn('Pas de formateurId dans la session → redirect');
-    redirect(); return;
+    showDebug('Session trouvée (clé: <b>' + foundKey + '</b>) mais pas de formateurId.<br>Contenu: <pre>' + JSON.stringify(SESSION, null, 2) + '</pre>');
+    return;
   }
 
   const niv = SESSION.niveau || '';
@@ -506,16 +512,27 @@ let statsQData = [];
   loadAll();
 })();
 
+function showDebug(msg) {
+  // Afficher erreur visible sur l'écran au lieu de rediriger
+  document.body.innerHTML = `
+    <div style="max-width:600px;margin:60px auto;padding:30px;font-family:sans-serif;">
+      <div style="background:#fff1f0;border:2px solid #fecaca;border-radius:14px;padding:24px;">
+        <h2 style="color:#c0392b;margin-bottom:12px;">⚠️ Problème de session formateur</h2>
+        <div style="font-size:.9rem;color:#333;line-height:1.6;">${msg}</div>
+        <hr style="margin:16px 0;border-color:#fecaca;">
+        <p style="font-size:.8rem;color:#666;">Si tu vois ce message, fais une capture d'écran et partage-la.<br>
+        Cela permettra de savoir exactement quelle clé localStorage utilise ta page de login.</p>
+        <a href="../index.html" style="display:inline-block;margin-top:14px;padding:8px 18px;background:#c0392b;color:#fff;border-radius:8px;text-decoration:none;font-weight:700;">← Retour index</a>
+      </div>
+    </div>`;
+}
+
 function redirect() { window.location.href = '../index.html'; }
 function logout() {
-  Object.keys(localStorage).forEach(k => {
-    try {
-      const v = JSON.parse(localStorage.getItem(k));
-      if (v && (v.formateurId || v.role === 'formateur' || v.type === 'formateur')) localStorage.removeItem(k);
-    } catch(e) {}
-  });
-  ['mib_formateur_session','SESSION','formateur_session','mib_session','user_session'].forEach(k => localStorage.removeItem(k));
-  redirect();
+  const keysToRemove = ['mib_formateur_session','SESSION','formateur_session','FORMATEUR','FORM',
+    'formateur','mib_session','user_session','mib_formateur','currentFormateur','current_formateur'];
+  keysToRemove.forEach(k => localStorage.removeItem(k));
+  window.location.href = '../index.html';
 }
 
 /* ══════════════════════════════════════
