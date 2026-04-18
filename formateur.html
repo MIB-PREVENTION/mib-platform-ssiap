@@ -422,8 +422,14 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); colo
    SUPABASE CONFIG
 ══════════════════════════════════════ */
 const SUPA_URL = 'https://ozfkmlokovxigfnwjeuk.supabase.co';
+// Remplace METTRE_CLE_ANON_ICI par ta cle depuis Supabase Dashboard -> Project Settings -> API
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im96ZmttbG9rb3Z4aWdmbndqZXVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODUzODUsImV4cCI6MjA5MTE2MTM4NX0.zu5V20Nz7vO3dSYhOtr7mqS7VAMaUDVS2Ibs01xS9Fk';
-const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+let sb;
+try {
+  sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+} catch(e) {
+  document.body.innerHTML = '<div style="padding:40px;font-family:sans-serif;color:#c0392b;"><h2>Erreur config Supabase</h2><pre>'+e.message+'</pre></div>';
+}
 
 /* ══════════════════════════════════════
    SESSION
