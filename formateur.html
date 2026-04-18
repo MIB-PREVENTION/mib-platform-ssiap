@@ -422,7 +422,7 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); colo
    SUPABASE CONFIG
 ══════════════════════════════════════ */
 const SUPA_URL = 'https://ozfkmlokovxigfnwjeuk.supabase.co';
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im96ZmttbG9rb3Z4aWdmbndqZXVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODUzODUsImV4cCI6MjA5MTE2MTM4NX0.zu5V20Nz7vO3dSYhOtr7mqS7VAMaUDVS2Ibs01xS9Fk';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im96ZmttbG9rb3Z4aWdmbndqZXVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ0NTQzMjEsImV4cCI6MjA2MDAzMDMyMX0.REMPLACER_PAR_VRAIE_CLE';
 const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
 
 /* ══════════════════════════════════════
@@ -434,13 +434,64 @@ let allStagiaires = [];
 let statsQData = [];
 
 (function boot() {
-  const keys = ['mib_formateur_session','SESSION','formateur_session'];
+  // 1. Logger TOUTES les clés localStorage pour diagnostic
+  console.log('=== MIB Formateur Boot ===');
+  console.log('Clés localStorage:', Object.keys(localStorage));
+  Object.keys(localStorage).forEach(k => {
+    try { console.log(k, '->', JSON.parse(localStorage.getItem(k))); }
+    catch(e) { console.log(k, '->', localStorage.getItem(k)); }
+  });
+
+  // 2. Chercher dans toutes les clés possibles
+  const knownKeys = ['mib_formateur_session','SESSION','formateur_session','mib_session','user_session'];
   let raw = null;
-  for (const k of keys) { raw = localStorage.getItem(k); if (raw) break; }
-  if (!raw) { redirect(); return; }
-  try { SESSION = JSON.parse(raw); } catch(e) { redirect(); return; }
-  if (!SESSION?.formateurId && !SESSION?.id) { redirect(); return; }
-  if (!SESSION.formateurId) SESSION.formateurId = SESSION.id;
+  let foundKey = null;
+
+  // D'abord les clés connues
+  for (const k of knownKeys) {
+    raw = localStorage.getItem(k);
+    if (raw) { foundKey = k; break; }
+  }
+
+  // Sinon, chercher dans TOUTES les clés une qui contient des données formateur
+  if (!raw) {
+    for (const k of Object.keys(localStorage)) {
+      const v = localStorage.getItem(k);
+      if (!v) continue;
+      try {
+        const obj = JSON.parse(v);
+        // Si l'objet a un rôle formateur ou un formateurId ou un id avec role
+        if (obj && (obj.formateurId || obj.role === 'formateur' || obj.type === 'formateur' ||
+            (obj.id && (obj.nom || obj.prenom || obj.email)))) {
+          raw = v; foundKey = k;
+          break;
+        }
+      } catch(e) {}
+    }
+  }
+
+  console.log('Clé trouvée:', foundKey, '| Contenu:', raw ? JSON.parse(raw) : null);
+
+  if (!raw) {
+    console.warn('Aucune session formateur trouvée → redirect');
+    redirect(); return;
+  }
+
+  try { SESSION = JSON.parse(raw); } catch(e) { console.error('JSON invalide:', e); redirect(); return; }
+
+  // 3. Normaliser les champs selon ce que la page de login a stocké
+  // Accepter id OU formateurId OU userId
+  SESSION.formateurId = SESSION.formateurId || SESSION.id || SESSION.userId || SESSION.user_id;
+  SESSION.centerId    = SESSION.centerId    || SESSION.center_id || SESSION.centreId;
+  SESSION.centreName  = SESSION.centreName  || SESSION.center_name || SESSION.centreName || '';
+  SESSION.niveau      = SESSION.niveau      || SESSION.level || '';
+
+  console.log('SESSION normalisé:', SESSION);
+
+  if (!SESSION.formateurId) {
+    console.warn('Pas de formateurId dans la session → redirect');
+    redirect(); return;
+  }
 
   const niv = SESSION.niveau || '';
   document.getElementById('sb-niveau').textContent = niv;
@@ -450,7 +501,16 @@ let statsQData = [];
 })();
 
 function redirect() { window.location.href = '../index.html'; }
-function logout() { ['mib_formateur_session','SESSION','formateur_session'].forEach(k => localStorage.removeItem(k)); redirect(); }
+function logout() {
+  Object.keys(localStorage).forEach(k => {
+    try {
+      const v = JSON.parse(localStorage.getItem(k));
+      if (v && (v.formateurId || v.role === 'formateur' || v.type === 'formateur')) localStorage.removeItem(k);
+    } catch(e) {}
+  });
+  ['mib_formateur_session','SESSION','formateur_session','mib_session','user_session'].forEach(k => localStorage.removeItem(k));
+  redirect();
+}
 
 /* ══════════════════════════════════════
    NAVIGATION
