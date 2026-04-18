@@ -6,6 +6,7 @@
 <title>Espace Formateur — MIB Prévention</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../supabase.js"></script>
 <style>
 /* ═══════════ TOKENS ═══════════ */
@@ -422,7 +423,7 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); colo
 /* ══════════════════════════════════════
    SESSION
 ══════════════════════════════════════ */
-let SESSION = null;
+let FSESSION = null;
 let allSessions = [];
 let allStagiaires = [];
 let statsQData = [];
@@ -475,25 +476,25 @@ let statsQData = [];
     return;
   }
 
-  try { SESSION = JSON.parse(raw); } catch(e) {
+  try { FSESSION = JSON.parse(raw); } catch(e) {
     showDebug('Erreur JSON dans la session: ' + e.message + '<br>Valeur: ' + raw.substring(0, 200));
     return;
   }
 
   // Normaliser
-  SESSION.formateurId = SESSION.formateurId || SESSION.formateur_id || SESSION.id || SESSION.userId || SESSION.user_id;
-  SESSION.centerId    = SESSION.centerId    || SESSION.center_id   || SESSION.centreId || SESSION.centre_id;
-  SESSION.centreName  = SESSION.centreName  || SESSION.center_name || SESSION.centre_name || '';
-  SESSION.niveau      = SESSION.niveau      || SESSION.level       || SESSION.niveauSSIAP || '';
+  FSESSION.formateurId = FSESSION.formateurId || FSESSION.formateur_id || FSESSION.id || FSESSION.userId || FSESSION.user_id;
+  FSESSION.centerId    = FSESSION.centerId    || FSESSION.center_id   || FSESSION.centreId || FSESSION.centre_id;
+  FSESSION.centreName  = FSESSION.centreName  || FSESSION.center_name || FSESSION.centre_name || '';
+  FSESSION.niveau      = FSESSION.niveau      || FSESSION.level       || FSESSION.niveauSSIAP || '';
 
-  console.log('SESSION normalisé:', SESSION);
+  console.log('SESSION normalisé:', FSESSION);
 
-  if (!SESSION.formateurId) {
-    showDebug('Session trouvée (clé: <b>' + foundKey + '</b>) mais pas de formateurId.<br>Contenu: <pre>' + JSON.stringify(SESSION, null, 2) + '</pre>');
+  if (!FSESSION.formateurId) {
+    showDebug('Session trouvée (clé: <b>' + foundKey + '</b>) mais pas de formateurId.<br>Contenu: <pre>' + JSON.stringify(FSESSION, null, 2) + '</pre>');
     return;
   }
 
-  const niv = SESSION.niveau || '';
+  const niv = FSESSION.niveau || '';
   document.getElementById('sb-niveau').textContent = niv;
   document.getElementById('mob-badge').textContent = niv;
 
@@ -585,8 +586,8 @@ async function dbq(table, opts = {}) {
    INIT LOAD
 ══════════════════════════════════════ */
 async function loadAll() {
-  const cid = SESSION.centerId || SESSION.center_id;
-  const fid = SESSION.formateurId;
+  const cid = FSESSION.centerId || FSESSION.center_id;
+  const fid = FSESSION.formateurId;
 
   const eq = cid ? { center_id: cid } : {};
   if (fid) eq.formateur_id = fid;
@@ -902,18 +903,18 @@ async function loadGlobalQ(niv) {
 ══════════════════════════════════════ */
 async function loadProfil() {
   const el = document.getElementById('profil-content');
-  const { data, error } = await sb.from('formateurs').select('*').eq('id', SESSION.formateurId).maybeSingle();
+  const { data, error } = await sb.from('formateurs').select('*').eq('id', FSESSION.formateurId).maybeSingle();
   if (error || !data) { el.innerHTML = emptyState('👤','Impossible de charger le profil.'); return; }
   const init = ((data.nom||'')[0]||(data.prenom||'')[0]||'?').toUpperCase();
   el.innerHTML = `
     <div class="profil-block">
       <div class="profil-av">${init}</div>
       <div class="profil-name">${esc(data.prenom||'')} ${esc(data.nom||'')}</div>
-      <div class="profil-role">Formateur SSIAP · ${esc(SESSION.centreName||'')}</div>
+      <div class="profil-role">Formateur SSIAP · ${esc(FSESSION.centreName||'')}</div>
       <div class="profil-grid">
         <div class="profil-field"><label>Email</label><span>${esc(data.email||'—')}</span></div>
         <div class="profil-field"><label>PIN connexion</label><span style="font-family:monospace;font-size:.95rem;">${data.pin_clair||'••••••'}</span></div>
-        <div class="profil-field"><label>Niveau</label><span>${esc(SESSION.niveau||'—')}</span></div>
+        <div class="profil-field"><label>Niveau</label><span>${esc(FSESSION.niveau||'—')}</span></div>
         <div class="profil-field"><label>Sessions actives</label><span>${allSessions.length}</span></div>
       </div>
     </div>
