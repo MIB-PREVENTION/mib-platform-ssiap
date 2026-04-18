@@ -2,1280 +2,892 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>MIB — Espace Formateur</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="supabase.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Espace Formateur — MIB Prévention</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Syne:wght@700;800;900&display=swap');
-:root{--bg:#eef2ff;--card:#fff;--text:#111827;--text2:#6b7280;--text3:#9ca3af;--blue:#2563eb;--green:#059669;}
-*{box-sizing:border-box;margin:0;padding:0;}
-html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);}
-.bg-wrap{position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse 70% 50% at 10% 0%,rgba(37,99,235,.08) 0%,transparent 60%),linear-gradient(160deg,#eef2ff 0%,#f5f7ff 100%);}
-.sidebar{width:230px;min-height:100vh;background:linear-gradient(180deg,#fff 0%,#f8faff 100%);border-right:1px solid rgba(0,0,0,.06);padding:20px 14px;flex-shrink:0;box-shadow:4px 0 20px rgba(100,116,139,.07);}
-.nav-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;cursor:pointer;font-size:.84rem;font-weight:600;color:var(--text2);transition:all .2s;margin-bottom:3px;}
-.nav-item:hover{background:linear-gradient(145deg,#f8faff,#eef1f8);color:var(--text);}
-.nav-item.on{background:linear-gradient(135deg,#eff6ff,#dbeafe);color:#1d4ed8;box-shadow:3px 3px 10px rgba(37,99,235,.1);}
-.nav-icon{font-size:1rem;width:20px;text-align:center;}
-.topbar{background:#fff;border-bottom:1px solid rgba(0,0,0,.06);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 10px rgba(100,116,139,.06);}
-.card{background:#fff;border-radius:18px;border:1px solid rgba(255,255,255,.9);box-shadow:5px 5px 18px rgba(100,116,139,.11),-3px -3px 10px rgba(255,255,255,.9);}
-.kpi{background:linear-gradient(145deg,#f8faff,#eef1f8);border-radius:16px;padding:20px;border:1.5px solid rgba(255,255,255,.9);box-shadow:4px 4px 12px rgba(100,116,139,.13);transition:transform .2s;}
-.kpi:hover{transform:translateY(-3px);}
-.kpi-val{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;line-height:1;}
-.kpi-lbl{font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-top:5px;}
-.kpi-icon{font-size:1.6rem;margin-bottom:8px;}
-.inp{width:100%;padding:11px 15px;border-radius:12px;background:linear-gradient(145deg,#e8edf5,#f3f6fc);border:1.5px solid rgba(0,0,0,.07);color:var(--text);font-family:'Inter',sans-serif;font-size:.88rem;outline:none;transition:all .2s;box-shadow:inset 3px 3px 7px rgba(100,116,139,.16),inset -2px -2px 5px rgba(255,255,255,.9);}
-.inp:focus{border-color:rgba(37,99,235,.35);}
-.inp::placeholder{color:var(--text3);}
-.lbl{font-size:.68rem;font-weight:700;color:var(--text2);letter-spacing:.07em;text-transform:uppercase;display:block;margin-bottom:6px;}
-.btn{padding:10px 18px;border-radius:11px;border:none;font-weight:700;font-size:.82rem;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;}
-.btn:hover{transform:translateY(-2px);}
-.btn:active{transform:translateY(1px);}
-.btn:disabled{opacity:.45;cursor:not-allowed;transform:none;}
-.btn-blue{background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;box-shadow:0 4px 14px rgba(37,99,235,.35);}
-.btn-green{background:linear-gradient(135deg,#10b981,#065f46);color:#fff;box-shadow:0 4px 14px rgba(16,185,129,.35);}
-.btn-red{background:linear-gradient(135deg,#ef4444,#b91c1c);color:#fff;box-shadow:0 4px 14px rgba(239,68,68,.35);}
-.btn-gray{background:linear-gradient(135deg,#9ca3af,#6b7280);color:#fff;box-shadow:0 4px 10px rgba(107,114,128,.25);}
-.btn-sm{padding:7px 13px;font-size:.75rem;border-radius:9px;}
-.btn-xs{padding:5px 10px;font-size:.7rem;border-radius:8px;}
-.tbl{width:100%;border-collapse:separate;border-spacing:0;}
-.tbl th{background:linear-gradient(145deg,#f8faff,#eef1f8);padding:10px 14px;font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);text-align:left;}
-.tbl th:first-child{border-radius:10px 0 0 0;}.tbl th:last-child{border-radius:0 10px 0 0;}
-.tbl td{padding:11px 14px;font-size:.84rem;border-bottom:1px solid rgba(0,0,0,.04);background:#fff;vertical-align:middle;}
-.tbl tr:hover td{background:#fafbff;}
-.tbl tr:last-child td:first-child{border-radius:0 0 0 10px;}.tbl tr:last-child td:last-child{border-radius:0 0 10px 0;}
-.tbl tr:last-child td{border-bottom:none;}
-.badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:.68rem;font-weight:700;letter-spacing:.05em;}
-.b-green{background:#f0fdf4;color:#065f46;border:1px solid #bbf7d0;}
-.b-blue{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;}
-.b-orange{background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;}
-.b-red{background:#fff1f2;color:#b91c1c;border:1px solid #fecdd3;}
-.b-gray{background:#f9fafb;color:#6b7280;border:1px solid #e5e7eb;}
-.b-purple{background:#faf5ff;color:#7c3aed;border:1px solid #e9d5ff;}
-.mod-card{border-radius:14px;padding:16px;border:2px solid;transition:all .2s;cursor:pointer;}
-.mod-on{background:linear-gradient(145deg,#eff6ff,#dbeafe);border-color:rgba(37,99,235,.3);}
-.mod-card:hover{transform:translateY(-3px);box-shadow:0 8px 20px rgba(37,99,235,.15);}
-.mod-icon{font-size:1.8rem;margin-bottom:8px;}
-.mod-title{font-size:.85rem;font-weight:700;}
-.mod-desc{font-size:.72rem;color:var(--text2);margin-top:3px;}
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.25);backdrop-filter:blur(6px);z-index:50;display:flex;align-items:center;justify-content:center;padding:16px;}
-.modal-box{background:#fff;border-radius:20px;padding:26px;width:100%;max-width:600px;max-height:90vh;overflow-y:auto;box-shadow:0 30px 70px rgba(0,0,0,.2);}
-.alert-ok{background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:10px;padding:10px 14px;font-size:.82rem;color:#065f46;}
-.alert-err{background:#fff1f2;border:1.5px solid #fecdd3;border-radius:10px;padding:10px 14px;font-size:.82rem;color:#b91c1c;}
-.sep{height:1px;background:linear-gradient(90deg,transparent,rgba(0,0,0,.07),transparent);margin:16px 0;}
-.logo-t{font-family:'Syne',sans-serif;font-weight:800;}
-.spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .6s linear infinite;display:inline-block;vertical-align:middle;}
-@keyframes sp{to{transform:rotate(360deg)}}
-.hidden{display:none!important;}
+/* ═══════════ TOKENS ═══════════ */
+:root {
+  --bg: #f6f5f3;
+  --card: #ffffff;
+  --text: #1a1714;
+  --text2: #4a4340;
+  --text3: #8c7b74;
+  --border: #e8e0db;
+  --subtle: #f2eeeb;
+  --rouge: #c0392b;
+  --rouge-bg: #fff1f0;
+  --blue: #2563eb;
+  --blue-bg: #eff6ff;
+  --green: #16a34a;
+  --green-bg: #f0fdf4;
+  --amber: #d97706;
+  --amber-bg: #fffbeb;
+  --sidebar-w: 224px;
+  --header-h: 56px;
+  --radius: 14px;
+  --shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 14px rgba(0,0,0,.04);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
-/* RESPONSIVE MOBILE FORMATEUR */
-@media(max-width:768px){
-  .sidebar{display:none;position:fixed;inset:0;z-index:100;width:260px;transition:transform .3s;}
-  .sidebar.open{display:flex;flex-direction:column;}
-  .mobile-header{display:flex!important;}
-  .main-content{margin-left:0!important;padding:12px!important;}
-  .kpi{padding:12px;}
-  .kpi-val{font-size:1.4rem;}
-  .card{border-radius:12px;}
+/* ═══════════ LAYOUT ═══════════ */
+.layout { display: flex; min-height: 100vh; }
+
+/* ═══════════ SIDEBAR ═══════════ */
+.sidebar {
+  width: var(--sidebar-w);
+  background: var(--card);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  position: fixed; top: 0; left: 0; bottom: 0;
+  z-index: 100;
+  transition: transform .28s cubic-bezier(.4,0,.2,1);
+  overflow: hidden;
 }
-@media(max-width:480px){
-  .kpi-val{font-size:1.2rem;}
-  .kpi-lbl{font-size:.6rem;}
-  table{font-size:.78rem;}
-  .btn{padding:9px 14px;font-size:.8rem;}
+.sb-logo {
+  padding: 18px 16px 14px;
+  border-bottom: 1px solid var(--border);
 }
-.mobile-header{display:none;background:#fff;border-bottom:1px solid rgba(0,0,0,.06);padding:12px 16px;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.05);}
-.menu-btn{background:none;border:1px solid #e5e7eb;border-radius:8px;padding:7px 10px;cursor:pointer;font-size:1.1rem;}
+.sb-brand { font-family: Syne, sans-serif; font-size: 1rem; font-weight: 800; }
+.sb-sub { font-size: .68rem; color: var(--text3); margin-top: 1px; }
+.sb-badge {
+  display: inline-block; margin-top: 7px;
+  font-size: .63rem; font-weight: 700; letter-spacing: .4px;
+  padding: 2px 8px; border-radius: 999px;
+  background: var(--blue-bg); color: var(--blue); border: 1px solid #bfdbfe;
+}
+.sb-nav { flex: 1; padding: 10px 8px; overflow-y: auto; }
+.nav-item {
+  display: flex; align-items: center; gap: 9px;
+  padding: 9px 11px; border-radius: 10px;
+  font-size: .82rem; font-weight: 600; color: var(--text2);
+  cursor: pointer; transition: all .14s; margin-bottom: 2px;
+  user-select: none;
+}
+.nav-item:hover { background: var(--subtle); color: var(--text); }
+.nav-item.active { background: var(--rouge-bg); color: var(--rouge); }
+.nav-icon { font-size: .95rem; width: 20px; text-align: center; flex-shrink: 0; }
+.sb-footer { padding: 12px 8px; border-top: 1px solid var(--border); }
+.btn-logout {
+  width: 100%; display: flex; align-items: center; gap: 8px;
+  padding: 9px 12px; border-radius: 10px; border: none;
+  font-family: inherit; font-size: .8rem; font-weight: 600;
+  background: var(--subtle); color: var(--text3); cursor: pointer;
+  transition: all .14s;
+}
+.btn-logout:hover { background: var(--rouge-bg); color: var(--rouge); }
+
+/* ═══════════ MOBILE HEADER ═══════════ */
+.mob-hdr {
+  display: none; position: fixed;
+  top: 0; left: 0; right: 0; height: var(--header-h);
+  background: var(--card); border-bottom: 1px solid var(--border);
+  align-items: center; padding: 0 14px; gap: 10px; z-index: 200;
+}
+.menu-btn {
+  width: 36px; height: 36px; border: 1.5px solid var(--border);
+  border-radius: 9px; background: var(--card); font-size: 1rem;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  color: var(--text2); flex-shrink: 0; transition: all .14s;
+}
+.menu-btn:hover { background: var(--subtle); }
+.mob-title { font-family: Syne, sans-serif; font-weight: 800; font-size: .88rem; flex: 1; }
+#overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.32); z-index: 99;
+  backdrop-filter: blur(2px);
+}
+
+/* ═══════════ MAIN ═══════════ */
+.main { margin-left: var(--sidebar-w); padding: 28px 26px 60px; flex: 1; }
+.page { display: none; animation: fadeIn .18s ease; }
+.page.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.page-title { font-family: Syne, sans-serif; font-size: 1.3rem; font-weight: 800; margin-bottom: 20px; }
+
+/* ═══════════ CARDS ═══════════ */
+.card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px 22px; margin-bottom: 16px;
+}
+.card-title { font-size: .9rem; font-weight: 800; margin-bottom: 14px; }
+
+/* KPIs */
+.kpi-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 18px; }
+.kpi-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px 18px; box-shadow: var(--shadow);
+}
+.kpi-icon { font-size: 1.15rem; margin-bottom: 6px; }
+.kpi-val { font-size: 1.65rem; font-weight: 800; line-height: 1; }
+.kpi-lbl { font-size: .7rem; color: var(--text3); margin-top: 4px; font-weight: 500; }
+
+/* Badges */
+.badge {
+  font-size: .63rem; font-weight: 700; padding: 3px 9px;
+  border-radius: 999px; border: 1px solid transparent; display: inline-block;
+}
+.badge-blue  { background: var(--blue-bg);  color: var(--blue);  border-color: #bfdbfe; }
+.badge-green { background: var(--green-bg); color: var(--green); border-color: #bbf7d0; }
+.badge-red   { background: var(--rouge-bg); color: var(--rouge); border-color: #fecaca; }
+.badge-amber { background: var(--amber-bg); color: var(--amber); border-color: #fde68a; }
+.badge-gray  { background: var(--subtle);   color: var(--text3); border-color: var(--border); }
+
+/* ═══════════ SESSIONS ACCORDION ═══════════ */
+.sess-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 12px; overflow: hidden; box-shadow: var(--shadow); }
+.sess-hdr { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; cursor: pointer; transition: background .14s; }
+.sess-hdr:hover { background: var(--subtle); }
+.sess-name { font-size: .9rem; font-weight: 700; }
+.sess-meta { font-size: .71rem; color: var(--text3); margin-top: 2px; }
+.sess-chev { font-size: .78rem; color: var(--text3); transition: transform .2s; flex-shrink: 0; }
+.sess-body { display: none; border-top: 1px solid var(--border); }
+.sess-body.open { display: block; }
+
+.sess-summary { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; padding: 14px 18px; background: var(--subtle); border-bottom: 1px solid var(--border); }
+.sum-item { text-align: center; }
+.sum-val { font-size: 1.05rem; font-weight: 800; }
+.sum-lbl { font-size: .63rem; color: var(--text3); margin-top: 2px; }
+
+/* Tableau stagiaires */
+.stag-tbl { width: 100%; border-collapse: collapse; }
+.stag-tbl th {
+  text-align: left; font-size: .65rem; font-weight: 700; color: var(--text3);
+  text-transform: uppercase; letter-spacing: .5px; padding: 9px 14px 7px;
+  border-bottom: 1px solid var(--border); background: var(--subtle);
+}
+.stag-tbl td { padding: 10px 14px; font-size: .82rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.stag-tbl tr:last-child td { border-bottom: none; }
+.stag-tbl tbody tr { transition: background .12s; cursor: default; }
+.stag-tbl tbody tr:hover td { background: var(--subtle); }
+
+/* Score bar */
+.sbar { display: flex; align-items: center; gap: 7px; }
+.sbar-bg { width: 72px; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; flex-shrink: 0; }
+.sbar-fill { height: 100%; border-radius: 3px; }
+.trend-up   { color: var(--green); font-weight: 800; }
+.trend-down { color: var(--rouge); font-weight: 800; }
+.trend-flat { color: var(--text3); }
+
+.btn-echecs {
+  font-size: .71rem; font-weight: 700; padding: 4px 10px; border-radius: 8px;
+  border: none; cursor: pointer; font-family: inherit;
+  background: var(--rouge-bg); color: var(--rouge); transition: all .14s;
+  white-space: nowrap;
+}
+.btn-echecs:hover { background: var(--rouge); color: #fff; }
+.btn-echecs:disabled { opacity: .35; cursor: default; background: var(--subtle); color: var(--text3); }
+
+/* ═══════════ PAGE STATS ═══════════ */
+.sel-wrap { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
+.sel-wrap label { font-size: .82rem; font-weight: 700; color: var(--text2); white-space: nowrap; }
+.sel-mod {
+  flex: 1; min-width: 200px; max-width: 340px;
+  border: 1.5px solid var(--border); border-radius: 10px;
+  padding: 8px 13px; font-size: .82rem; font-family: inherit;
+  background: var(--card); color: var(--text); outline: none; cursor: pointer;
+  transition: border-color .14s;
+}
+.sel-mod:focus { border-color: var(--blue); }
+
+.stats-tbl { width: 100%; border-collapse: collapse; }
+.stats-tbl th {
+  text-align: left; font-size: .65rem; font-weight: 700; color: var(--text3);
+  text-transform: uppercase; letter-spacing: .5px; padding: 9px 16px 7px;
+  border-bottom: 1px solid var(--border); background: var(--subtle);
+}
+.stats-tbl td { padding: 10px 16px; font-size: .82rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.stats-tbl tr:last-child td { border-bottom: none; }
+.stats-tbl tbody tr { transition: background .12s; cursor: pointer; }
+.stats-tbl tbody tr:hover td { background: var(--subtle); }
+
+/* ═══════════ QUESTIONS ÉCHOUÉES ═══════════ */
+.q-card {
+  background: var(--card); border: 1.5px solid #fecaca;
+  border-radius: 11px; padding: 14px 16px; margin-bottom: 10px;
+}
+.q-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.q-num { font-size: .68rem; font-weight: 800; color: var(--rouge); text-transform: uppercase; letter-spacing: .4px; margin-bottom: 4px; }
+.q-text { font-size: .85rem; font-weight: 600; line-height: 1.45; }
+.q-sub { font-size: .7rem; color: var(--text3); margin-top: 5px; }
+.q-pct { font-size: 1rem; font-weight: 800; color: var(--rouge); padding: 5px 11px; background: var(--rouge-bg); border-radius: 8px; white-space: nowrap; flex-shrink: 0; }
+.q-details { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+.q-box { font-size: .74rem; padding: 7px 10px; border-radius: 8px; line-height: 1.45; }
+.q-box.correct { background: var(--green-bg); color: #14532d; border: 1px solid #bbf7d0; }
+.q-box.expl { background: var(--amber-bg); color: #92400e; border: 1px solid #fde68a; grid-column: 1/-1; }
+.q-box-lbl { font-size: .63rem; font-weight: 800; text-transform: uppercase; letter-spacing: .4px; margin-bottom: 3px; }
+
+/* ═══════════ EMPTY + LOADER ═══════════ */
+.empty { text-align: center; padding: 36px 20px; color: var(--text3); }
+.empty-icon { font-size: 2.2rem; margin-bottom: 8px; }
+.empty p { font-size: .83rem; }
+.loader { text-align: center; padding: 28px; color: var(--text3); font-size: .82rem; }
+.spin { display: inline-block; width: 20px; height: 20px; border: 2.5px solid var(--border); border-top-color: var(--rouge); border-radius: 50%; animation: spin .65s linear infinite; vertical-align: middle; margin-right: 7px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ═══════════ MODAL ═══════════ */
+.modal-wrap { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.38); backdrop-filter: blur(4px); z-index: 500; align-items: center; justify-content: center; padding: 16px; }
+.modal-wrap.open { display: flex; }
+.modal { background: var(--card); border-radius: 18px; box-shadow: 0 20px 60px rgba(0,0,0,.2); width: 100%; max-width: 640px; max-height: 88vh; overflow-y: auto; animation: mIn .2s cubic-bezier(.34,1.56,.64,1); }
+@keyframes mIn { from { transform: scale(.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.modal-hdr { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--card); z-index: 1; }
+.modal-hdr h3 { font-size: .98rem; font-weight: 800; }
+.modal-close { width: 32px; height: 32px; border: 1.5px solid var(--border); border-radius: 8px; background: var(--card); cursor: pointer; font-size: .88rem; display: flex; align-items: center; justify-content: center; transition: all .14s; }
+.modal-close:hover { background: var(--rouge-bg); border-color: var(--rouge); color: var(--rouge); }
+.modal-body { padding: 18px 22px 22px; }
+
+/* ═══════════ TOAST ═══════════ */
+.toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%) translateY(60px); background: var(--text); color: #fff; padding: 10px 18px; border-radius: 10px; font-size: .82rem; font-weight: 600; opacity: 0; transition: all .28s; z-index: 999; pointer-events: none; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.ok { background: var(--green); }
+.toast.err { background: var(--rouge); }
+
+/* ═══════════ PROFIL ═══════════ */
+.profil-block { background: var(--subtle); border-radius: 12px; padding: 20px; margin-bottom: 14px; }
+.profil-av { width: 50px; height: 50px; border-radius: 14px; background: var(--rouge-bg); color: var(--rouge); display: flex; align-items: center; justify-content: center; font-size: 1.35rem; font-weight: 800; margin-bottom: 12px; }
+.profil-name { font-size: 1.1rem; font-weight: 800; }
+.profil-role { font-size: .76rem; color: var(--text3); margin-top: 2px; }
+.profil-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+.profil-field label { display: block; font-size: .63rem; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: .4px; margin-bottom: 2px; }
+.profil-field span { font-size: .83rem; font-weight: 600; }
+
+/* ═══════════ RESPONSIVE ═══════════ */
+@media (max-width: 768px) {
+  .mob-hdr { display: flex; }
+  .sidebar { transform: translateX(-100%); box-shadow: 4px 0 30px rgba(0,0,0,.12); }
+  .sidebar.open { transform: translateX(0); }
+  .main { margin-left: 0; padding: 72px 14px 60px; }
+  .kpi-grid { grid-template-columns: repeat(2,1fr); gap: 10px; }
+  .sess-summary { grid-template-columns: repeat(2,1fr); }
+  .q-details { grid-template-columns: 1fr; }
+  .profil-grid { grid-template-columns: 1fr; }
+  .sel-mod { max-width: 100%; }
+  .stag-tbl th:nth-child(3), .stag-tbl td:nth-child(3) { display: none; }
+  .stag-tbl th:nth-child(4), .stag-tbl td:nth-child(4) { display: none; }
+  .stats-tbl th:nth-child(4), .stats-tbl td:nth-child(4) { display: none; }
+  .modal { border-radius: 18px 18px 0 0; max-height: 94vh; }
+  .page-title { font-size: 1.1rem; }
+}
+@media (max-width: 480px) {
+  .kpi-grid { grid-template-columns: 1fr 1fr; }
+  .card { padding: 14px 14px; }
+  .kpi-val { font-size: 1.4rem; }
+  .sbar-bg { width: 50px; }
+}
 </style>
 </head>
 <body>
 
-<script>
-(function(){
-  var _s;
-  try { _s = JSON.parse(localStorage.getItem('mib_formateur')); } catch(e) {}
-  if (!_s) {
-    document.addEventListener('DOMContentLoaded', function(){ window.location.href = 'login-formateur.html'; });
-    return;
-  }
-  var parts = (_s.formateur_nom || '').split(' ');
-  window.FORMATEUR = {
-    id: _s.formateur_id,
-    prenom: parts[0] || '',
-    nom: parts.slice(1).join(' ') || '',
-    role: _s.role_formateur || 'formateur',
-    center_id: _s.center_id,
-    center_nom: _s.center_nom || '',
-    modules: _s.modules || {}
-  };
-  window._SESSION_CENTER_DATA = _s.modules || {};
-})();
-</script>
+<div id="overlay" onclick="closeSidebar()"></div>
 
-<div class="bg-wrap"></div>
-<div class="relative z-10 flex min-h-screen">
-
-  <!-- SIDEBAR -->
-  <div class="mobile-header" id="mobile-header">
-  <button class="menu-btn" onclick="toggleSidebar()">&#9776;</button>
-  <span style="font-size:.9rem;font-weight:800;font-family:Syne,sans-serif;" id="mobile-title">Espace Formateur</span>
-  <span id="top-badge-m" style="font-size:.7rem;font-weight:700;background:#eff6ff;color:#1d4ed8;padding:3px 8px;border-radius:999px;border:1px solid #bfdbfe;"></span>
+<!-- ═══ MOBILE HEADER ═══ -->
+<div class="mob-hdr">
+  <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+  <span class="mob-title">🔥 MIB Formation</span>
+  <span id="mob-badge" class="badge badge-blue" style="font-size:.62rem;"></span>
 </div>
-<div id="sidebar-overlay" onclick="toggleSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:99;backdrop-filter:blur(2px);"></div>
-<div class="sidebar">
-    <div class="flex items-center gap-3 mb-7">
-      <div style="width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,#10b981,#065f46);display:flex;align-items:center;justify-content:center;font-size:1.1rem;box-shadow:2px 2px 8px rgba(16,185,129,.35);">👨‍🏫</div>
-      <div>
-        <div class="logo-t" style="font-size:.95rem;color:var(--text);" id="sb-nom">Formateur</div>
-        <div style="font-size:.65rem;color:var(--text3);" id="sb-centre">—</div>
-      </div>
+
+<div class="layout">
+  <!-- ═══ SIDEBAR ═══ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-logo">
+      <div class="sb-brand">🔥 MIB Formation</div>
+      <div class="sb-sub">Espace Formateur</div>
+      <div class="sb-badge" id="sb-niveau"></div>
     </div>
-    <nav>
-      <div class="nav-item on" onclick="showTab('dashboard')" id="nav-dashboard"><span class="nav-icon">📊</span>Accueil</div>
-      <div class="nav-item" onclick="showTab('sessions')" id="nav-sessions"><span class="nav-icon">📋</span>Mes sessions</div>
-      <div class="nav-item" onclick="showTab('stats')" id="nav-stats"><span class="nav-icon">📈</span>Statistiques</div>
-<div class="nav-item" onclick="showTab('avis')" id="nav-avis"><span class="nav-icon">💬</span>Avis & Retours</div>
+    <nav class="sb-nav">
+      <div class="nav-item active" id="nav-overview" onclick="showPage('overview')">
+        <span class="nav-icon">📊</span> Tableau de bord
+      </div>
+      <div class="nav-item" id="nav-sessions" onclick="showPage('sessions')">
+        <span class="nav-icon">📋</span> Mes sessions
+      </div>
+      <div class="nav-item" id="nav-stats" onclick="showPage('stats')">
+        <span class="nav-icon">📈</span> Statistiques
+      </div>
+      <div class="nav-item" id="nav-questions" onclick="showPage('questions')">
+        <span class="nav-icon">❓</span> Questions
+      </div>
+      <div class="nav-item" id="nav-profil" onclick="showPage('profil')">
+        <span class="nav-icon">👤</span> Mon profil
+      </div>
     </nav>
-    <div style="margin-top:auto;padding-top:30px;">
-      <div class="sep"></div>
-      <button onclick="logout()" class="btn btn-gray btn-sm" style="width:100%;">🚪 Déconnexion</button>
+    <div class="sb-footer">
+      <button class="btn-logout" onclick="logout()">🚪 Déconnexion</button>
     </div>
-  </div>
+  </aside>
 
-  <!-- MAIN -->
-  <div class="flex-1 flex flex-col" style="max-height:100vh;overflow:hidden;">
-    <div class="topbar">
-      <div>
-        <h1 class="logo-t" style="font-size:1.1rem;" id="top-title">Accueil</h1>
-        <p style="font-size:.72rem;color:var(--text3);" id="top-sub">Bienvenue sur votre espace formateur</p>
+  <!-- ═══ MAIN ═══ -->
+  <main class="main">
+
+    <!-- ─── OVERVIEW ─── -->
+    <div id="page-overview" class="page active">
+      <h2 class="page-title">Tableau de bord</h2>
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-icon">📋</div><div class="kpi-val" id="kpi-sessions">—</div><div class="kpi-lbl">Sessions</div></div>
+        <div class="kpi-card"><div class="kpi-icon">👥</div><div class="kpi-val" id="kpi-stagiaires">—</div><div class="kpi-lbl">Stagiaires</div></div>
+        <div class="kpi-card"><div class="kpi-icon">🎯</div><div class="kpi-val" id="kpi-entr">—</div><div class="kpi-lbl">Entraînements</div></div>
       </div>
-      <button onclick="loadDashboard()" class="btn btn-blue btn-sm">🔄</button>
+      <div class="card">
+        <div class="card-title">Sessions récentes</div>
+        <div id="ov-sessions"><div class="loader"><span class="spin"></span>Chargement...</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">🏆 Top stagiaires (score moyen)</div>
+        <div id="ov-top"><div class="loader"><span class="spin"></span>Chargement...</div></div>
+      </div>
     </div>
 
-    <div class="flex-1 p-6 overflow-y-auto">
+    <!-- ─── SESSIONS ─── -->
+    <div id="page-sessions" class="page">
+      <h2 class="page-title">Mes sessions</h2>
+      <div id="sessions-list"><div class="loader"><span class="spin"></span>Chargement...</div></div>
+    </div>
 
-      <!-- DASHBOARD -->
-      <div id="tab-dashboard">
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <div class="kpi"><div class="kpi-icon">👨‍🎓</div><div class="kpi-val text-blue-600" id="kpi-stag">—</div><div class="kpi-lbl">Stagiaires</div></div>
-          <div class="kpi"><div class="kpi-icon">📋</div><div class="kpi-val text-green-600" id="kpi-sess">—</div><div class="kpi-lbl">Sessions</div></div>
-          <div class="kpi"><div class="kpi-icon">✅</div><div class="kpi-val text-purple-600" id="kpi-present">—</div><div class="kpi-lbl">Présences</div></div>
-          <div class="kpi"><div class="kpi-icon">📅</div><div class="kpi-val text-orange-600" id="kpi-mois">—</div><div class="kpi-lbl">Ce mois</div></div>
+    <!-- ─── STATS ─── -->
+    <div id="page-stats" class="page">
+      <h2 class="page-title">Statistiques par session</h2>
+      <div class="card">
+        <div class="sel-wrap">
+          <label>Session :</label>
+          <select class="sel-mod" id="stats-sel" onchange="loadStatsSess(this.value)">
+            <option value="">— Choisir une session —</option>
+          </select>
         </div>
-        <div class="card p-5 mb-5">
-          <div class="flex justify-between items-center mb-4">
-            <h2 style="font-size:.95rem;font-weight:700;">Mes dernières sessions</h2>
-            <button onclick="showTab('sessions')" class="btn btn-blue btn-sm">Voir toutes →</button>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="tbl">
-              <thead><tr><th>Session</th><th>Dates</th><th>Statut</th><th>Action</th></tr></thead>
-              <tbody id="body-dash-sessions"><tr><td colspan="4" style="text-align:center;color:var(--text3);padding:20px;">Chargement...</td></tr></tbody>
-            </table>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- SESSIONS -->
-      <div id="tab-sessions" class="hidden">
-        <div id="sess-list-view">
-          <div class="flex flex-wrap justify-between items-center gap-3 mb-5">
-            <div>
-              <h2 style="font-size:1rem;font-weight:700;">Mes sessions de formation</h2>
-              <p style="font-size:.78rem;color:var(--text2);margin-top:2px;" id="sess-count-lbl">—</p>
-            </div>
-          </div>
-          <div class="card p-4 mb-4">
-            <div class="flex flex-wrap gap-3">
-              <select id="filter-sess-type" class="inp" style="max-width:160px;" onchange="filterSessions()">
-                <option value="">Tous types</option>
-                <option value="INI">INI</option>
-                <option value="REC">REC</option>
-                <option value="RAN">RAN</option>
-              </select>
-              <select id="filter-sess-niveau" class="inp" style="max-width:140px;" onchange="filterSessions()">
-                <option value="">Tous niveaux</option>
-                <option value="SSIAP1">SSIAP 1</option>
-                <option value="SSIAP2">SSIAP 2</option>
-                <option value="SSIAP3">SSIAP 3</option>
-              </select>
-            </div>
-          </div>
-          <div class="card p-5">
-            <div class="overflow-x-auto">
-              <table class="tbl">
-                <thead><tr><th>Session</th><th>Dates</th><th>Statut</th><th>Actions</th></tr></thead>
-                <tbody id="body-sessions"><tr><td colspan="4" style="text-align:center;color:var(--text3);padding:20px;">Chargement...</td></tr></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <div id="sess-detail-view" class="hidden">
-          <div class="flex items-center gap-3 mb-5">
-            <button onclick="backToSessions()" class="btn btn-gray btn-sm">← Retour</button>
-            <div>
-              <h2 style="font-size:1rem;font-weight:700;" id="detail-sess-title">—</h2>
-              <p style="font-size:.78rem;color:var(--text2);" id="detail-sess-dates">—</p>
-            </div>
-            <div style="margin-left:auto;"><span id="detail-sess-statut"></span></div>
-          </div>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
-            <div class="kpi"><div class="kpi-icon">👨‍🎓</div><div class="kpi-val text-blue-600" id="d-nb-stag">—</div><div class="kpi-lbl">Inscrits</div></div>
-            <div class="kpi"><div class="kpi-icon">✅</div><div class="kpi-val text-green-600" id="d-nb-present">—</div><div class="kpi-lbl">Présents</div></div>
-            <div class="kpi"><div class="kpi-icon">📅</div><div class="kpi-val text-purple-600" style="font-size:1.1rem;" id="d-dates">—</div><div class="kpi-lbl">Période</div></div>
-          </div>
-          <div class="card p-5 mb-5">
-            <div class="flex justify-between items-center mb-4">
-              <h3 style="font-size:.9rem;font-weight:700;">👨‍🎓 Liste des stagiaires</h3>
-              <div style="display:flex;gap:6px;"><button onclick="openAddStagiaireModal()" class="btn btn-blue btn-sm">+ Nouveau stagiaire</button><button onclick="openAddParticipantsModal()" class="btn btn-green btn-sm">+ Ajouter à la session</button></div>
-            </div>
-            <div class="overflow-x-auto">
-              <table class="tbl">
-                <thead><tr><th>Nom</th><th>Prénom</th><th>Niveau</th><th>Présence</th><th>Action</th></tr></thead>
-                <tbody id="body-detail-participants"><tr><td colspan="5" style="text-align:center;color:var(--text3);padding:20px;">Aucun stagiaire inscrit</td></tr></tbody>
-              </table>
-            </div>
-          </div>
-          <div class="card p-5">
-            <h3 style="font-size:.9rem;font-weight:700;margin-bottom:14px;">🧩 Lancer un module pour cette session</h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3" id="detail-modules-grid"></div>
-          </div>
+        <div id="stats-content">
+          <div class="empty"><div class="empty-icon">📊</div><p>Sélectionnez une session pour afficher les statistiques d'entraînement.</p></div>
         </div>
       </div>
 
-      <!-- AVIS -->
-      <div id="tab-avis" class="hidden">
-        <div class="flex flex-wrap justify-between items-center gap-3 mb-5">
+      <div id="stats-q-block" style="display:none;">
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+            <div>
+              <div class="card-title" style="margin-bottom:2px;">⚠️ Questions à retravailler en présentiel</div>
+              <div style="font-size:.72rem;color:var(--text3);">Classées par taux d'échec parmi les stagiaires de cette session</div>
+            </div>
+            <select class="sel-mod" id="stats-niv-fil" onchange="renderStatsQ()" style="max-width:150px;font-size:.76rem;padding:6px 11px;">
+              <option value="">Tous niveaux</option>
+              <option value="1">SSIAP 1</option><option value="2">SSIAP 2</option><option value="3">SSIAP 3</option>
+            </select>
+          </div>
+          <div id="stats-q-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── QUESTIONS GLOBALES ─── -->
+    <div id="page-questions" class="page">
+      <h2 class="page-title">Questions les plus échouées</h2>
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
           <div>
-            <h2 style="font-size:1rem;font-weight:700;">Avis & Retours</h2>
-            <p style="font-size:.78rem;color:var(--text2);margin-top:2px;">Vos retours et demandes au superviseur MIB</p>
+            <div class="card-title" style="margin-bottom:2px;">Statistiques globales</div>
+            <div style="font-size:.72rem;color:var(--text3);">Toutes sessions confondues</div>
           </div>
-          <button onclick="document.getElementById('modal-avis-f').classList.remove('hidden')" class="btn btn-blue">+ Nouvel avis / Demande</button>
+          <select class="sel-mod" id="q-niv" onchange="loadGlobalQ(this.value)" style="max-width:150px;">
+            <option value="1">SSIAP 1</option><option value="2">SSIAP 2</option><option value="3">SSIAP 3</option>
+          </select>
         </div>
-        <div class="card p-5">
-          <div id="avis-list-f"><div style="text-align:center;color:var(--text3);padding:30px;">Chargement...</div></div>
-        </div>
+        <div id="global-q-list"><div class="loader"><span class="spin"></span>Chargement...</div></div>
       </div>
-
     </div>
+
+    <!-- ─── PROFIL ─── -->
+    <div id="page-profil" class="page">
+      <h2 class="page-title">Mon profil</h2>
+      <div id="profil-content"><div class="loader"><span class="spin"></span>Chargement...</div></div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ═══ MODAL ÉCHECS STAGIAIRE ═══ -->
+<div class="modal-wrap" id="modal-echecs">
+  <div class="modal" style="max-width:660px;">
+    <div class="modal-hdr">
+      <h3 id="echecs-title">Échecs — stagiaire</h3>
+      <button class="modal-close" onclick="closeModal('modal-echecs')">✕</button>
+    </div>
+    <div class="modal-body" id="echecs-body"></div>
   </div>
 </div>
 
-<!-- TAB STATISTIQUES -->
-<div id="tab-stats" class="hidden">
-  <div style="margin-bottom:20px;">
-    <h2 style="font-size:1.1rem;font-weight:800;color:var(--text);">Statistiques de formation</h2>
-    <p style="font-size:.82rem;color:var(--text2);margin-top:4px;">Suivi des entraînements de vos stagiaires par session</p>
-  </div>
-
-  <!-- Filtre session -->
-  <div class="card p-4 mb-4">
-    <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:10px;">Session</div>
-    <select id="stats-session-sel" onchange="loadStatsSession()" style="width:100%;padding:9px 12px;border-radius:10px;border:1.5px solid #e5e7eb;font-size:.84rem;color:var(--text);background:#fff;outline:none;">
-      <option value="">-- Choisir une session --</option>
-    </select>
-  </div>
-
-  <!-- KPIs session -->
-  <div id="stats-kpis" class="hidden" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">
-    <div class="kpi"><div class="kpi-val" id="sk-stagiaires">-</div><div class="kpi-lbl">Stagiaires</div></div>
-    <div class="kpi"><div class="kpi-val" id="sk-sessions">-</div><div class="kpi-lbl">Sessions quiz</div></div>
-    <div class="kpi"><div class="kpi-val" id="sk-moyenne">-</div><div class="kpi-lbl">Moyenne</div></div>
-  </div>
-
-  <!-- Tableau par stagiaire -->
-  <div id="stats-table-wrap" class="hidden card p-4 mb-4">
-    <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:14px;">Progression par stagiaire</div>
-    <div id="stats-table"></div>
-  </div>
-
-  <!-- Questions échouées -->
-  <div id="stats-errors-wrap" class="hidden card p-4">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-      <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);">Questions les plus échouées</div>
-      <span style="font-size:.72rem;color:var(--text3);">À reprendre en présentiel</span>
-    </div>
-    <div id="stats-errors"></div>
-  </div>
-
-  <div id="stats-empty" style="text-align:center;padding:40px;color:var(--text3);">
-    <div style="font-size:2rem;margin-bottom:8px;">📊</div>
-    <div style="font-size:.88rem;">Sélectionnez une session pour voir les statistiques</div>
-  </div>
-</div>
-
-<!-- MODAL Ajouter participants -->
-<div id="modal-add-participants" class="modal-bg hidden">
-  <div class="modal-box">
-    <div class="flex justify-between items-center mb-5">
-      <h3 style="font-size:1.05rem;font-weight:800;">👨‍🎓 Ajouter des stagiaires</h3>
-      <button onclick="closeParticipantsModal()" style="width:32px;height:32px;border-radius:50%;background:#f3f4f6;border:none;cursor:pointer;">✕</button>
-    </div>
-    <input type="text" id="search-part" class="inp" style="margin-bottom:12px;" placeholder="🔍 Rechercher..." oninput="filterPartList()">
-    <div style="max-height:300px;overflow-y:auto;" id="list-parts-to-add">
-      <p style="text-align:center;color:var(--text3);padding:20px;">Chargement...</p>
-    </div>
-    <div id="part-msg" class="hidden" style="margin-top:10px;"></div>
-    <div class="flex gap-3 mt-4">
-      <button onclick="closeParticipantsModal()" class="btn btn-gray flex-1">Fermer</button>
-      <button onclick="addParticipants()" class="btn btn-green flex-1">Ajouter la sélection</button>
-    </div>
-  </div>
-</div>
+<div class="toast" id="toast"></div>
 
 <script>
-// ============================================================
-// ÉTAT
-// ============================================================
-let FORMATEUR = window.FORMATEUR || null;
-let CENTER_DATA = window._SESSION_CENTER_DATA || {};
+/* ══════════════════════════════════════
+   SUPABASE CONFIG
+══════════════════════════════════════ */
+const SUPA_URL = 'https://ozfkmlokovxigfnwjeuk.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im96ZmttbG9rb3Z4aWdmbndqZXVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ0NTQzMjEsImV4cCI6MjA2MDAzMDMyMX0.REMPLACER_PAR_VRAIE_CLE';
+const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+/* ══════════════════════════════════════
+   SESSION
+══════════════════════════════════════ */
+let SESSION = null;
 let allSessions = [];
 let allStagiaires = [];
-let currentSession = null;
-let currentParticipants = [];
+let statsQData = [];
 
-// ============================================================
-// INIT
-// ============================================================
-window.addEventListener('DOMContentLoaded', async () => {
-  if (!FORMATEUR) { window.location.href = 'login-formateur.html'; return; }
-  document.getElementById('sb-nom').textContent = FORMATEUR.prenom + ' ' + FORMATEUR.nom;
-  document.getElementById('sb-centre').textContent = FORMATEUR.center_nom || '—';
-  try {
-    const { data } = await supabase.from('stagiaires')
-      .select('*').eq('center_id', FORMATEUR.center_id).eq('actif', true).order('nom');
-    allStagiaires = data || [];
-  } catch(e) { console.error(e); }
-  loadDashboard();
-});
+(function boot() {
+  const keys = ['mib_formateur_session','SESSION','formateur_session'];
+  let raw = null;
+  for (const k of keys) { raw = localStorage.getItem(k); if (raw) break; }
+  if (!raw) { redirect(); return; }
+  try { SESSION = JSON.parse(raw); } catch(e) { redirect(); return; }
+  if (!SESSION?.formateurId && !SESSION?.id) { redirect(); return; }
+  if (!SESSION.formateurId) SESSION.formateurId = SESSION.id;
 
-// ============================================================
-// NAVIGATION
-// ============================================================
-const TABS_F = ['dashboard','sessions','stats','avis'];
-const TAB_TITLES_F = {
-  dashboard: ['Accueil','Bienvenue sur votre espace formateur'],
-  sessions:  ['Mes sessions','Gérez vos sessions de formation'],
-  stats:     ['Statistiques', 'Suivi des entraînements par session'],
-  avis:      ['Avis & Retours','Vos retours et demandes']
-};
+  const niv = SESSION.niveau || '';
+  document.getElementById('sb-niveau').textContent = niv;
+  document.getElementById('mob-badge').textContent = niv;
 
-window.showTab = function(t) {
-  TABS_F.forEach(id => {
-    document.getElementById('tab-'+id).classList.toggle('hidden', id !== t);
-    document.getElementById('nav-'+id).classList.toggle('on', id === t);
+  loadAll();
+})();
+
+function redirect() { window.location.href = '../index.html'; }
+function logout() { ['mib_formateur_session','SESSION','formateur_session'].forEach(k => localStorage.removeItem(k)); redirect(); }
+
+/* ══════════════════════════════════════
+   NAVIGATION
+══════════════════════════════════════ */
+const PAGES = ['overview','sessions','stats','questions','profil'];
+
+function showPage(name) {
+  PAGES.forEach(p => {
+    document.getElementById('page-'+p)?.classList.toggle('active', p === name);
+    document.getElementById('nav-'+p)?.classList.toggle('active', p === name);
   });
-  const ti = TAB_TITLES_F[t] || ['',''];
-  document.getElementById('top-title').textContent = ti[0];
-  document.getElementById('top-sub').textContent = ti[1];
-  if (t === 'sessions') loadSessions();
-  if (t === 'stats') initStats();
-  if (t === 'avis') loadAvisFormateur();
-};
-
-window.logout = function() {
-  localStorage.removeItem('mib_formateur');
-  window.location.href = 'login-formateur.html';
-};
-
-// ============================================================
-// DASHBOARD
-// ============================================================
-window.loadDashboard = async function() {
-  if (!FORMATEUR) return;
-  const debut = new Date(new Date().setDate(1)).toISOString();
-  try {
-    const { data: sessions } = await supabase.from('sessions_formation')
-      .select('*')
-      .eq('center_id', FORMATEUR.center_id)
-      .eq('formateur_id', FORMATEUR.id)
-      .order('created_at', {ascending:false});
-    allSessions = sessions || [];
-
-    let participants = [];
-    if (allSessions.length) {
-      const { data: parts } = await supabase.from('session_participants')
-        .select('stagiaire_id, presence')
-        .in('session_id', allSessions.map(s => s.id));
-      participants = parts || [];
-    }
-
-    const uniqueStags = new Set(participants.map(p => p.stagiaire_id)).size;
-    const nbPresent = participants.filter(p => p.presence).length;
-    const sessMonth = allSessions.filter(s => s.created_at >= debut).length;
-
-    document.getElementById('kpi-stag').textContent = uniqueStags;
-    document.getElementById('kpi-sess').textContent = allSessions.length;
-    document.getElementById('kpi-present').textContent = nbPresent;
-    document.getElementById('kpi-mois').textContent = sessMonth;
-
-    buildDashSessions(allSessions.slice(0, 5));
-  } catch(e) { console.error(e); }
-};
-
-function buildDashSessions(data) {
-  const tbody = document.getElementById('body-dash-sessions');
-  tbody.innerHTML = '';
-  if (!data.length) {
-    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:20px;">Aucune session assignée</td></tr>';
-    return;
-  }
-  const typeColors = {INI:'b-blue', REC:'b-orange', RAN:'b-purple'};
-  data.forEach(s => {
-    const tr = document.createElement('tr');
-    const dates = (s.date_debut ? UTILS.dateStr(s.date_debut) : '—');
-    tr.innerHTML = '<td></td><td style="font-size:.78rem;color:var(--text2);">' + dates + '</td>'
-      + '<td></td><td></td>';
-    // Session badge
-    const td0 = tr.cells[0];
-    const sp1 = document.createElement('span');
-    sp1.className = 'badge ' + (typeColors[s.type_formation]||'b-gray');
-    sp1.textContent = s.type_formation;
-    const sp2 = document.createElement('span');
-    sp2.className = 'badge b-gray';
-    sp2.style.marginLeft = '4px';
-    sp2.style.fontSize = '.65rem';
-    sp2.textContent = s.niveau;
-    td0.appendChild(sp1); td0.appendChild(sp2);
-    // Statut
-    tr.cells[2].innerHTML = sessionStatutBadge(s.statut);
-    // Action
-    const btn = document.createElement('button');
-    btn.className = 'btn btn-blue btn-xs';
-    btn.textContent = '👁 Détail';
-    btn.onclick = function() { openSessionDetail(s.id); };
-    tr.cells[3].appendChild(btn);
-    tbody.appendChild(tr);
-  });
+  closeSidebar();
+  if (name === 'questions') loadGlobalQ(1);
 }
 
-function buildDashModules() {
-  const defs = getModuleDefs();
-  const grid = document.getElementById('dash-modules');
-  grid.innerHTML = '';
-  const actifs = defs.filter(m => CENTER_DATA && CENTER_DATA[m.key]);
-  if (!actifs.length) {
-    grid.innerHTML = '<p style="color:var(--text3);font-size:.82rem;">Aucun module actif sur votre plan.</p>';
-    return;
-  }
-  actifs.forEach(m => {
-    const div = document.createElement('div');
-    div.className = 'mod-card mod-on';
-    div.innerHTML = '<div class="mod-icon">' + m.icon + '</div>'
-      + '<div class="mod-title">' + m.title + '</div>'
-      + '<div class="mod-desc">' + m.desc + '</div>'
-      + '<div style="font-size:.68rem;font-weight:700;color:#1d4ed8;margin-top:8px;">▶ Lancer →</div>';
-    div.onclick = function() {
-      window.open(m.url + '?center=' + FORMATEUR.center_id + '&formateur=' + FORMATEUR.id, '_blank');
-    };
-    grid.appendChild(div);
-  });
-}
-
-// ============================================================
-// SESSIONS
-// ============================================================
-window.loadSessions = async function() {
-  if (!FORMATEUR) return;
-  try {
-    const { data } = await supabase.from('sessions_formation')
-      .select('*')
-      .eq('center_id', FORMATEUR.center_id)
-      .eq('formateur_id', FORMATEUR.id)
-      .order('created_at', {ascending:false});
-    allSessions = data || [];
-    document.getElementById('sess-count-lbl').textContent = allSessions.length + ' session(s)';
-    buildSessionsTable(allSessions);
-  } catch(e) { console.error(e); }
-};
-
-function buildSessionsTable(data) {
-  const tbody = document.getElementById('body-sessions');
-  tbody.innerHTML = '';
-  if (!data.length) {
-    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:20px;">Aucune session assignée</td></tr>';
-    return;
-  }
-  const typeColors = {INI:'b-blue', REC:'b-orange', RAN:'b-purple'};
-  data.forEach(s => {
-    const tr = document.createElement('tr');
-    const dates = (s.date_debut ? UTILS.dateStr(s.date_debut) : '—') + (s.date_fin ? ' → '+UTILS.dateStr(s.date_fin) : '');
-    tr.innerHTML = '<td></td><td style="font-size:.78rem;color:var(--text2);">' + dates + '</td><td></td><td></td>';
-    // Badge session
-    const sp1 = document.createElement('span');
-    sp1.className = 'badge ' + (typeColors[s.type_formation]||'b-gray');
-    sp1.textContent = s.type_formation;
-    const sp2 = document.createElement('span');
-    sp2.className = 'badge b-gray';
-    sp2.style.marginLeft = '4px'; sp2.style.fontSize = '.65rem';
-    sp2.textContent = s.niveau;
-    tr.cells[0].appendChild(sp1); tr.cells[0].appendChild(sp2);
-    // Statut
-    tr.cells[2].innerHTML = sessionStatutBadge(s.statut);
-    // Action
-    const btn = document.createElement('button');
-    btn.className = 'btn btn-blue btn-xs';
-    btn.textContent = '👁 Détail';
-    btn.onclick = function() { openSessionDetail(s.id); };
-    tr.cells[3].appendChild(btn);
-    tbody.appendChild(tr);
-  });
-}
-
-window.filterSessions = function() {
-  const type = document.getElementById('filter-sess-type').value;
-  const niveau = document.getElementById('filter-sess-niveau').value;
-  buildSessionsTable(allSessions.filter(s =>
-    (!type || s.type_formation === type) && (!niveau || s.niveau === niveau)
-  ));
-};
-
-window.openSessionDetail = async function(id) {
-  currentSession = allSessions.find(s => s.id === id);
-  if (!currentSession) {
-    const { data } = await supabase.from('sessions_formation').select('*').eq('id', id).single();
-    currentSession = data;
-  }
-  if (!currentSession) return;
-
-  document.getElementById('sess-list-view').classList.add('hidden');
-  document.getElementById('sess-detail-view').classList.remove('hidden');
-  TABS_F.forEach(t => {
-    document.getElementById('tab-'+t).classList.toggle('hidden', t !== 'sessions');
-    document.getElementById('nav-'+t).classList.toggle('on', t === 'sessions');
-  });
-
-  const typeLabel = {INI:'Initial', REC:'Recyclage', RAN:'Remise à niveau'};
-  document.getElementById('detail-sess-title').textContent =
-    currentSession.type_formation + ' ' + currentSession.niveau + ' — ' + (typeLabel[currentSession.type_formation]||'');
-  document.getElementById('detail-sess-dates').textContent =
-    (currentSession.date_debut ? UTILS.dateStr(currentSession.date_debut) : '—') +
-    (currentSession.date_fin ? ' → '+UTILS.dateStr(currentSession.date_fin) : '');
-  document.getElementById('detail-sess-statut').innerHTML = sessionStatutBadge(currentSession.statut);
-  document.getElementById('d-dates').textContent =
-    (currentSession.date_debut ? UTILS.dateStr(currentSession.date_debut) : '—') +
-    (currentSession.date_fin ? ' → '+UTILS.dateStr(currentSession.date_fin) : '');
-
-  await loadDetailParticipants();
-  buildDetailModules();
-};
-
-window.backToSessions = function() {
-  document.getElementById('sess-detail-view').classList.add('hidden');
-  document.getElementById('sess-list-view').classList.remove('hidden');
-  currentSession = null;
-};
-
-window.loadDetailParticipants = async function() {
-  if (!currentSession) return;
-  try {
-    const { data } = await supabase.from('session_participants')
-      .select('*, stagiaires(nom,prenom,niveau)')
-      .eq('session_id', currentSession.id);
-    currentParticipants = data || [];
-    document.getElementById('d-nb-stag').textContent = currentParticipants.length;
-    document.getElementById('d-nb-present').textContent = currentParticipants.filter(p => p.presence).length;
-    buildParticipantsTable();
-  } catch(e) { console.error(e); }
-};
-
-function buildParticipantsTable() {
-  const tbody = document.getElementById('body-detail-participants');
-  tbody.innerHTML = '';
-  if (!currentParticipants.length) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:20px;">Aucun stagiaire inscrit — ajoutez-en !</td></tr>';
-    return;
-  }
-  currentParticipants.forEach(p => {
-    const tr = document.createElement('tr');
-    const nom = p.stagiaires?.nom || '—';
-    const prenom = p.stagiaires?.prenom || '—';
-    const niv = p.stagiaires?.niveau || '—';
-    // Cells
-    const td1 = document.createElement('td'); td1.innerHTML = '<strong>' + nom + '</strong>';
-    const td2 = document.createElement('td'); td2.textContent = prenom;
-    const td3 = document.createElement('td');
-    const badge = document.createElement('span');
-    badge.className = 'badge b-blue'; badge.style.fontSize = '.68rem'; badge.textContent = niv;
-    td3.appendChild(badge);
-    // Présence checkbox
-    const td4 = document.createElement('td');
-    const label = document.createElement('label');
-    label.style.cssText = 'display:flex;align-items:center;gap:6px;cursor:pointer;';
-    const cb = document.createElement('input');
-    cb.type = 'checkbox'; cb.checked = p.presence;
-    cb.style.cssText = 'width:16px;height:16px;cursor:pointer;';
-    const span = document.createElement('span');
-    span.style.fontSize = '.8rem';
-    span.textContent = p.presence ? 'Présent' : 'Absent';
-    cb.onchange = function() {
-      togglePresence(p.id, this.checked);
-      span.textContent = this.checked ? 'Présent' : 'Absent';
-    };
-    label.appendChild(cb); label.appendChild(span); td4.appendChild(label);
-    // Supprimer
-    const td5 = document.createElement('td');
-    const btnDel = document.createElement('button');
-    btnDel.className = 'btn btn-red btn-xs'; btnDel.textContent = '✕';
-    btnDel.onclick = function() { removeParticipant(p.id); };
-    td5.appendChild(btnDel);
-    tr.append(td1, td2, td3, td4, td5);
-    tbody.appendChild(tr);
-  });
-}
-
-window.togglePresence = async function(partId, presence) {
-  await supabase.from('session_participants').update({presence}).eq('id', partId);
-  const p = currentParticipants.find(x => x.id === partId);
-  if (p) p.presence = presence;
-  document.getElementById('d-nb-present').textContent = currentParticipants.filter(p => p.presence).length;
-};
-
-window.removeParticipant = async function(partId) {
-  if (!confirm('Retirer ce stagiaire de la session ?')) return;
-  await supabase.from('session_participants').delete().eq('id', partId);
-  await loadDetailParticipants();
-};
-
-function buildDetailModules() {
-  const defs = getModuleDefs().filter(m => m.key !== 'module_auto_entrainement' && m.key !== 'module_ssi_autoformation');
-  const grid = document.getElementById('detail-modules-grid');
-  grid.innerHTML = '';
-  const actifs = defs.filter(m => CENTER_DATA && CENTER_DATA[m.key]);
-  if (!actifs.length) {
-    grid.innerHTML = '<p style="color:var(--text3);font-size:.82rem;">Aucun module actif.</p>';
-    return;
-  }
-  actifs.forEach(m => {
-    const div = document.createElement('div');
-    div.className = 'mod-card mod-on';
-    div.innerHTML = '<div class="mod-icon">' + m.icon + '</div>'
-      + '<div class="mod-title">' + m.title + '</div>'
-      + '<div style="font-size:.68rem;font-weight:700;color:#1d4ed8;margin-top:8px;">▶ Lancer →</div>';
-    div.onclick = function() {
-      window.open(m.url + '?session=' + currentSession.id + '&center=' + FORMATEUR.center_id + '&formateur=' + FORMATEUR.id, '_blank');
-    };
-    grid.appendChild(div);
-  });
-}
-
-// ============================================================
-// AJOUT PARTICIPANTS
-// ============================================================
-window.openAddParticipantsModal = function() {
-  const alreadyIn = new Set(currentParticipants.map(p => p.stagiaire_id));
-  const available = allStagiaires.filter(s => !alreadyIn.has(s.id));
-  window._availParts = available;
-  document.getElementById('search-part').value = '';
-  document.getElementById('part-msg').classList.add('hidden');
-  buildPartList(available);
-  document.getElementById('modal-add-participants').classList.remove('hidden');
-};
-
-window.closeParticipantsModal = function() {
-  document.getElementById('modal-add-participants').classList.add('hidden');
-};
-
-window.filterPartList = function() {
-  const q = document.getElementById('search-part').value.toLowerCase();
-  buildPartList((window._availParts||[]).filter(s =>
-    (s.nom + ' ' + s.prenom).toLowerCase().includes(q)
-  ));
-};
-
-function buildPartList(list) {
-  const el = document.getElementById('list-parts-to-add');
-  el.innerHTML = '';
-  if (!list.length) {
-    el.innerHTML = '<p style="text-align:center;color:var(--text3);padding:20px;">Tous les stagiaires sont déjà inscrits.</p>';
-    return;
-  }
-  list.forEach(s => {
-    const label = document.createElement('label');
-    label.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;border:1px solid rgba(0,0,0,.06);margin-bottom:6px;background:#fafbff;';
-    const cb = document.createElement('input');
-    cb.type = 'checkbox'; cb.value = s.id;
-    cb.style.cssText = 'width:16px;height:16px;';
-    const span = document.createElement('span');
-    span.style.cssText = 'font-weight:600;font-size:.88rem;';
-    span.textContent = s.nom + ' ' + s.prenom;
-    const badge = document.createElement('span');
-    badge.className = 'badge b-blue';
-    badge.style.cssText = 'font-size:.66rem;margin-left:auto;';
-    badge.textContent = s.niveau;
-    label.appendChild(cb); label.appendChild(span); label.appendChild(badge);
-    el.appendChild(label);
-  });
-}
-
-window.addParticipants = async function() {
-  const checked = [...document.querySelectorAll('#list-parts-to-add input[type=checkbox]:checked')];
-  const msgEl = document.getElementById('part-msg');
-  if (!checked.length) {
-    msgEl.innerHTML = '<div class="alert-err">⚠️ Sélectionnez au moins un stagiaire.</div>';
-    msgEl.classList.remove('hidden');
-    return;
-  }
-  const toInsert = checked.map(cb => ({ session_id: currentSession.id, stagiaire_id: cb.value, presence: false }));
-  try {
-    const { error } = await supabase.from('session_participants').insert(toInsert);
-    if (error) throw error;
-    msgEl.innerHTML = '<div class="alert-ok">✅ ' + toInsert.length + ' stagiaire(s) ajouté(s) !</div>';
-    msgEl.classList.remove('hidden');
-    await loadDetailParticipants();
-    setTimeout(() => closeParticipantsModal(), 1200);
-  } catch(e) {
-    msgEl.innerHTML = '<div class="alert-err">❌ ' + e.message + '</div>';
-    msgEl.classList.remove('hidden');
-  }
-};
-
-// ============================================================
-// STAGIAIRES TAB
-// ============================================================
-window.renderStagiairesTab = function() {
-  if (!allSessions.length) {
-    document.getElementById('stag-count-lbl').textContent = '0 stagiaire(s)';
-    document.getElementById('body-stagiaires').innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:20px;">Aucune session assignée</td></tr>';
-    return;
-  }
-  supabase.from('session_participants')
-    .select('stagiaire_id, stagiaires(nom,prenom,niveau,email)')
-    .in('session_id', allSessions.map(s => s.id))
-    .then(({ data }) => {
-      const stags = []; const seen = new Set();
-      (data||[]).forEach(p => {
-        if (p.stagiaires && !seen.has(p.stagiaire_id)) {
-          seen.add(p.stagiaire_id); stags.push(p.stagiaires);
-        }
-      });
-      document.getElementById('stag-count-lbl').textContent = stags.length + ' stagiaire(s)';
-      window._tabStags = stags;
-      buildStagiairesTable(stags);
-    });
-};
-
-window.filterStagiaires = function() {
-  const q = document.getElementById('search-stag').value.toLowerCase();
-  buildStagiairesTable((window._tabStags||[]).filter(s =>
-    (s.nom + ' ' + s.prenom).toLowerCase().includes(q)
-  ));
-};
-
-function buildStagiairesTable(data) {
-  const tbody = document.getElementById('body-stagiaires');
-  tbody.innerHTML = '';
-  if (!data.length) {
-    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:20px;">Aucun stagiaire dans vos sessions</td></tr>';
-    return;
-  }
-  data.forEach(s => {
-    const tr = document.createElement('tr');
-    const niveauColor = s.niveau === 'SSIAP1' ? 'b-blue' : s.niveau === 'SSIAP2' ? 'b-orange' : 'b-red';
-    tr.innerHTML = '<td><strong>' + s.nom + '</strong></td>'
-      + '<td>' + s.prenom + '</td>'
-      + '<td><span class="badge ' + niveauColor + '">' + s.niveau + '</span></td>'
-      + '<td style="font-size:.8rem;color:var(--text2);">' + (s.email||'—') + '</td>';
-    tbody.appendChild(tr);
-  });
-}
-
-// ============================================================
-// MODULES TAB
-// ============================================================
-window.loadModulesTab = async function() {
-  if (!allSessions.length) await loadSessions();
-  const sel = document.getElementById('module-session-select');
-  sel.innerHTML = '<option value="">— Choisir une session —</option>';
-  allSessions.forEach(s => {
-    const opt = document.createElement('option');
-    opt.value = s.id;
-    opt.textContent = s.type_formation + ' ' + s.niveau + (s.date_debut ? ' — '+UTILS.dateStr(s.date_debut) : '');
-    sel.appendChild(opt);
-  });
-  document.getElementById('modules-grid').innerHTML = '';
-};
-
-window.renderModulesForSession = function() {
-  const sessionId = document.getElementById('module-session-select').value;
-  const sess = allSessions.find(s => s.id === sessionId);
-  const defs = getModuleDefs();
-  const grid = document.getElementById('modules-grid');
-  grid.innerHTML = '';
-  const actifs = defs.filter(m => CENTER_DATA && CENTER_DATA[m.key]);
-  if (!actifs.length) {
-    grid.innerHTML = '<p style="color:var(--text3);font-size:.82rem;">Aucun module actif sur votre plan.</p>';
-    return;
-  }
-  actifs.forEach(m => {
-    const div = document.createElement('div');
-    div.className = 'mod-card mod-on';
-    div.innerHTML = '<div class="mod-icon">' + m.icon + '</div>'
-      + '<div class="mod-title">' + m.title + '</div>'
-      + '<div class="mod-desc">' + m.desc + '</div>'
-      + '<div style="font-size:.68rem;font-weight:700;color:#1d4ed8;margin-top:8px;">▶ Lancer →</div>';
-    div.onclick = function() {
-      if (!sess) { alert('Sélectionnez d\'abord une session'); return; }
-      window.open(m.url + '?session=' + sess.id + '&center=' + FORMATEUR.center_id + '&formateur=' + FORMATEUR.id, '_blank');
-    };
-    grid.appendChild(div);
-  });
-};
-
-// ============================================================
-// HELPERS
-// ============================================================
-function getModuleDefs() {
-  return [
-    {key:'module_auto_entrainement', icon:'🎯', title:'Auto-entraînement', desc:'Stagiaires en autonomie à la maison', url:'auto-entrainement.html'},
-    {key:'module_quiz_salle',        icon:'📡', title:'Quiz Salle',         desc:'Quiz interactif en temps réel',    url:'quiz-salle.html'},
-    {key:'module_challenge_cup',     icon:'🏆', title:'Challenge Cup',      desc:'Jeu gamifié par équipes',          url:'challenge-cup.html'},
-    {key:'module_ssi_supervise',     icon:'🔴', title:'SSI Supervisé',      desc:'Simulation panneau SSI guidée',    url:'ssi-supervise.html'},
-    {key:'module_ssi_autoformation', icon:'🟡', title:'SSI Auto-formation', desc:'Scénarios SSI en autonomie',       url:'ssi-autoformation.html'},
-  ];
-}
-
-function sessionStatutBadge(s) {
-  const m = {
-    planifiee: {cls:'b-blue',  lbl:'📅 Planifiée'},
-    en_cours:  {cls:'b-green', lbl:'🟢 En cours'},
-    terminee:  {cls:'b-gray',  lbl:'✅ Terminée'},
-    annulee:   {cls:'b-red',   lbl:'❌ Annulée'}
-  };
-  const c = m[s] || {cls:'b-gray', lbl: s||'—'};
-  return '<span class="badge ' + c.cls + '">' + c.lbl + '</span>';
-}
-</script>
-
-<!-- Modal Avis Formateur -->
-<div id="modal-avis-f" class="modal-bg hidden">
-  <div class="modal-box">
-    <div class="flex justify-between items-center mb-5">
-      <h3 style="font-size:1.05rem;font-weight:800;">💬 Nouvel avis / Demande</h3>
-      <button onclick="document.getElementById('modal-avis-f').classList.add('hidden')" style="width:32px;height:32px;border-radius:50%;background:#f3f4f6;border:none;cursor:pointer;">✕</button>
-    </div>
-    <div class="space-y-3">
-      <div>
-        <label class="lbl">Type</label>
-        <select id="avis-type-f" class="inp">
-          <option value="avis">💬 Avis général</option>
-          <option value="demande">📋 Demande</option>
-          <option value="bug">🐛 Signalement bug</option>
-          <option value="suggestion">💡 Suggestion</option>
-        </select>
-      </div>
-      <div>
-        <label class="lbl">Note (étoiles)</label>
-        <div style="display:flex;gap:4px;align-items:center;">
-          <button class="star-btn-f" onclick="setStarsF(1)" style="background:none;border:none;font-size:1.6rem;cursor:pointer;padding:2px;">☆</button>
-          <button class="star-btn-f" onclick="setStarsF(2)" style="background:none;border:none;font-size:1.6rem;cursor:pointer;padding:2px;">☆</button>
-          <button class="star-btn-f" onclick="setStarsF(3)" style="background:none;border:none;font-size:1.6rem;cursor:pointer;padding:2px;">☆</button>
-          <button class="star-btn-f" onclick="setStarsF(4)" style="background:none;border:none;font-size:1.6rem;cursor:pointer;padding:2px;">☆</button>
-          <button class="star-btn-f" onclick="setStarsF(5)" style="background:none;border:none;font-size:1.6rem;cursor:pointer;padding:2px;">☆</button>
-          <span id="star-label-f" style="font-size:.8rem;color:#6b7280;margin-left:8px;">Non noté</span>
-        </div>
-      </div>
-      <div>
-        <label class="lbl">Message</label>
-        <textarea id="avis-message-f" class="inp" rows="4" placeholder="Décrivez votre avis ou demande..."></textarea>
-      </div>
-      <div id="avis-msg-f" class="hidden"></div>
-      <div class="flex gap-3 mt-1">
-        <button onclick="document.getElementById('modal-avis-f').classList.add('hidden')" class="btn btn-gray flex-1">Annuler</button>
-        <button onclick="sendAvisFormateur()" class="btn btn-blue flex-1" id="btn-send-avis-f">Envoyer</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<script>
-// ============================================================
-// AVIS FORMATEUR
-// ============================================================
-window.loadAvisFormateur = async function() {
-  if (!FORMATEUR) return;
-  try {
-    const { data } = await supabase.from('avis_retours')
-      .select('*')
-      .eq('center_id', FORMATEUR.center_id)
-      .eq('auteur_type', 'formateur')
-      .eq('auteur_id', FORMATEUR.id)
-      .order('created_at', {ascending: false});
-    const el = document.getElementById('avis-list-f');
-    if (!data || !data.length) {
-      el.innerHTML = '<div style="text-align:center;color:#9ca3af;padding:30px;">Aucun avis envoyé.<br><small>Cliquez sur "+ Nouvel avis" pour partager votre retour.</small></div>';
-      return;
-    }
-    const typeIcons = {avis:'💬', demande:'📋', bug:'🐛', suggestion:'💡'};
-    const statutColors = {nouveau:'b-blue', en_cours:'b-orange', resolu:'b-green'};
-    el.innerHTML = data.map(a => {
-      const date = UTILS.dateStr(a.created_at);
-      const icon = typeIcons[a.type] || '💬';
-      const cls = statutColors[a.statut] || 'b-gray';
-      return '<div style="padding:16px;border-radius:14px;border:1.5px solid rgba(0,0,0,.07);margin-bottom:10px;background:linear-gradient(145deg,#f8faff,#eef1f8);">'
-        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'
-        + '<span style="font-size:.82rem;font-weight:700;">' + icon + ' ' + (a.type||'avis') + ' — ' + date + '</span>'
-        + '<span class="badge ' + cls + '">' + (a.statut||'nouveau') + '</span></div>'
-        + '<p style="font-size:.85rem;">' + (a.message||'') + '</p>'
-        + (a.reponse ? '<div style="margin-top:10px;padding:10px;background:#eff6ff;border-radius:10px;font-size:.82rem;color:#1d4ed8;"><strong>Réponse MIB :</strong> ' + a.reponse + '</div>' : '')
-        + '</div>';
-    }).join('');
-  } catch(e) { console.error(e); }
-};
-
-window.sendAvisFormateur = async function() {
-  const type = document.getElementById('avis-type-f').value;
-  const message = document.getElementById('avis-message-f').value.trim();
-  const msgEl = document.getElementById('avis-msg-f');
-  msgEl.classList.add('hidden');
-  if (!message) { msgEl.innerHTML='<div class="alert-err">❌ Écrivez votre message.</div>'; msgEl.classList.remove('hidden'); return; }
-  const btnEl = document.getElementById('btn-send-avis-f');
-  btnEl.disabled = true; btnEl.innerHTML = '<span class="spin"></span>';
-  try {
-    const { error } = await supabase.from('avis_retours').insert({
-      center_id: FORMATEUR.center_id,
-      auteur_type: 'formateur',
-      auteur_id: FORMATEUR.id,
-      auteur_nom: FORMATEUR.prenom + ' ' + FORMATEUR.nom,
-      type, message, statut: 'nouveau'
-    });
-    if (error) throw error;
-    msgEl.innerHTML = '<div class="alert-ok">✅ Votre avis a été envoyé !</div>';
-    msgEl.classList.remove('hidden');
-    document.getElementById('avis-message-f').value = '';
-    loadAvisFormateur();
-    setTimeout(() => document.getElementById('modal-avis-f').classList.add('hidden'), 1500);
-  } catch(e) {
-    msgEl.innerHTML = '<div class="alert-err">❌ ' + e.message + '</div>';
-    msgEl.classList.remove('hidden');
-  } finally { btnEl.disabled = false; btnEl.textContent = 'Envoyer'; }
-};
-</script>
-
-<!-- Modal Nouveau Stagiaire (depuis formateur) -->
-<div id="modal-add-stagiaire-f" class="modal-bg hidden">
-  <div class="modal-box">
-    <div class="flex justify-between items-center mb-5">
-      <h3 style="font-size:1.05rem;font-weight:800;">&#128104;&#8205;&#127979; <span id="modal-sf-title">Nouveau stagiaire</span></h3>
-      <button onclick="document.getElementById('modal-add-stagiaire-f').classList.add('hidden')" style="width:32px;height:32px;border-radius:50%;background:#f3f4f6;border:none;cursor:pointer;">&#x2715;</button>
-    </div>
-    <div class="space-y-3">
-      <div class="grid grid-cols-2 gap-3">
-        <div><label class="lbl">Prénom</label><input type="text" id="sf-prenom" class="inp" placeholder="Marie"></div>
-        <div><label class="lbl">Nom</label><input type="text" id="sf-nom" class="inp" placeholder="DUPONT"></div>
-      </div>
-      <div><label class="lbl">Email (optionnel)</label><input type="email" id="sf-email" class="inp" placeholder="marie@email.fr"></div>
-      <div><label class="lbl">Niveau</label>
-        <select id="sf-niveau" class="inp">
-          <option value="SSIAP1">SSIAP 1 — Équipier</option>
-          <option value="SSIAP2">SSIAP 2 — Chef d'équipe</option>
-          <option value="SSIAP3">SSIAP 3 — Chef de service</option>
-        </select>
-      </div>
-      <!-- Résultat création -->
-      <div id="sf-result" class="hidden">
-        <div style="height:1px;background:linear-gradient(90deg,transparent,rgba(0,0,0,.07),transparent);margin:16px 0;"></div>
-        <div id="sf-msg-ok" class="alert-ok mb-4"></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;">
-          <div style="text-align:center;">
-            <div style="font-size:.68rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;">Code PIN stagiaire</div>
-            <div id="sf-pin-generated" style="font-family:monospace;font-size:2.5rem;font-weight:900;letter-spacing:.4em;color:#059669;background:linear-gradient(145deg,#e8edf5,#f3f6fc);border-radius:12px;padding:14px;"></div>
-            <p style="font-size:.7rem;color:#9ca3af;margin-top:6px;">À remettre au stagiaire</p>
-          </div>
-          <div style="text-align:center;">
-            <div style="font-size:.68rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;">QR Code connexion</div>
-            <div style="display:inline-block;padding:10px;background:#fff;border-radius:12px;box-shadow:3px 3px 10px rgba(100,116,139,.15);"><div id="sf-qr-code"></div></div>
-          </div>
-        </div>
-        <button onclick="window.print()" class="btn btn-green btn-sm" style="width:100%;margin-top:12px;">&#128424;&#65039; Imprimer la fiche stagiaire</button>
-        <div id="sf-print-zone" style="display:none;"></div>
-      </div>
-      <div id="sf-msg" class="hidden"></div>
-      <div class="flex gap-3 mt-1" id="sf-form-actions">
-        <button onclick="document.getElementById('modal-add-stagiaire-f').classList.add('hidden')" class="btn btn-gray flex-1">Annuler</button>
-        <button onclick="saveStagiaireFormateur()" class="btn btn-green flex-1" id="btn-save-sf">Enregistrer</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<script>
-// ============================================================
-// STAGIAIRE DEPUIS FORMATEUR
-// ============================================================
-let editingStagiaireF = null;
-
-window.openAddStagiaireModal = function(id) {
-  editingStagiaireF = id || null;
-  const isEdit = !!id;
-  document.getElementById('modal-sf-title').textContent = isEdit ? 'Modifier le stagiaire' : 'Nouveau stagiaire';
-  document.getElementById('sf-result').classList.add('hidden');
-  document.getElementById('sf-form-actions').classList.remove('hidden');
-  document.getElementById('sf-msg').classList.add('hidden');
-  if (isEdit) {
-    const s = allStagiaires.find(x => x.id === id);
-    if (s) {
-      document.getElementById('sf-prenom').value = s.prenom;
-      document.getElementById('sf-nom').value = s.nom;
-      document.getElementById('sf-email').value = s.email || '';
-      document.getElementById('sf-niveau').value = s.niveau || 'SSIAP1';
-    }
-  } else {
-    ['sf-prenom','sf-nom','sf-email'].forEach(i => document.getElementById(i).value = '');
-    document.getElementById('sf-niveau').value = 'SSIAP1';
-  }
-  document.getElementById('modal-add-stagiaire-f').classList.remove('hidden');
-};
-
-window.saveStagiaireFormateur = async function() {
-  const prenom = document.getElementById('sf-prenom').value.trim();
-  const nom    = document.getElementById('sf-nom').value.trim();
-  const email  = document.getElementById('sf-email').value.trim().toLowerCase();
-  const niveau = document.getElementById('sf-niveau').value;
-  const msgEl  = document.getElementById('sf-msg');
-  msgEl.classList.add('hidden');
-  if (!prenom || !nom) { msgEl.innerHTML='<div class="alert-err">&#10060; Prénom et nom obligatoires.</div>'; msgEl.classList.remove('hidden'); return; }
-  const btnEl = document.getElementById('btn-save-sf');
-  btnEl.disabled = true; btnEl.innerHTML = '<span class="spin"></span>';
-  try {
-    if (editingStagiaireF) {
-      await supabase.from('stagiaires').update({ prenom, nom, email:email||null, niveau }).eq('id', editingStagiaireF);
-      msgEl.innerHTML = '<div class="alert-ok">&#10003; Stagiaire modifié !</div>';
-      msgEl.classList.remove('hidden');
-      const { data } = await supabase.from('stagiaires').select('*').eq('center_id', FORMATEUR.center_id).eq('actif', true).order('nom');
-      allStagiaires = data || [];
-      setTimeout(() => document.getElementById('modal-add-stagiaire-f').classList.add('hidden'), 1500);
-    } else {
-      // Générer PIN 4 chiffres
-      let pin = '', pinHash = null;
-      for (let a = 0; a < 20; a++) {
-        const c = String(Math.floor(1000 + Math.random()*9000));
-        const ph = await UTILS.hash(c);
-        const { data: ex } = await supabase.from('stagiaires').select('id').eq('center_id', FORMATEUR.center_id).eq('pin_hash', ph).eq('actif', true);
-        if (!ex || !ex.length) { pin = c; pinHash = ph; break; }
-      }
-      if (!pin) throw new Error('Impossible de générer un PIN unique');
-      const { error } = await supabase.from('stagiaires').insert({
-        prenom, nom, email:email||null, niveau,
-        center_id: FORMATEUR.center_id, actif: true,
-        pin_hash: pinHash, pin_clair: pin
-      });
-      if (error) throw error;
-      // Afficher résultat
-      const base = window.location.origin + window.location.pathname.replace(/[^/]*$/, '');
-      const loginUrl = base + 'login-stagiaire.html?center=' + FORMATEUR.center_id;
-      document.getElementById('sf-pin-generated').textContent = pin;
-      const qrEl = document.getElementById('sf-qr-code'); qrEl.innerHTML = '';
-      if (typeof QRCode !== 'undefined') new QRCode(qrEl, {text:loginUrl,width:130,height:130,colorDark:'#059669',colorLight:'#ffffff'});
-      document.getElementById('sf-print-zone').innerHTML = buildStagFCard(prenom, nom, pin, loginUrl, niveau);
-      document.getElementById('sf-msg-ok').textContent = '&#10003; ' + prenom + ' ' + nom + ' ajouté(e) ! PIN : ' + pin;
-      document.getElementById('sf-result').classList.remove('hidden');
-      document.getElementById('sf-form-actions').classList.add('hidden');
-      const { data } = await supabase.from('stagiaires').select('*').eq('center_id', FORMATEUR.center_id).eq('actif', true).order('nom');
-      allStagiaires = data || [];
-    }
-  } catch(e) { msgEl.innerHTML = '<div class="alert-err">&#10060; ' + e.message + '</div>'; msgEl.classList.remove('hidden'); }
-  finally { btnEl.disabled = false; btnEl.textContent = 'Enregistrer'; }
-};
-
-function buildStagFCard(prenom, nom, pin, url, niveau) {
-  return '<div style="font-family:sans-serif;padding:24px;max-width:400px;border:2px solid #059669;border-radius:16px;">'
-    + '<div style="font-size:1.3rem;font-weight:900;">' + prenom + ' ' + nom + '</div>'
-    + '<div style="font-size:.82rem;color:#6b7280;">' + niveau + ' &#183; ' + FORMATEUR.center_nom + '</div>'
-    + '<div style="background:#f0fdf4;border-radius:10px;padding:14px;margin:14px 0;">'
-    + '<div style="font-size:.7rem;font-weight:700;color:#065f46;text-transform:uppercase;margin-bottom:6px;">Code PIN stagiaire</div>'
-    + '<div style="font-size:2.5rem;font-weight:900;letter-spacing:.4em;color:#059669;">' + pin + '</div>'
-    + '</div><div style="font-size:.68rem;word-break:break-all;">' + url + '</div>'
-    + '<div style="font-size:.65rem;color:#9ca3af;margin-top:12px;">MIB Prévention &#169; 2026</div></div>';
-}
-
-// Étoiles avis
-let _starsF = 0;
-window.setStarsF = function(n) {
-  _starsF = n;
-  const labels = ['','Médiocre','Passable','Bien','Très bien','Excellent !'];
-  document.querySelectorAll('.star-btn-f').forEach((btn, i) => { btn.textContent = i < n ? '&#11088;' : '&#9734;'; });
-  document.getElementById('star-label-f').textContent = labels[n] || 'Non noté';
-};
-
-// Surcharger sendAvisFormateur pour inclure les étoiles
-const _origSend = window.sendAvisFormateur;
-window.sendAvisFormateur = async function() {
-  const type    = document.getElementById('avis-type-f').value;
-  const message = document.getElementById('avis-message-f').value.trim();
-  const msgEl   = document.getElementById('avis-msg-f');
-  msgEl.classList.add('hidden');
-  if (!message) { msgEl.innerHTML='<div class="alert-err">&#10060; Écrivez votre message.</div>'; msgEl.classList.remove('hidden'); return; }
-  const btnEl = document.getElementById('btn-send-avis-f');
-  btnEl.disabled = true; btnEl.innerHTML = '<span class="spin"></span>';
-  try {
-    const { error } = await supabase.from('avis_retours').insert({
-      center_id: FORMATEUR.center_id,
-      auteur_type: 'formateur',
-      auteur_id: FORMATEUR.id,
-      auteur_nom: FORMATEUR.prenom + ' ' + FORMATEUR.nom,
-      type, message, note: _starsF || null, statut: 'nouveau'
-    });
-    if (error) throw error;
-    msgEl.innerHTML = '<div class="alert-ok">&#10003; Avis envoyé !</div>';
-    msgEl.classList.remove('hidden');
-    document.getElementById('avis-message-f').value = '';
-    _starsF = 0;
-    document.querySelectorAll('.star-btn-f').forEach(b => b.textContent = '&#9734;');
-    document.getElementById('star-label-f').textContent = 'Non noté';
-    loadAvisFormateur();
-    setTimeout(() => document.getElementById('modal-avis-f').classList.add('hidden'), 1500);
-  } catch(e) { msgEl.innerHTML = '<div class="alert-err">&#10060; ' + e.message + '</div>'; msgEl.classList.remove('hidden'); }
-  finally { btnEl.disabled = false; btnEl.textContent = 'Envoyer'; }
-};
-
-
-// ============================================================
-// STATISTIQUES FORMATEUR
-// ============================================================
-async function initStats() {
-  if (!FORM.center_id) return;
-  // Charger les sessions du centre
-  const { data } = await supabase.from('sessions_formation')
-    .select('id, type_formation, niveau, date_debut, date_fin')
-    .eq('center_id', FORM.center_id)
-    .eq('formateur_id', FORM.id)
-    .order('date_debut', { ascending: false });
-  const sel = document.getElementById('stats-session-sel');
-  if (!sel) return;
-  sel.innerHTML = '<option value="">-- Choisir une session --</option>';
-  (data || []).forEach(s => {
-    const label = (s.type_formation || 'INI') + '_' + (s.niveau || 'SSIAP1') + ' — ' + (s.date_debut ? new Date(s.date_debut).toLocaleDateString('fr-FR') : '');
-    sel.innerHTML += `<option value="${s.id}">${label}</option>`;
-  });
-}
-
-window.loadStatsSession = async function() {
-  const sessId = document.getElementById('stats-session-sel').value;
-  const empty = document.getElementById('stats-empty');
-  const kpis = document.getElementById('stats-kpis');
-  const tableWrap = document.getElementById('stats-table-wrap');
-  const errorsWrap = document.getElementById('stats-errors-wrap');
-  if (!sessId) {
-    empty.style.display = 'block';
-    kpis.classList.add('hidden');
-    tableWrap.classList.add('hidden');
-    errorsWrap.classList.add('hidden');
-    return;
-  }
-  empty.style.display = 'none';
-
-  // Charger les participants de la session
-  const { data: parts } = await supabase.from('session_participants')
-    .select('stagiaire_id, stagiaires(nom, prenom, niveau)')
-    .eq('session_id', sessId);
-  
-  if (!parts || !parts.length) {
-    empty.textContent = 'Aucun stagiaire inscrit à cette session.';
-    empty.style.display = 'block';
-    return;
-  }
-
-  const stagIds = parts.map(p => p.stagiaire_id);
-  
-  // Charger les sessions d'entraînement de ces stagiaires
-  const { data: trainSess } = await supabase.from('entrainement_sessions')
-    .select('*')
-    .in('stagiaire_id', stagIds)
-    .eq('status', 'terminee');
-  
-  // Charger les réponses incorrectes
-  const sessTrainIds = (trainSess || []).map(s => s.id);
-  let wrongReps = [];
-  if (sessTrainIds.length) {
-    const { data: reps } = await supabase.from('entrainement_reponses')
-      .select('question_id, est_correcte, session_id')
-      .in('session_id', sessTrainIds)
-      .eq('est_correcte', false);
-    wrongReps = reps || [];
-  }
-
-  // KPIs
-  const nbSessions = (trainSess || []).length;
-  let totalPct = 0, nbPct = 0;
-  (trainSess || []).forEach(s => {
-    if (s.nb_questions) { totalPct += s.score / s.nb_questions * 100; nbPct++; }
-  });
-  const moy = nbPct ? Math.round(totalPct / nbPct) : 0;
-  document.getElementById('sk-stagiaires').textContent = parts.length;
-  document.getElementById('sk-sessions').textContent = nbSessions;
-  document.getElementById('sk-moyenne').textContent = moy + '%';
-  kpis.classList.remove('hidden');
-  kpis.style.display = 'grid';
-
-  // Tableau par stagiaire
-  tableWrap.classList.remove('hidden');
-  const table = document.getElementById('stats-table');
-  let tHtml = '<div style="display:grid;grid-template-columns:1fr auto auto auto;gap:8px;font-size:.72rem;font-weight:700;text-transform:uppercase;color:var(--text3);padding:0 4px;margin-bottom:8px;">';
-  tHtml += '<div>Stagiaire</div><div>Entr.</div><div>Moy.</div><div>Trend</div></div>';
-  
-  parts.forEach(p => {
-    const stag = p.stagiaires;
-    const stagSess = (trainSess || []).filter(s => s.stagiaire_id === p.stagiaire_id);
-    const nb = stagSess.length;
-    let moyStag = 0;
-    stagSess.forEach(s => { if (s.nb_questions) moyStag += s.score / s.nb_questions * 100; });
-    moyStag = nb ? Math.round(moyStag / nb) : 0;
-    const col = moyStag >= 75 ? '#059669' : moyStag >= 50 ? '#d97706' : moyStag > 0 ? '#ef4444' : '#9ca3af';
-    const trend = stagSess.length >= 2 ? (
-      stagSess[0].score / stagSess[0].nb_questions > stagSess[stagSess.length-1].score / stagSess[stagSess.length-1].nb_questions ? '↑' : '↓'
-    ) : '—';
-    tHtml += `<div class="card p-3" style="display:grid;grid-template-columns:1fr auto auto auto;gap:8px;align-items:center;margin-bottom:6px;">
-      <div style="font-size:.82rem;font-weight:600;">${stag ? stag.prenom + ' ' + stag.nom : '—'}</div>
-      <div style="font-size:.82rem;color:var(--text2);">${nb}</div>
-      <div style="font-size:.88rem;font-weight:800;color:${col};">${nb ? moyStag + '%' : '—'}</div>
-      <div style="font-size:1rem;color:${trend==='↑'?'#059669':'#ef4444'}">${trend}</div>
-    </div>`;
-  });
-  table.innerHTML = tHtml;
-
-  // Questions les plus échouées
-  if (wrongReps.length) {
-    errorsWrap.classList.remove('hidden');
-    // Compter par question
-    const counts = {};
-    wrongReps.forEach(r => { counts[r.question_id] = (counts[r.question_id] || 0) + 1; });
-    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 10);
-    const qIds = sorted.map(e => e[0]);
-    const { data: qs } = await supabase.from('questions').select('id, question, titre, explication').in('id', qIds);
-    
-    let eHtml = '';
-    sorted.forEach(([qid, nb]) => {
-      const q = (qs || []).find(x => x.id === qid);
-      if (!q) return;
-      const pctFail = Math.round(nb / parts.length * 100);
-      eHtml += `<div class="card p-4" style="border-left:4px solid ${pctFail>=70?'#ef4444':'#f59e0b'};margin-bottom:10px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-          ${q.titre ? `<span class="badge b-blue">${q.titre}</span>` : '<span></span>'}
-          <span class="badge ${pctFail>=70?'b-red':'b-orange'}">${pctFail}% d'échec (${nb}/${parts.length})</span>
-        </div>
-        <p style="font-size:.85rem;font-weight:600;margin-bottom:8px;line-height:1.5;">${q.question}</p>
-        ${q.explication ? `<div style="background:#eff6ff;border-radius:8px;padding:8px 12px;font-size:.8rem;color:#1d4ed8;line-height:1.5;">
-          <strong>💡 Explication :</strong> ${q.explication}
-        </div>` : ''}
-      </div>`;
-    });
-    document.getElementById('stats-errors').innerHTML = eHtml || '<p style="color:var(--text3);font-size:.84rem;">Aucune erreur détectée.</p>';
-  } else {
-    errorsWrap.classList.add('hidden');
-  }
-};
-
-
+/* ══════════════════════════════════════
+   SIDEBAR MOBILE
+══════════════════════════════════════ */
 function toggleSidebar() {
-  var sb = document.querySelector('.sidebar');
-  var ov = document.getElementById('sidebar-overlay');
-  if (!sb) return;
-  sb.classList.toggle('open');
-  ov.style.display = sb.classList.contains('open') ? 'block' : 'none';
+  const s = document.getElementById('sidebar');
+  const o = document.getElementById('overlay');
+  const open = s.classList.toggle('open');
+  o.style.display = open ? 'block' : 'none';
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').style.display = 'none';
+}
+
+/* ══════════════════════════════════════
+   MODALS
+══════════════════════════════════════ */
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') PAGES.forEach(() => document.querySelectorAll('.modal-wrap.open').forEach(m => m.classList.remove('open'))); });
+
+/* ══════════════════════════════════════
+   TOAST
+══════════════════════════════════════ */
+function toast(msg, cls='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast show' + (cls ? ' '+cls : '');
+  clearTimeout(t._t); t._t = setTimeout(() => t.className = 'toast', 2800);
+}
+
+/* ══════════════════════════════════════
+   FETCH HELPER
+══════════════════════════════════════ */
+async function dbq(table, opts = {}) {
+  let r = sb.from(table).select(opts.sel || '*');
+  if (opts.eq)  Object.entries(opts.eq).forEach(([k,v]) => r = r.eq(k,v));
+  if (opts.in)  Object.entries(opts.in).forEach(([k,v]) => r = r.in(k,v));
+  if (opts.order) r = r.order(opts.order, { ascending: opts.asc ?? false });
+  if (opts.lim)   r = r.limit(opts.lim);
+  const { data, error } = await r;
+  if (error) { console.warn(table, error.message); return []; }
+  return data || [];
+}
+
+/* ══════════════════════════════════════
+   INIT LOAD
+══════════════════════════════════════ */
+async function loadAll() {
+  const cid = SESSION.centerId || SESSION.center_id;
+  const fid = SESSION.formateurId;
+
+  const eq = cid ? { center_id: cid } : {};
+  if (fid) eq.formateur_id = fid;
+
+  const sessions = await dbq('sessions', { eq, order: 'created_at' });
+  allSessions = sessions;
+
+  const sessIds = sessions.map(s => s.id);
+  const [stags, entr] = sessIds.length ? await Promise.all([
+    dbq('stagiaires', { in: { session_id: sessIds } }),
+    dbq('entrainements', { in: { session_id: sessIds }, order: 'created_at' })
+  ]) : [[], []];
+  allStagiaires = stags;
+
+  document.getElementById('kpi-sessions').textContent = sessions.length;
+  document.getElementById('kpi-stagiaires').textContent = stags.length;
+  document.getElementById('kpi-entr').textContent = entr.length;
+
+  renderOvSessions(sessions.slice(0,5));
+  renderOvTop(stags, entr);
+  renderSessionsList(sessions, stags, entr);
+  populateStatsSel(sessions);
+}
+
+/* ══════════════════════════════════════
+   OVERVIEW
+══════════════════════════════════════ */
+function renderOvSessions(sessions) {
+  const el = document.getElementById('ov-sessions');
+  if (!sessions.length) { el.innerHTML = emptyState('📋','Aucune session trouvée.'); return; }
+  el.innerHTML = sessions.map((s,i) => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;
+      ${i < sessions.length-1 ? 'border-bottom:1px solid var(--border);' : ''}gap:10px;">
+      <div>
+        <div style="font-size:.85rem;font-weight:700;">${esc(s.nom||s.session_id||s.id)}</div>
+        <div style="font-size:.71rem;color:var(--text3);margin-top:1px;">${s.niveau||''} · ${fmtDate(s.date_debut||s.created_at)}</div>
+      </div>
+      <span class="badge ${s.statut==='actif'?'badge-green':'badge-gray'}">${s.statut||'en cours'}</span>
+    </div>
+  `).join('');
+}
+
+function renderOvTop(stags, entr) {
+  const el = document.getElementById('ov-top');
+  if (!stags.length || !entr.length) { el.innerHTML = emptyState('🏆','Pas encore de données d\'entraînement.'); return; }
+  const byS = {};
+  entr.forEach(e => { if (!byS[e.stagiaire_id]) byS[e.stagiaire_id] = []; byS[e.stagiaire_id].push(e.score||0); });
+  const ranked = stags.filter(s => byS[s.id]).map(s => ({
+    ...s,
+    avg: Math.round(byS[s.id].reduce((a,b)=>a+b,0)/byS[s.id].length),
+    nb: byS[s.id].length
+  })).sort((a,b)=>b.avg-a.avg).slice(0,8);
+  el.innerHTML = `<table class="stats-tbl"><thead><tr>
+    <th>#</th><th>Stagiaire</th><th>Sessions</th><th>Score moy.</th>
+  </tr></thead><tbody>${ranked.map((s,i)=>`<tr>
+    <td style="color:var(--text3);font-weight:700;">${i+1}</td>
+    <td style="font-weight:700;">${esc(s.nom||'')} ${esc(s.prenom||'')}</td>
+    <td style="color:var(--text3);">${s.nb}</td>
+    <td>${scoreBadge(s.avg)}</td>
+  </tr>`).join('')}</tbody></table>`;
+}
+
+/* ══════════════════════════════════════
+   SESSIONS
+══════════════════════════════════════ */
+function renderSessionsList(sessions, stags, entr) {
+  const el = document.getElementById('sessions-list');
+  if (!sessions.length) { el.innerHTML = emptyState('📋','Aucune session assignée.'); return; }
+  el.innerHTML = sessions.map(s => buildSessCard(s, stags, entr)).join('');
+}
+
+function buildSessCard(sess, allStags, allEntr) {
+  const stags = allStags.filter(s => s.session_id === sess.id);
+  const entr  = allEntr.filter(e => e.session_id === sess.id);
+  const avg   = entr.length ? Math.round(entr.reduce((a,e)=>a+(e.score||0),0)/entr.length) : null;
+  const taux  = entr.length ? Math.round(entr.filter(e=>(e.score||0)>=70).length/entr.length*100) : null;
+
+  const rows = stags.map(stag => {
+    const se = entr.filter(e=>e.stagiaire_id===stag.id).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+    const nb = se.length;
+    const a  = nb ? Math.round(se.reduce((x,e)=>x+(e.score||0),0)/nb) : null;
+    const l  = se[0]?.score ?? null;
+    const p  = se[1]?.score ?? null;
+    const tr = l===null?'—': p===null?'→': l>p?'↑': l<p?'↓':'→';
+    const tCls = tr==='↑'?'trend-up':tr==='↓'?'trend-down':'trend-flat';
+    const hasEch = se.some(e=>(e.details_questions||[]).some(d=>!d.correct));
+    return `<tr>
+      <td style="font-weight:700;">${esc(stag.nom||'')} ${esc(stag.prenom||'')}</td>
+      <td style="color:var(--text3);">${nb}</td>
+      <td>${a!==null?sbar(a):'<span style="color:var(--text3);">—</span>'}</td>
+      <td>${l!==null?l+'%':'—'}</td>
+      <td class="${tCls}" style="font-size:.9rem;">${tr}</td>
+      <td><button class="btn-echecs" ${!hasEch?'disabled':''} onclick="showEchecs('${stag.id}','${sess.id}','${escA(stag.nom+' '+stag.prenom)}')">
+        ${hasEch?'⚠️ Voir échecs':'Aucun échec'}</button></td>
+    </tr>`;
+  }).join('');
+
+  return `<div class="sess-card">
+    <div class="sess-hdr" onclick="toggleSess('${sess.id}')">
+      <div>
+        <div class="sess-name">${esc(sess.nom||sess.session_id||sess.id)}</div>
+        <div class="sess-meta">${sess.niveau||''} · ${fmtDate(sess.date_debut||sess.created_at)}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
+        <span class="badge ${sess.statut==='actif'?'badge-green':'badge-gray'}">${sess.statut||'en cours'}</span>
+        <span class="badge badge-blue">${stags.length} stag.</span>
+        <span class="sess-chev" id="chev-${sess.id}">▼</span>
+      </div>
+    </div>
+    <div class="sess-body" id="sbody-${sess.id}">
+      <div class="sess-summary">
+        <div class="sum-item"><div class="sum-val">${stags.length}</div><div class="sum-lbl">Stagiaires</div></div>
+        <div class="sum-item"><div class="sum-val">${entr.length}</div><div class="sum-lbl">Entraînements</div></div>
+        <div class="sum-item"><div class="sum-val">${avg!==null?avg+'%':'—'}</div><div class="sum-lbl">Score moyen</div></div>
+        <div class="sum-item"><div class="sum-val">${taux!==null?taux+'%':'—'}</div><div class="sum-lbl">Taux ≥ 70%</div></div>
+      </div>
+      ${stags.length
+        ? `<div style="overflow-x:auto;">
+            <table class="stag-tbl">
+              <thead><tr><th>Stagiaire</th><th>Sessions</th><th>Moy.</th><th>Dernier</th><th>Tend.</th><th>Échecs</th></tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>`
+        : emptyState('👥','Aucun stagiaire dans cette session.','padding:18px;')
+      }
+    </div>
+  </div>`;
+}
+
+function toggleSess(id) {
+  const body = document.getElementById('sbody-'+id);
+  const chev = document.getElementById('chev-'+id);
+  const open = body.classList.toggle('open');
+  chev.style.transform = open ? 'rotate(180deg)' : '';
+}
+
+/* ══════════════════════════════════════
+   MODAL ÉCHECS (par stagiaire)
+══════════════════════════════════════ */
+async function showEchecs(stagId, sessId, nom) {
+  document.getElementById('echecs-title').textContent = `⚠️ Questions échouées — ${nom}`;
+  document.getElementById('echecs-body').innerHTML = '<div class="loader"><span class="spin"></span>Chargement...</div>';
+  openModal('modal-echecs');
+
+  const entr = await dbq('entrainements', { eq: { stagiaire_id: stagId, session_id: sessId }, order: 'created_at' });
+  const map = {};
+  entr.forEach(e => (e.details_questions||[]).forEach(d => {
+    if (!d.correct) {
+      const id = d.question_id || d.question || JSON.stringify(d.question);
+      if (!map[id]) map[id] = { ...d, count: 0 };
+      map[id].count++;
+    }
+  }));
+
+  const list = Object.values(map).sort((a,b) => b.count - a.count);
+  if (!list.length) {
+    document.getElementById('echecs-body').innerHTML = emptyState('✅','Aucune question échouée !');
+    return;
+  }
+
+  document.getElementById('echecs-body').innerHTML =
+    `<p style="font-size:.76rem;color:var(--text3);margin-bottom:14px;">${list.length} question${list.length>1?'s':''} échouée${list.length>1?'s':''} sur ${entr.length} entraînement${entr.length>1?'s':''}</p>`
+    + list.map((q,i) => renderQCard(q, i+1, q.count, entr.length)).join('');
+}
+
+/* ══════════════════════════════════════
+   PAGE STATS
+══════════════════════════════════════ */
+function populateStatsSel(sessions) {
+  const sel = document.getElementById('stats-sel');
+  sessions.forEach(s => {
+    const o = document.createElement('option');
+    o.value = s.id; o.textContent = s.nom || s.session_id || s.id;
+    sel.appendChild(o);
+  });
+}
+
+async function loadStatsSess(sessId) {
+  const el = document.getElementById('stats-content');
+  const qBlock = document.getElementById('stats-q-block');
+  if (!sessId) {
+    el.innerHTML = emptyState('📊','Sélectionnez une session pour afficher les statistiques d\'entraînement.');
+    qBlock.style.display = 'none'; return;
+  }
+  el.innerHTML = '<div class="loader"><span class="spin"></span>Chargement...</div>';
+
+  const [stags, entr] = await Promise.all([
+    dbq('stagiaires', { eq: { session_id: sessId } }),
+    dbq('entrainements', { eq: { session_id: sessId }, order: 'created_at' })
+  ]);
+
+  const avgG = entr.length ? Math.round(entr.reduce((a,e)=>a+(e.score||0),0)/entr.length) : null;
+
+  const rows = stags.map(stag => {
+    const se = entr.filter(e=>e.stagiaire_id===stag.id).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+    const nb = se.length;
+    const a  = nb ? Math.round(se.reduce((x,e)=>x+(e.score||0),0)/nb) : null;
+    const l  = se[0]?.score ?? null;
+    const p  = se[1]?.score ?? null;
+    const tr = l===null?'—':p===null?'→':l>p?'↑':l<p?'↓':'→';
+    const tCls = tr==='↑'?'trend-up':tr==='↓'?'trend-down':'trend-flat';
+    const hasEch = se.some(e=>(e.details_questions||[]).some(d=>!d.correct));
+    return `<tr onclick="showEchecs('${stag.id}','${sessId}','${escA(stag.nom+' '+stag.prenom)}')" title="Voir questions échouées">
+      <td style="font-weight:700;">${esc(stag.nom||'')} ${esc(stag.prenom||'')}</td>
+      <td style="color:var(--text3);">${nb}</td>
+      <td>${a!==null?sbar(a):'<span style="color:var(--text3);">—</span>'}</td>
+      <td>${l!==null?l+'%':'—'}</td>
+      <td class="${tCls}" style="font-size:.9rem;">${tr}</td>
+      <td>${hasEch?'<span class="badge badge-red">Échecs</span>':nb?'<span class="badge badge-green">OK</span>':'<span class="badge badge-gray">—</span>'}</td>
+    </tr>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="kpi-grid" style="margin-bottom:14px;">
+      <div class="kpi-card"><div class="kpi-icon">👥</div><div class="kpi-val">${stags.length}</div><div class="kpi-lbl">Stagiaires</div></div>
+      <div class="kpi-card"><div class="kpi-icon">🎯</div><div class="kpi-val">${entr.length}</div><div class="kpi-lbl">Entraînements</div></div>
+      <div class="kpi-card"><div class="kpi-icon">📈</div><div class="kpi-val">${avgG!==null?avgG+'%':'—'}</div><div class="kpi-lbl">Score moyen</div></div>
+    </div>
+    ${stags.length
+      ? `<div style="overflow-x:auto;"><table class="stats-tbl">
+          <thead><tr><th>Stagiaire</th><th>Entraînements</th><th>Score moyen</th><th>Dernier</th><th>Tendance</th><th>Statut</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table></div>
+        <p style="font-size:.7rem;color:var(--text3);margin-top:10px;">👆 Cliquez sur un stagiaire pour voir ses questions échouées</p>`
+      : emptyState('👥','Aucun stagiaire dans cette session.')
+    }
+  `;
+
+  // Questions échouées agrégées
+  buildStatsQ(entr);
+  qBlock.style.display = 'block';
+}
+
+function buildStatsQ(entr) {
+  const map = {};
+  const stagIds = new Set();
+  entr.forEach(e => {
+    if (e.stagiaire_id) stagIds.add(e.stagiaire_id);
+    (e.details_questions||[]).forEach(d => {
+      if (!d.correct) {
+        const id = d.question_id || d.question || JSON.stringify(d.question);
+        if (!map[id]) map[id] = { ...d, count: 0, stags: new Set() };
+        map[id].count++;
+        if (e.stagiaire_id) map[id].stags.add(e.stagiaire_id);
+      }
+    });
+  });
+  const total = stagIds.size || 1;
+  statsQData = Object.values(map).map(q => ({ ...q, pct: Math.round(q.stags.size/total*100) })).sort((a,b)=>b.pct-a.pct);
+  renderStatsQ();
+}
+
+function renderStatsQ() {
+  const el = document.getElementById('stats-q-list');
+  const niv = document.getElementById('stats-niv-fil')?.value || '';
+  let data = statsQData;
+  if (niv) data = data.filter(q => (q.niveau||'').toString() === niv);
+  if (!data.length) { el.innerHTML = emptyState('✅','Aucune question échouée pour cette sélection !','padding:18px;'); return; }
+  el.innerHTML = data.slice(0,20).map((q,i) => {
+    const corrAnss = q.correct_answers_labels || q.correct_answers || [];
+    const expl = q.explanation || q.explication || '';
+    return `<div class="q-card">
+      <div class="q-top">
+        <div style="flex:1;">
+          <div class="q-num">Question ${i+1}${q.niveau?' · SSIAP '+q.niveau:''}</div>
+          <div class="q-text">${esc(q.question||'—')}</div>
+          <div class="q-sub">Échouée par ${q.stags.size} stagiaire${q.stags.size>1?'s':''} · ${q.count} fois au total</div>
+        </div>
+        <div class="q-pct">${q.pct}%</div>
+      </div>
+      ${corrAnss.length || expl ? `<div class="q-details">
+        ${corrAnss.length ? `<div class="q-box correct"><div class="q-box-lbl">✅ Bonne réponse</div>${esc(Array.isArray(corrAnss)?corrAnss.join(', '):corrAnss)}</div>` : ''}
+        ${expl ? `<div class="q-box expl"><div class="q-box-lbl">💡 À revoir en présentiel</div>${esc(expl)}</div>` : ''}
+      </div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+/* ══════════════════════════════════════
+   QUESTIONS GLOBALES
+══════════════════════════════════════ */
+async function loadGlobalQ(niv) {
+  const el = document.getElementById('global-q-list');
+  el.innerHTML = '<div class="loader"><span class="spin"></span>Chargement...</div>';
+  const sessIds = allSessions.map(s => s.id);
+  const entr = sessIds.length ? await dbq('entrainements', { in: { session_id: sessIds } }) : [];
+
+  const map = {};
+  const totalEntr = entr.length || 1;
+  entr.forEach(e => (e.details_questions||[]).forEach(d => {
+    if (!d.correct) {
+      const id = d.question_id || d.question;
+      if (!map[id]) map[id] = { ...d, count: 0 };
+      map[id].count++;
+    }
+  }));
+
+  let list = Object.values(map).sort((a,b)=>b.count-a.count);
+  if (niv) list = list.filter(q => (q.niveau||'').toString() === niv.toString());
+  list = list.slice(0,15);
+
+  if (!list.length) { el.innerHTML = emptyState('✅','Aucune donnée d\'entraînement pour ce niveau.'); return; }
+  el.innerHTML = list.map((q,i) => {
+    const pct = Math.round(q.count/totalEntr*100);
+    const corrAnss = q.correct_answers_labels || q.correct_answers || [];
+    const expl = q.explanation || q.explication || '';
+    return renderQCard({...q, pct_override: pct, stags: null}, i+1, q.count, totalEntr);
+  }).join('');
+}
+
+/* ══════════════════════════════════════
+   PROFIL
+══════════════════════════════════════ */
+async function loadProfil() {
+  const el = document.getElementById('profil-content');
+  const { data, error } = await sb.from('formateurs').select('*').eq('id', SESSION.formateurId).maybeSingle();
+  if (error || !data) { el.innerHTML = emptyState('👤','Impossible de charger le profil.'); return; }
+  const init = ((data.nom||'')[0]||(data.prenom||'')[0]||'?').toUpperCase();
+  el.innerHTML = `
+    <div class="profil-block">
+      <div class="profil-av">${init}</div>
+      <div class="profil-name">${esc(data.prenom||'')} ${esc(data.nom||'')}</div>
+      <div class="profil-role">Formateur SSIAP · ${esc(SESSION.centreName||'')}</div>
+      <div class="profil-grid">
+        <div class="profil-field"><label>Email</label><span>${esc(data.email||'—')}</span></div>
+        <div class="profil-field"><label>PIN connexion</label><span style="font-family:monospace;font-size:.95rem;">${data.pin_clair||'••••••'}</span></div>
+        <div class="profil-field"><label>Niveau</label><span>${esc(SESSION.niveau||'—')}</span></div>
+        <div class="profil-field"><label>Sessions actives</label><span>${allSessions.length}</span></div>
+      </div>
+    </div>
+  `;
+}
+
+/* ══════════════════════════════════════
+   RENDERERS
+══════════════════════════════════════ */
+function renderQCard(q, num, count, total) {
+  const pct = q.pct_override ?? (total>0 ? Math.round(count/total*100) : 0);
+  const corrAnss = q.correct_answers_labels || q.correct_answers || [];
+  const userAnss = q.user_answers_labels || q.user_answers || [];
+  const expl = q.explanation || q.explication || '';
+  return `<div class="q-card">
+    <div class="q-top">
+      <div style="flex:1;">
+        <div class="q-num">Question ${num}${q.niveau?' · SSIAP '+q.niveau:''}</div>
+        <div class="q-text">${esc(q.question||'—')}</div>
+        ${count>1?`<div class="q-sub">Échouée ${count} fois</div>`:''}
+      </div>
+      <div class="q-pct">${pct}%</div>
+    </div>
+    ${userAnss.length || corrAnss.length || expl ? `<div class="q-details">
+      ${userAnss.length ? `<div class="q-box" style="background:var(--rouge-bg);color:var(--rouge);border:1px solid #fecaca;"><div class="q-box-lbl">❌ Réponse donnée</div>${esc(Array.isArray(userAnss)?userAnss.join(', '):userAnss)}</div>` : ''}
+      ${corrAnss.length ? `<div class="q-box correct"><div class="q-box-lbl">✅ Bonne réponse</div>${esc(Array.isArray(corrAnss)?corrAnss.join(', '):corrAnss)}</div>` : ''}
+      ${expl ? `<div class="q-box expl"><div class="q-box-lbl">💡 Explication</div>${esc(expl)}</div>` : ''}
+    </div>` : ''}
+  </div>`;
+}
+
+/* ══════════════════════════════════════
+   HELPERS
+══════════════════════════════════════ */
+function esc(s) { return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escA(s) { return (s||'').toString().replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+function fmtDate(d) { if(!d) return '—'; return new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'}); }
+function emptyState(icon, text, style='') { return `<div class="empty" style="${style}"><div class="empty-icon">${icon}</div><p>${text}</p></div>`; }
+function sbar(score) {
+  const c = score>=80?'var(--green)':score>=60?'var(--amber)':'var(--rouge)';
+  return `<div class="sbar"><div class="sbar-bg"><div class="sbar-fill" style="width:${score}%;background:${c};"></div></div><span style="font-size:.82rem;font-weight:700;color:${c};">${score}%</span></div>`;
+}
+function scoreBadge(score) {
+  const c = score>=80?'var(--green)':score>=60?'var(--amber)':'var(--rouge)';
+  return `<span style="font-weight:700;color:${c};">${score}%</span>`;
 }
 </script>
 </body>
