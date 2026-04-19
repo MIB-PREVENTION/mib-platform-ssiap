@@ -1334,7 +1334,7 @@ async function loadStatsGlobal() {
   const nivLabels = Object.keys(byNiv);
   const nivData = nivLabels.map(n => Math.round(byNiv[n].reduce((a,b)=>a+b,0)/byNiv[n].length));
 
-  el.innerHTML = \`
+  el.innerHTML = `
     <div class="stats-kpi-row">
       <div class="kpi-card"><div class="kpi-icon">📋</div><div class="kpi-val">\${allSessions.length}</div><div class="kpi-lbl">Sessions</div></div>
       <div class="kpi-card"><div class="kpi-icon">👥</div><div class="kpi-val">\${allStagiaires.length}</div><div class="kpi-lbl">Stagiaires</div></div>
@@ -1367,7 +1367,7 @@ async function loadStatsGlobal() {
         <div class="chart-wrap"><canvas id="chart-niveau"></canvas></div>
       </div>
     </div>
-  \`;
+  `;
 
   // Détruire anciens charts
   Object.values(chartsInstances).forEach(ch => { try { ch.destroy(); } catch(e){} });
