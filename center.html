@@ -408,8 +408,18 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
         <div><label class="lbl">Nom</label><input type="text" id="f-nom" class="inp" placeholder="MARTIN" oninput="this.value=this.value.toUpperCase()"></div>
       </div>
       <div><label class="lbl">Email (optionnel)</label><input type="email" id="f-email" class="inp" placeholder="jean.martin@centre.fr"></div>
-      <div><label class="lbl">Rôle</label>
-        <select id="f-role" class="inp"><option value="formateur">Formateur</option><option value="responsable">Responsable de centre</option></select>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="lbl">Rôle</label>
+          <select id="f-role" class="inp"><option value="formateur">Formateur</option><option value="responsable">Responsable de centre</option></select>
+        </div>
+        <div><label class="lbl">Niveau SSIAP</label>
+          <select id="f-niveau-form" class="inp">
+            <option value="">— Sélectionner —</option>
+            <option value="SSIAP1">SSIAP 1 — Équipier</option>
+            <option value="SSIAP2">SSIAP 2 — Chef d'équipe</option>
+            <option value="SSIAP3">SSIAP 3 — Chef de service</option>
+          </select>
+        </div>
       </div>
       <div style="background:linear-gradient(145deg,#eff6ff,#dbeafe);border-radius:12px;padding:12px;text-align:center;">
         <div style="font-size:.7rem;font-weight:700;color:#1d4ed8;text-transform:uppercase;letter-spacing:.07em;">🔐 Code PIN</div>
@@ -793,6 +803,7 @@ window.saveFormateur = async function() {
   const nom = document.getElementById('f-nom').value.trim();
   const email = document.getElementById('f-email').value.trim().toLowerCase();
   const role = document.getElementById('f-role').value;
+  const niveauForm = document.getElementById('f-niveau-form')?.value || '';
   const msgEl = document.getElementById('f-msg');
   msgEl.classList.add('hidden');
   if (!prenom || !nom) { msgEl.innerHTML = '<div class="alert-err">❌ Prénom et nom obligatoires.</div>'; msgEl.classList.remove('hidden'); return; }
@@ -800,7 +811,7 @@ window.saveFormateur = async function() {
   btnEl.disabled = true; btnEl.innerHTML = '<span class="spin"></span>';
   try {
     if (editingFormateurId) {
-      await supabase.from('formateurs').update({ prenom, nom, email: email||null, role }).eq('id', editingFormateurId);
+      await supabase.from('formateurs').update({ prenom, nom, email: email||null, role, niveau: niveauForm||null }).eq('id', editingFormateurId);
       msgEl.innerHTML = '<div class="alert-ok">✅ Formateur modifié.</div>'; msgEl.classList.remove('hidden');
       loadFormateurs(); loadAll();
       setTimeout(() => closeModal('modal-add-formateur'), 1500);
@@ -813,7 +824,7 @@ window.saveFormateur = async function() {
         if (!ex || !ex.length) { pin = c; pinHash = ph; break; }
       }
       if (!pin) throw new Error('Impossible de générer un PIN unique');
-      const { error } = await supabase.from('formateurs').insert({ prenom, nom, email: email||null, role, pin_hash: pinHash, pin_clair: pin, center_id: CENTER.id, actif: true });
+      const { error } = await supabase.from('formateurs').insert({ prenom, nom, email: email||null, role, niveau: niveauForm||null, pin_hash: pinHash, pin_clair: pin, center_id: CENTER.id, actif: true });
       if (error) throw error;
       const base = window.location.origin + window.location.pathname.replace(/[^/]*$/, '');
       const loginUrl = base + 'login-formateur.html?center=' + CENTER.id;
@@ -840,6 +851,7 @@ window.editFormateur = async function(id) {
   document.getElementById('f-nom').value = data.nom;
   document.getElementById('f-email').value = data.email || '';
   document.getElementById('f-role').value = data.role;
+  if(document.getElementById('f-niveau-form')) document.getElementById('f-niveau-form').value = data.niveau || '';
   document.getElementById('f-msg').classList.add('hidden');
   document.getElementById('f-result').classList.add('hidden');
   document.getElementById('f-form-actions').classList.remove('hidden');
@@ -854,6 +866,7 @@ function resetFormateurModal() {
   document.getElementById('modal-f-title').textContent = 'Nouveau formateur';
   ['f-prenom','f-nom','f-email'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
   document.getElementById('f-role').value = 'formateur';
+  if(document.getElementById('f-niveau-form')) document.getElementById('f-niveau-form').value = '';
   document.getElementById('f-result').classList.add('hidden');
   document.getElementById('f-form-actions').classList.remove('hidden');
   document.getElementById('f-msg').classList.add('hidden');
