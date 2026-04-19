@@ -621,15 +621,15 @@ async function loadAll() {
     presence: p.presence
   })).filter(s => s && s.id);
 
-  // 3. Entraînements par stagiaire_id (entrainement_sessions n'a pas de session_id)
+  // 3. Entraînements par stagiaire_id — requête simple
   let allEntr = [];
   const stagIds = allStagiaires.map(s => s.id).filter(Boolean);
   if (stagIds.length) {
-    const { data: entrData } = await window.supabase
+    const { data: entrData, error: eErr } = await window.supabase
       .from('entrainement_sessions')
-      .select('*')
-      .in('stagiaire_id', stagIds)
-      .order('started_at', {ascending: true});
+      .select('id, stagiaire_id, score, max_score, niveau, status, started_at')
+      .in('stagiaire_id', stagIds);
+    if (eErr) console.warn('entr error:', eErr.message);
     allEntr = entrData || [];
   }
 
@@ -764,13 +764,31 @@ async function showEchecs(stagId, sessId, nom) {
   document.getElementById('echecs-body').innerHTML = '<div class="loader"><span class="spin"></span>Chargement...</div>';
   openModal('modal-echecs');
 
-  // Charger les sessions d'entraînement du stagiaire + leurs réponses
+  // 1. Sessions d'entraînement du stagiaire
   const { data: entrRaw } = await window.supabase
     .from('entrainement_sessions')
-    .select('*, entrainement_reponses(question_id, est_correcte, reponse, questions(question, reponses, explication))')
+    .select('id, stagiaire_id, score, max_score, niveau, started_at')
     .eq('stagiaire_id', stagId)
     .order('started_at', {ascending: false});
-  const entr = entrRaw || [];
+  const entrSess = entrRaw || [];
+  
+  // 2. Réponses incorrectes
+  const entr = [];
+  if (entrSess.length) {
+    const entrIds = entrSess.map(e => e.id);
+    const { data: repData } = await window.supabase
+      .from('entrainement_reponses')
+      .select('session_id, question_id, est_correcte, reponse, questions(question, explication, reponses)')
+      .in('session_id', entrIds)
+      .eq('est_correcte', false);
+    // Regrouper par session
+    const repMap = {};
+    (repData || []).forEach(r => {
+      if (!repMap[r.session_id]) repMap[r.session_id] = [];
+      repMap[r.session_id].push(r);
+    });
+    entrSess.forEach(e => entr.push({ ...e, entrainement_reponses: repMap[e.id] || [] }));
+  }
   const map = {};
   entr.forEach(e => (e.entrainement_reponses||[]).forEach(r => {
     if (!r.est_correcte) {
@@ -826,16 +844,34 @@ async function loadStatsSess(sessId) {
     .eq('session_id', sessId);
   const stags = (partsData || []).map(p => ({ ...p.stagiaires, session_id: sessId })).filter(s => s && s.id);
 
-  // entrainement_sessions filtré par stagiaire_id de cette session
+  // Entraînements des stagiaires de cette session
   const stagIdsForSess = stags.map(s => s.id).filter(Boolean);
   let entr = [];
   if (stagIdsForSess.length) {
-    const { data: entrData } = await window.supabase
+    const { data: entrData, error: eErr2 } = await window.supabase
       .from('entrainement_sessions')
-      .select('*, entrainement_reponses(question_id, est_correcte, reponse, questions(question, reponses, explication))')
+      .select('id, stagiaire_id, score, max_score, niveau, status, started_at')
       .in('stagiaire_id', stagIdsForSess)
       .order('started_at', {ascending: true});
+    if (eErr2) console.warn('entr stat error:', eErr2.message);
     entr = entrData || [];
+    
+    // Charger les réponses incorrectes séparément pour buildStatsQ
+    if (entr.length) {
+      const entrIds = entr.map(e => e.id);
+      const { data: repData } = await window.supabase
+        .from('entrainement_reponses')
+        .select('session_id, question_id, est_correcte, reponse')
+        .in('session_id', entrIds)
+        .eq('est_correcte', false);
+      // Attacher les reponses à chaque entr
+      const repByEntr = {};
+      (repData || []).forEach(r => {
+        if (!repByEntr[r.session_id]) repByEntr[r.session_id] = [];
+        repByEntr[r.session_id].push(r);
+      });
+      entr = entr.map(e => ({ ...e, entrainement_reponses: repByEntr[e.id] || [] }));
+    }
   }
 
   const avgG = entr.length ? Math.round(entr.reduce((a,e)=>a+(e.score||0),0)/entr.length) : null;
@@ -939,15 +975,30 @@ async function loadGlobalQ(niv) {
   const el = document.getElementById('global-q-list');
   el.innerHTML = '<div class="loader"><span class="spin"></span>Chargement...</div>';
   const sessIds = allSessions.map(s => s.id);
-  // Charger les entraînements des stagiaires du formateur avec leurs réponses
   const stagIdsGlobal = allStagiaires.map(s => s.id).filter(Boolean);
   let entr = [];
   if (stagIdsGlobal.length) {
-    const { data } = await window.supabase
+    // 1. Sessions
+    const { data: sessG } = await window.supabase
       .from('entrainement_sessions')
-      .select('*, entrainement_reponses(question_id, est_correcte, reponse, questions(question, explication))')
+      .select('id, stagiaire_id, niveau')
       .in('stagiaire_id', stagIdsGlobal);
-    entr = data || [];
+    const sessGList = sessG || [];
+    if (sessGList.length) {
+      const gIds = sessGList.map(e => e.id);
+      // 2. Réponses incorrectes avec texte question
+      const { data: repG } = await window.supabase
+        .from('entrainement_reponses')
+        .select('session_id, question_id, est_correcte, questions(question, explication)')
+        .in('session_id', gIds)
+        .eq('est_correcte', false);
+      const repGMap = {};
+      (repG || []).forEach(r => {
+        if (!repGMap[r.session_id]) repGMap[r.session_id] = [];
+        repGMap[r.session_id].push(r);
+      });
+      entr = sessGList.map(e => ({ ...e, entrainement_reponses: repGMap[e.id] || [] }));
+    }
   }
 
   const map = {};
