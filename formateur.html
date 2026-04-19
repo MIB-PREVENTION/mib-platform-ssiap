@@ -653,7 +653,7 @@ function renderOvSessions(sessions) {
     <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;
       ${i < sessions.length-1 ? 'border-bottom:1px solid var(--border);' : ''}gap:10px;">
       <div>
-        <div style="font-size:.85rem;font-weight:700;">${esc(s.titre||s.nom||s.type_formation+' '+s.niveau||s.id)}</div>
+        <div style="font-size:.85rem;font-weight:700;">${esc(s.titre||s.nom||(s.type_formation?s.type_formation+' '+s.niveau:s.id.substring(0,8)))}</div>
         <div style="font-size:.71rem;color:var(--text3);margin-top:1px;">${s.niveau||''} · ${fmtDate(s.date_debut||s.created_at)}</div>
       </div>
       <span class="badge ${s.statut==='actif'?'badge-green':'badge-gray'}">${s.statut||'en cours'}</span>
@@ -723,7 +723,7 @@ function buildSessCard(sess, allStags, allEntr) {
   return `<div class="sess-card">
     <div class="sess-hdr" onclick="toggleSess('${sess.id}')">
       <div>
-        <div class="sess-name">${esc(sess.titre||sess.nom||(sess.type_formation?sess.type_formation+' '+sess.niveau:sess.id))}</div>
+        <div class="sess-name">${esc(sess.titre||sess.nom||(sess.type_formation?sess.type_formation+' '+sess.niveau:sess.id.substring(0,8)+'…'))}</div>
         <div class="sess-meta">${sess.niveau||''} · ${fmtDate(sess.date_debut||sess.created_at)}</div>
       </div>
       <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
@@ -835,7 +835,10 @@ function populateStatsSel(sessions) {
   const sel = document.getElementById('stats-sel');
   sessions.forEach(s => {
     const o = document.createElement('option');
-    o.value = s.id; o.textContent = s.nom || s.session_id || s.id;
+    o.value = s.id;
+    o.textContent = s.titre || s.nom ||
+      ((s.type_formation && s.niveau) ? s.type_formation + ' ' + s.niveau : null) ||
+      s.id.substring(0,8)+'…';
     sel.appendChild(o);
   });
 }
@@ -897,7 +900,8 @@ async function loadStatsSess(sessId) {
     }
   }
 
-  const avgG = entr.length ? Math.round(entr.reduce((a,e)=>a+(e.score||0),0)/entr.length) : null;
+  const spct = e => e.max_score > 0 ? Math.round((e.score||0)/e.max_score*100) : 0;
+  const avgG = entr.length ? Math.round(entr.reduce((a,e)=>a+spct(e),0)/entr.length) : null;
 
   const rows = stags.map(stag => {
     const se = entr.filter(e=>e.stagiaire_id===stag.id).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
@@ -1052,9 +1056,25 @@ async function loadGlobalQ(niv) {
   }));
 
   let list = Object.values(map).sort((a,b)=>b.count-a.count);
-  if (niv) list = list.filter(q => (q.niveau||'').toString() === niv.toString());
+  if (niv) {
+    // niveau peut être "1", "SSIAP1", "SSIAP 1" selon la table
+    const nivStr = niv.toString();
+    list = list.filter(q => {
+      const qn = (q.niveau||'').toString();
+      return qn === nivStr || qn === 'SSIAP'+nivStr || qn === 'SSIAP '+nivStr || qn.endsWith(nivStr);
+    });
+  }
   list = list.slice(0,15);
 
+  // Si vide avec filtre niveau, essayer sans filtre
+  if (!list.length && niv) {
+    const allList = Object.values(map).sort((a,b)=>b.count-a.count).slice(0,15);
+    if (allList.length) {
+      el.innerHTML = emptyState('ℹ️','Aucune donnée pour SSIAP'+niv+' — affichage de tous niveaux.') + 
+        allList.map((q,i) => renderQCard({...q, pct_override: Math.round(q.count/totalEntr*100)}, i+1, q.count, totalEntr)).join('');
+      return;
+    }
+  }
   if (!list.length) { el.innerHTML = emptyState('✅','Aucune donnée d\'entraînement pour ce niveau.'); return; }
   el.innerHTML = list.map((q,i) => {
     const pct = Math.round(q.count/totalEntr*100);
