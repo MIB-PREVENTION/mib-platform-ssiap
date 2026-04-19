@@ -5,7 +5,53 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>MIB — Espace Stagiaire</title>
 <meta name="theme-color" content="#f0fdf4">
-<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.tailwindcss.com">
+let currentNote = 0;
+function setNote(n) {
+  currentNote = n;
+  for(let i=1;i<=5;i++) {
+    document.getElementById('star-'+i).textContent = i<=n ? '★' : '☆';
+    document.getElementById('star-'+i).style.color = i<=n ? '#f59e0b' : '#d1d5db';
+  }
+}
+function openAvisModal() {
+  const m = document.getElementById('modal-avis-stag');
+  m.style.display = 'flex';
+  currentNote = 0;
+  for(let i=1;i<=5;i++) {
+    document.getElementById('star-'+i).textContent = '☆';
+    document.getElementById('star-'+i).style.color = '#d1d5db';
+  }
+  document.getElementById('avis-msg').value = '';
+  document.getElementById('avis-result').style.display = 'none';
+}
+function closeAvisModal() {
+  document.getElementById('modal-avis-stag').style.display = 'none';
+}
+async function submitAvis() {
+  const msg = document.getElementById('avis-msg').value.trim();
+  if (!msg) { alert('Veuillez écrire un message.'); return; }
+  const btn = document.getElementById('btn-submit-avis');
+  btn.disabled = true; btn.textContent = '⏳';
+  try {
+    const centerId = STAGIAIRE?.center_id || centerData?.id || null;
+    await supabase.from('avis_retours').insert({
+      center_id: centerId,
+      auteur_type: 'stagiaire',
+      auteur_id: STAGIAIRE?.id || null,
+      auteur_nom: (STAGIAIRE?.prenom||'') + ' ' + (STAGIAIRE?.nom||''),
+      type: document.getElementById('avis-type').value,
+      note: currentNote || null,
+      message: msg,
+      statut: 'nouveau'
+    });
+    document.getElementById('avis-result').style.display = 'block';
+    setTimeout(closeAvisModal, 2000);
+  } catch(e) { alert('Erreur : ' + e.message); }
+  finally { btn.disabled = false; btn.textContent = 'Envoyer →'; }
+}
+
+</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="supabase.js"></script>
 <style>
@@ -151,30 +197,84 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:
       <div class="fade-up-3">
         <h2 style="font-size:.85rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:14px;">🧩 Mes modules de formation</h2>
 
-        <div class="grid grid-cols-1 gap-4">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
 
           <!-- AUTO-ENTRAÎNEMENT -->
-          <div class="module-card mod-auto" id="card-auto" onclick="launchModule('auto')">
-            <div style="font-size:2.8rem;margin-bottom:12px;">🎯</div>
-            <div style="font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:900;margin-bottom:6px;">Auto-entraînement</div>
-            <div style="font-size:.82rem;opacity:.85;margin-bottom:16px;line-height:1.5;">Entraîne-toi à ton rythme avec des QCM SSIAP adaptés à ton niveau. Suivi de progression inclus.</div>
-            <div style="display:flex;align-items:center;gap:8px;">
-              <span style="background:rgba(255,255,255,.2);border-radius:8px;padding:6px 14px;font-size:.8rem;font-weight:700;">▶ Commencer →</span>
-              <span id="badge-auto" style="background:rgba(255,255,255,.15);border-radius:6px;padding:4px 10px;font-size:.72rem;"></span>
+          <div class="module-card mod-auto" id="card-auto" onclick="launchModule('auto')" style="padding:18px 16px;">
+            <div style="font-size:2rem;margin-bottom:8px;">🎯</div>
+            <div style="font-family:'Syne',sans-serif;font-size:.95rem;font-weight:900;margin-bottom:4px;">Auto-entraînement</div>
+            <div style="font-size:.74rem;opacity:.85;margin-bottom:12px;line-height:1.4;">QCM SSIAP adaptés à ton niveau. Suivi inclus.</div>
+            <div>
+              <span style="background:rgba(255,255,255,.2);border-radius:8px;padding:5px 12px;font-size:.75rem;font-weight:700;">▶ Commencer →</span>
             </div>
+            <div id="badge-auto" style="margin-top:6px;font-size:.68rem;opacity:.8;"></div>
           </div>
 
           <!-- SSI AUTO-FORMATION -->
-          <div class="module-card mod-ssi" id="card-ssi" onclick="launchModule('ssi')">
-            <div style="font-size:2.8rem;margin-bottom:12px;">🟡</div>
-            <div style="font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:900;margin-bottom:6px;">SSI Auto-formation</div>
-            <div style="font-size:.82rem;opacity:.85;margin-bottom:16px;line-height:1.5;">Découvre les systèmes de sécurité incendie avec des scénarios guidés en autonomie.</div>
-            <div style="display:flex;align-items:center;gap:8px;">
-              <span style="background:rgba(255,255,255,.2);border-radius:8px;padding:6px 14px;font-size:.8rem;font-weight:700;">▶ Commencer →</span>
-              <span id="badge-ssi" style="background:rgba(255,255,255,.15);border-radius:6px;padding:4px 10px;font-size:.72rem;"></span>
+          <div class="module-card mod-ssi" id="card-ssi" onclick="launchModule('ssi')" style="padding:18px 16px;">
+            <div style="font-size:2rem;margin-bottom:8px;">🟡</div>
+            <div style="font-family:'Syne',sans-serif;font-size:.95rem;font-weight:900;margin-bottom:4px;">SSI Auto-formation</div>
+            <div style="font-size:.74rem;opacity:.85;margin-bottom:12px;line-height:1.4;">Scénarios guidés sur les systèmes SSI.</div>
+            <div>
+              <span style="background:rgba(255,255,255,.2);border-radius:8px;padding:5px 12px;font-size:.75rem;font-weight:700;">▶ Commencer →</span>
             </div>
+            <div id="badge-ssi" style="margin-top:6px;font-size:.68rem;opacity:.8;"></div>
           </div>
 
+        </div>
+
+        <!-- BOUTON AVIS & RETOURS -->
+        <div onclick="openAvisModal()" style="
+          display:flex;align-items:center;gap:12px;
+          background:linear-gradient(145deg,#fffbeb,#fef3c7);
+          border:1.5px solid #fde68a;border-radius:16px;
+          padding:14px 18px;cursor:pointer;transition:all .2s;
+          " onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
+          <div style="font-size:1.8rem;">💬</div>
+          <div>
+            <div style="font-size:.88rem;font-weight:800;color:#92400e;">Avis & Retours</div>
+            <div style="font-size:.74rem;color:#b45309;margin-top:2px;">Donnez votre avis sur la formation</div>
+          </div>
+          <div style="margin-left:auto;font-size:1rem;color:#d97706;">→</div>
+        </div>
+
+      </div>
+
+      <!-- MODAL AVIS -->
+      <div id="modal-avis-stag" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;align-items:center;justify-content:center;padding:16px;">
+        <div style="background:#fff;border-radius:20px;padding:24px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.2);">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+            <h3 style="font-size:1rem;font-weight:800;">💬 Avis & Retours</h3>
+            <button onclick="closeAvisModal()" style="width:32px;height:32px;border-radius:50%;background:#f3f4f6;border:none;cursor:pointer;font-size:.9rem;">✕</button>
+          </div>
+          <div style="margin-bottom:12px;">
+            <label style="display:block;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#6b7280;margin-bottom:6px;">Type</label>
+            <select id="avis-type" style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:.85rem;font-family:inherit;outline:none;">
+              <option value="avis">Avis sur la formation</option>
+              <option value="question">Question</option>
+              <option value="probleme">Problème rencontré</option>
+              <option value="suggestion">Suggestion</option>
+            </select>
+          </div>
+          <div style="margin-bottom:12px;">
+            <label style="display:block;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#6b7280;margin-bottom:6px;">Note (optionnel)</label>
+            <div id="star-rating" style="display:flex;gap:6px;font-size:1.6rem;cursor:pointer;">
+              <span onclick="setNote(1)" id="star-1">☆</span>
+              <span onclick="setNote(2)" id="star-2">☆</span>
+              <span onclick="setNote(3)" id="star-3">☆</span>
+              <span onclick="setNote(4)" id="star-4">☆</span>
+              <span onclick="setNote(5)" id="star-5">☆</span>
+            </div>
+          </div>
+          <div style="margin-bottom:16px;">
+            <label style="display:block;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#6b7280;margin-bottom:6px;">Message</label>
+            <textarea id="avis-msg" rows="4" placeholder="Votre message..." style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:.85rem;font-family:inherit;outline:none;resize:none;box-sizing:border-box;"></textarea>
+          </div>
+          <div id="avis-result" style="display:none;text-align:center;padding:12px;background:#f0fdf4;border-radius:10px;color:#16a34a;font-weight:700;margin-bottom:12px;">✅ Avis envoyé !</div>
+          <div style="display:flex;gap:10px;">
+            <button onclick="closeAvisModal()" style="flex:1;padding:10px;border:1.5px solid #e5e7eb;border-radius:10px;background:#f9fafb;cursor:pointer;font-weight:600;font-family:inherit;">Annuler</button>
+            <button onclick="submitAvis()" id="btn-submit-avis" style="flex:2;padding:10px;border:none;border-radius:10px;background:#f59e0b;color:#fff;cursor:pointer;font-weight:700;font-family:inherit;">Envoyer →</button>
+          </div>
         </div>
       </div>
 
