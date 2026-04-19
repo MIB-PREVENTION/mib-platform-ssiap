@@ -1286,24 +1286,21 @@ async function loadStatsGlobal() {
     allEntrG = data || [];
   }
 
-  const pct = e => e.max_score>0 ? Math.round((e.score||0)/e.max_score*100) : 0;
+  const pct = e => e.max_score > 0 ? Math.round((e.score||0)/e.max_score*100) : 0;
   const avgGlobal = allEntrG.length ? Math.round(allEntrG.reduce((a,e)=>a+pct(e),0)/allEntrG.length) : 0;
-  const tauxReussite = allEntrG.length ? Math.round(allEntrG.filter(e=>pct(e)>=70).length/allEntrG.length*100) : 0;
 
-  // Données pour graphes
-  // 1. Évolution score par semaine
-  const byWeek = {};
+  // 1. Évolution par date
+  const byDay = {};
   allEntrG.forEach(e => {
-    const d = new Date(e.started_at);
-    const week = d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'});
-    if (!byWeek[week]) byWeek[week] = [];
-    byWeek[week].push(pct(e));
+    const d = new Date(e.started_at).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'});
+    if (!byDay[d]) byDay[d] = [];
+    byDay[d].push(pct(e));
   });
-  const weekLabels = Object.keys(byWeek).slice(-10);
-  const weekData = weekLabels.map(w => Math.round(byWeek[w].reduce((a,b)=>a+b,0)/byWeek[w].length));
+  const dayLabels = Object.keys(byDay).slice(-10);
+  const dayData = dayLabels.map(d => Math.round(byDay[d].reduce((a,b)=>a+b,0)/byDay[d].length));
 
-  // 2. Distribution scores
-  const dist = [0,0,0,0,0]; // <40, 40-59, 60-79, 80-99, 100
+  // 2. Distribution
+  const dist = [0,0,0,0,0];
   allEntrG.forEach(e => {
     const s = pct(e);
     if (s===100) dist[4]++;
@@ -1320,113 +1317,106 @@ async function loadStatsGlobal() {
     bySt[e.stagiaire_id].push(pct(e));
   });
   const topStags = allStagiaires
-    .filter(s => bySt[s.id])
-    .map(s => ({ name: (s.prenom||'')+' '+(s.nom||''), avg: Math.round(bySt[s.id].reduce((a,b)=>a+b,0)/bySt[s.id].length), nb: bySt[s.id].length }))
+    .filter(s => bySt[s.id] && bySt[s.id].length)
+    .map(s => ({
+      name: ((s.prenom||'') + ' ' + (s.nom||'')).trim(),
+      avg: Math.round(bySt[s.id].reduce((a,b)=>a+b,0)/bySt[s.id].length),
+      nb: bySt[s.id].length
+    }))
     .sort((a,b)=>b.avg-a.avg).slice(0,6);
 
   // 4. Par niveau
   const byNiv = {};
   allEntrG.forEach(e => {
-    const n = e.niveau||'?';
+    const n = e.niveau || '?';
     if (!byNiv[n]) byNiv[n] = [];
     byNiv[n].push(pct(e));
   });
   const nivLabels = Object.keys(byNiv);
   const nivData = nivLabels.map(n => Math.round(byNiv[n].reduce((a,b)=>a+b,0)/byNiv[n].length));
 
-  el.innerHTML = `
-    <div class="stats-kpi-row">
-      <div class="kpi-card"><div class="kpi-icon">📋</div><div class="kpi-val">\${allSessions.length}</div><div class="kpi-lbl">Sessions</div></div>
-      <div class="kpi-card"><div class="kpi-icon">👥</div><div class="kpi-val">\${allStagiaires.length}</div><div class="kpi-lbl">Stagiaires</div></div>
-      <div class="kpi-card"><div class="kpi-icon">🎯</div><div class="kpi-val">\${allEntrG.length}</div><div class="kpi-lbl">Entraînements</div></div>
-      <div class="kpi-card"><div class="kpi-icon">📈</div><div class="kpi-val" style="color:\${avgGlobal>=70?'var(--green)':avgGlobal>=50?'var(--amber)':'var(--rouge)'};">\${avgGlobal}%</div><div class="kpi-lbl">Score moyen global</div></div>
-    </div>
-    <div class="charts-grid">
-      <div class="chart-card">
-        <div class="chart-card-title">📈 Évolution du score moyen</div>
-        <div class="chart-wrap"><canvas id="chart-evolution"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-card-title">📊 Distribution des scores</div>
-        <div class="chart-wrap"><canvas id="chart-dist"></canvas></div>
-      </div>
-    </div>
-    <div class="charts-grid">
-      <div class="chart-card">
-        <div class="chart-card-title">🏆 Top stagiaires</div>
-        <div id="chart-top-stags">\${topStags.length ? topStags.map(s =>
-          '<div class="top-stag-bar">'
-          +'<div class="top-stag-name" title="'+esc(s.name)+'">'+esc(s.name)+'</div>'
-          +'<div class="top-stag-bg"><div class="top-stag-fill" style="width:'+s.avg+'%;background:'+(s.avg>=70?'var(--green)':s.avg>=50?'var(--amber)':'var(--rouge)')+'"></div></div>'
-          +'<div class="top-stag-pct">'+s.avg+'%</div>'
-          +'</div>'
-        ).join('') : '<div class="empty" style="padding:10px;"><p>Pas de données</p></div>'}</div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-card-title">🎓 Score moyen par niveau</div>
-        <div class="chart-wrap"><canvas id="chart-niveau"></canvas></div>
-      </div>
-    </div>
-  `;
+  // Couleur selon score
+  const col = s => s>=70?'var(--green)':s>=50?'var(--amber)':'var(--rouge)';
+
+  // Construire le HTML proprement (sans template literal)
+  const kpiHtml = '<div class="stats-kpi-row">'
+    + '<div class="kpi-card"><div class="kpi-icon">📋</div><div class="kpi-val">'+allSessions.length+'</div><div class="kpi-lbl">Sessions</div></div>'
+    + '<div class="kpi-card"><div class="kpi-icon">👥</div><div class="kpi-val">'+allStagiaires.length+'</div><div class="kpi-lbl">Stagiaires</div></div>'
+    + '<div class="kpi-card"><div class="kpi-icon">🎯</div><div class="kpi-val">'+allEntrG.length+'</div><div class="kpi-lbl">Entraînements</div></div>'
+    + '<div class="kpi-card"><div class="kpi-icon">📈</div><div class="kpi-val" style="color:'+col(avgGlobal)+';">'+avgGlobal+'%</div><div class="kpi-lbl">Score moyen global</div></div>'
+    + '</div>';
+
+  const topHtml = topStags.length
+    ? topStags.map(s =>
+        '<div class="top-stag-bar">'
+        + '<div class="top-stag-name" title="'+esc(s.name)+'">'+esc(s.name)+'</div>'
+        + '<div class="top-stag-bg"><div class="top-stag-fill" style="width:'+s.avg+'%;background:'+col(s.avg)+'"></div></div>'
+        + '<div class="top-stag-pct">'+s.avg+'%</div>'
+        + '</div>'
+      ).join('')
+    : '<div class="empty" style="padding:10px;"><p>Aucun entraînement enregistré.</p></div>';
+
+  el.innerHTML = kpiHtml
+    + '<div class="charts-grid">'
+    + '<div class="chart-card"><div class="chart-card-title">📈 Évolution du score moyen</div><div class="chart-wrap"><canvas id="chart-evo"></canvas></div></div>'
+    + '<div class="chart-card"><div class="chart-card-title">📊 Distribution des scores</div><div class="chart-wrap"><canvas id="chart-dist"></canvas></div></div>'
+    + '</div>'
+    + '<div class="charts-grid">'
+    + '<div class="chart-card"><div class="chart-card-title">🏆 Top stagiaires</div><div id="top-stags-bars">' + topHtml + '</div></div>'
+    + '<div class="chart-card"><div class="chart-card-title">🎓 Score moyen par niveau</div><div class="chart-wrap"><canvas id="chart-niv"></canvas></div></div>'
+    + '</div>';
 
   // Détruire anciens charts
   Object.values(chartsInstances).forEach(ch => { try { ch.destroy(); } catch(e){} });
   chartsInstances = {};
 
-  // Chart évolution
-  if (weekLabels.length) {
-    const ctx1 = document.getElementById('chart-evolution');
-    if (ctx1) chartsInstances.evo = new Chart(ctx1, {
-      type: 'line',
-      data: {
-        labels: weekLabels,
-        datasets: [{ label: 'Score moyen (%)', data: weekData,
-          borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,.1)',
-          borderWidth: 2.5, pointRadius: 4, pointBackgroundColor: '#2563eb',
-          fill: true, tension: .35 }]
-      },
-      options: { responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: { y: { min:0, max:100, ticks: { callback: v=>v+'%', font:{size:10} }, grid:{color:'rgba(0,0,0,.05)'} },
-                  x: { ticks: { font:{size:9} }, grid:{display:false} } } }
+  const chartOpts = { responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{ display:false } } };
+
+  if (dayLabels.length) {
+    const c1 = document.getElementById('chart-evo');
+    if (c1) chartsInstances.evo = new Chart(c1, {
+      type:'line',
+      data:{ labels:dayLabels, datasets:[{
+        label:'Score %', data:dayData,
+        borderColor:'#2563eb', backgroundColor:'rgba(37,99,235,.1)',
+        borderWidth:2.5, pointRadius:4, pointBackgroundColor:'#2563eb',
+        fill:true, tension:.35
+      }]},
+      options:{ ...chartOpts, scales:{
+        y:{ min:0, max:100, ticks:{ callback:v=>v+'%', font:{size:10} }, grid:{ color:'rgba(0,0,0,.05)' } },
+        x:{ ticks:{ font:{size:9} }, grid:{ display:false } }
+      }}
     });
   }
 
-  // Chart distribution
-  const ctx2 = document.getElementById('chart-dist');
-  if (ctx2) chartsInstances.dist = new Chart(ctx2, {
-    type: 'bar',
-    data: {
-      labels: ['< 40%', '40–59%', '60–79%', '80–99%', '100%'],
-      datasets: [{ data: dist,
-        backgroundColor: ['#ef4444','#f97316','#eab308','#22c55e','#16a34a'],
-        borderRadius: 6, borderSkipped: false }]
-    },
-    options: { responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: { y: { ticks: { stepSize:1, font:{size:10} }, grid:{color:'rgba(0,0,0,.05)'} },
-                x: { ticks: { font:{size:10} }, grid:{display:false} } } }
+  const c2 = document.getElementById('chart-dist');
+  if (c2) chartsInstances.dist = new Chart(c2, {
+    type:'bar',
+    data:{ labels:['< 40%','40–59%','60–79%','80–99%','100%'], datasets:[{
+      data:dist,
+      backgroundColor:['#ef4444','#f97316','#eab308','#22c55e','#16a34a'],
+      borderRadius:6, borderSkipped:false
+    }]},
+    options:{ ...chartOpts, scales:{
+      y:{ ticks:{ stepSize:1, font:{size:10} }, grid:{ color:'rgba(0,0,0,.05)' } },
+      x:{ ticks:{ font:{size:10} }, grid:{ display:false } }
+    }}
   });
 
-  // Chart par niveau
   if (nivLabels.length) {
-    const ctx4 = document.getElementById('chart-niveau');
-    if (ctx4) chartsInstances.niv = new Chart(ctx4, {
-      type: 'bar',
-      data: {
-        labels: nivLabels,
-        datasets: [{ label: 'Score moyen', data: nivData,
-          backgroundColor: ['#3b82f6','#8b5cf6','#ec4899'],
-          borderRadius: 8, borderSkipped: false }]
-      },
-      options: { responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: { y: { min:0, max:100, ticks: { callback: v=>v+'%', font:{size:10} }, grid:{color:'rgba(0,0,0,.05)'} },
-                  x: { ticks: { font:{size:10} }, grid:{display:false} } } }
+    const c4 = document.getElementById('chart-niv');
+    if (c4) chartsInstances.niv = new Chart(c4, {
+      type:'bar',
+      data:{ labels:nivLabels, datasets:[{
+        label:'Score moyen', data:nivData,
+        backgroundColor:['#3b82f6','#8b5cf6','#ec4899','#06b6d4'],
+        borderRadius:8, borderSkipped:false
+      }]},
+      options:{ ...chartOpts, scales:{
+        y:{ min:0, max:100, ticks:{ callback:v=>v+'%', font:{size:10} }, grid:{ color:'rgba(0,0,0,.05)' } },
+        x:{ ticks:{ font:{size:10} }, grid:{ display:false } }
+      }}
     });
   }
 }
-
-</script>
-</body>
-</html>
