@@ -665,7 +665,8 @@ function renderOvTop(stags, entr) {
   const el = document.getElementById('ov-top');
   if (!stags.length || !entr.length) { el.innerHTML = emptyState('🏆','Pas encore de données d\'entraînement.'); return; }
   const byS = {};
-  entr.forEach(e => { if (!byS[e.stagiaire_id]) byS[e.stagiaire_id] = []; byS[e.stagiaire_id].push(e.score||0); });
+  const pct = e => e.max_score > 0 ? Math.round((e.score||0)/e.max_score*100) : (e.score||0);
+  entr.forEach(e => { if (!byS[e.stagiaire_id]) byS[e.stagiaire_id] = []; byS[e.stagiaire_id].push(pct(e)); });
   const ranked = stags.filter(s => byS[s.id]).map(s => ({
     ...s,
     avg: Math.round(byS[s.id].reduce((a,b)=>a+b,0)/byS[s.id].length),
@@ -692,7 +693,9 @@ function renderSessionsList(sessions, stags, entr) {
 
 function buildSessCard(sess, allStags, allEntr) {
   const stags = allStags.filter(s => s.session_id === sess.id);
-  const entr  = allEntr.filter(e => e.session_id === sess.id);
+  // Entr = tous les entraînements des stagiaires de cette session (pas de session_id dans la table)
+  const sessStgIds = new Set(stags.map(s => s.id));
+  const entr = allEntr.filter(e => sessStgIds.has(e.stagiaire_id));
   const scorePct = e => e.max_score > 0 ? Math.round((e.score||0)/e.max_score*100) : (e.score||0);
   const avg   = entr.length ? Math.round(entr.reduce((a,e)=>a+scorePct(e),0)/entr.length) : null;
   const taux  = entr.length ? Math.round(entr.filter(e=>scorePct(e)>=70).length/entr.length*100) : null;
@@ -700,8 +703,8 @@ function buildSessCard(sess, allStags, allEntr) {
   const rows = stags.map(stag => {
     const se = entr.filter(e=>e.stagiaire_id===stag.id).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
     const nb = se.length;
-    const a  = nb ? Math.round(se.reduce((x,e)=>x+(e.max_score>0?Math.round((e.score||0)/e.max_score*100):(e.score||0)),0)/nb) : null;
-    const l  = se[0]?.max_score>0?Math.round((se[0].score||0)/se[0].max_score*100):se[0]?.score ?? null;
+    const a  = nb ? Math.round(se.reduce((x,e)=>x+(e.max_score>0?Math.round((e.score||0)/e.max_score*100):0),0)/nb) : null;
+    const l  = se[0]?.max_score>0 ? Math.round((se[0].score||0)/se[0].max_score*100) : null;
     const p  = se[1]?.score ?? null;
     const tr = l===null?'—': p===null?'→': l>p?'↑': l<p?'↓':'→';
     const tCls = tr==='↑'?'trend-up':tr==='↓'?'trend-down':'trend-flat';
@@ -778,14 +781,23 @@ async function showEchecs(stagId, sessId, nom) {
     const entrIds = entrSess.map(e => e.id);
     const { data: repData } = await window.supabase
       .from('entrainement_reponses')
-      .select('session_id, question_id, est_correcte, reponse, questions(question, explication, reponses)')
+      .select('session_id, question_id, est_correcte, reponse')
       .in('session_id', entrIds)
       .eq('est_correcte', false);
-    // Regrouper par session
+    
+    // Charger les questions séparément
+    const echQIds = [...new Set((repData||[]).map(r=>r.question_id).filter(Boolean))];
+    let echQMap = {};
+    if (echQIds.length) {
+      const { data: qData } = await window.supabase
+        .from('questions').select('id, question, explication, niveau').in('id', echQIds);
+      (qData||[]).forEach(q => { echQMap[q.id] = q; });
+    }
+    
     const repMap = {};
     (repData || []).forEach(r => {
       if (!repMap[r.session_id]) repMap[r.session_id] = [];
-      repMap[r.session_id].push(r);
+      repMap[r.session_id].push({ ...r, questions: echQMap[r.question_id] || {} });
     });
     entrSess.forEach(e => entr.push({ ...e, entrainement_reponses: repMap[e.id] || [] }));
   }
@@ -864,11 +876,22 @@ async function loadStatsSess(sessId) {
         .select('session_id, question_id, est_correcte, reponse')
         .in('session_id', entrIds)
         .eq('est_correcte', false);
-      // Attacher les reponses à chaque entr
+      
+      // Charger le texte des questions échouées
+      const failQIds = [...new Set((repData||[]).map(r => r.question_id).filter(Boolean))];
+      let questionsMap = {};
+      if (failQIds.length) {
+        const { data: qData } = await window.supabase
+          .from('questions')
+          .select('id, question, explication, niveau')
+          .in('id', failQIds);
+        (qData || []).forEach(q => { questionsMap[q.id] = q; });
+      }
+      
       const repByEntr = {};
       (repData || []).forEach(r => {
         if (!repByEntr[r.session_id]) repByEntr[r.session_id] = [];
-        repByEntr[r.session_id].push(r);
+        repByEntr[r.session_id].push({ ...r, questions: questionsMap[r.question_id] || {} });
       });
       entr = entr.map(e => ({ ...e, entrainement_reponses: repByEntr[e.id] || [] }));
     }
@@ -879,8 +902,8 @@ async function loadStatsSess(sessId) {
   const rows = stags.map(stag => {
     const se = entr.filter(e=>e.stagiaire_id===stag.id).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
     const nb = se.length;
-    const a  = nb ? Math.round(se.reduce((x,e)=>x+(e.max_score>0?Math.round((e.score||0)/e.max_score*100):(e.score||0)),0)/nb) : null;
-    const l  = se[0]?.max_score>0?Math.round((se[0].score||0)/se[0].max_score*100):se[0]?.score ?? null;
+    const a  = nb ? Math.round(se.reduce((x,e)=>x+(e.max_score>0?Math.round((e.score||0)/e.max_score*100):0),0)/nb) : null;
+    const l  = se[0]?.max_score>0 ? Math.round((se[0].score||0)/se[0].max_score*100) : null;
     const p  = se[1]?.score ?? null;
     const tr = l===null?'—':p===null?'→':l>p?'↑':l<p?'↓':'→';
     const tCls = tr==='↑'?'trend-up':tr==='↓'?'trend-down':'trend-flat';
@@ -975,6 +998,8 @@ async function loadGlobalQ(niv) {
   const el = document.getElementById('global-q-list');
   el.innerHTML = '<div class="loader"><span class="spin"></span>Chargement...</div>';
   const sessIds = allSessions.map(s => s.id);
+  // Recharger si les données ne sont pas encore là
+  if (!allStagiaires.length) { await loadAll(); }
   const stagIdsGlobal = allStagiaires.map(s => s.id).filter(Boolean);
   let entr = [];
   if (stagIdsGlobal.length) {
@@ -989,13 +1014,21 @@ async function loadGlobalQ(niv) {
       // 2. Réponses incorrectes avec texte question
       const { data: repG } = await window.supabase
         .from('entrainement_reponses')
-        .select('session_id, question_id, est_correcte, questions(question, explication)')
+        .select('session_id, question_id, est_correcte')
         .in('session_id', gIds)
         .eq('est_correcte', false);
+      // Questions séparément
+      const gQIds = [...new Set((repG||[]).map(r=>r.question_id).filter(Boolean))];
+      let gQMap = {};
+      if (gQIds.length) {
+        const { data: qGData } = await window.supabase
+          .from('questions').select('id, question, explication, niveau').in('id', gQIds);
+        (qGData||[]).forEach(q => { gQMap[q.id] = q; });
+      }
       const repGMap = {};
       (repG || []).forEach(r => {
         if (!repGMap[r.session_id]) repGMap[r.session_id] = [];
-        repGMap[r.session_id].push(r);
+        repGMap[r.session_id].push({ ...r, questions: gQMap[r.question_id] || {} });
       });
       entr = sessGList.map(e => ({ ...e, entrainement_reponses: repGMap[e.id] || [] }));
     }
