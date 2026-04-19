@@ -1248,7 +1248,7 @@ async function toggleInlineEchecs(rowId, stagId, sessId, tr) {
     + '<div><div style="font-size:.72rem;font-weight:700;color:var(--text3);margin-bottom:8px;">PROGRESSION ('+totalEntr+' sessions)</div>'
     + '<div style="display:flex;gap:6px;align-items:flex-end;">'+hist+'</div></div>'
     + '<div style="flex:1;min-width:160px;padding-top:20px;">'
-    + '<div style="font-size:.72rem;font-weight:700;color:var(--rouge);margin-bottom:4px;">'+echecs.length+' QUESTION'+(echecs.length>1?'S':'')+' ÉCHOUÉE'+(echecs.length>1?'S':'')</div>'
+    + '<div style="font-size:.72rem;font-weight:700;color:var(--rouge);margin-bottom:4px;">'+echecs.length+' QUESTION'+(echecs.length>1?'S':'')+' ÉCHOUÉE'+(echecs.length>1?'S':'')+'</div>'
     + '<div style="font-size:.76rem;color:var(--text3);">Moyenne globale : <b style="color:var(--text);">'+avgScore+'%</b></div>'
     + '</div></div>'
     + echecs.slice(0,8).map((q,i) => {
