@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="../supabase.js"></script>
 <style>
 /* ═══════════ TOKENS ═══════════ */
@@ -277,6 +278,35 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); colo
   .kpi-val { font-size: 1.4rem; }
   .sbar-bg { width: 50px; }
 }
+
+/* ═══ INLINE ÉCHECS ═══ */
+.stag-echecs-row { display: none; }
+.stag-echecs-row.open { display: table-row; }
+.stag-echecs-inner { padding: 0 14px 16px; background: #fdfbfb; border-bottom: 1px solid var(--border); }
+.stag-row { cursor: pointer; }
+.stag-row:hover td { background: var(--subtle); }
+.stag-row td:first-child { position: relative; padding-left: 28px; }
+.stag-row .row-caret { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: .6rem; color: var(--text3); transition: transform .2s; }
+.stag-row.expanded .row-caret { transform: translateY(-50%) rotate(90deg); }
+
+/* ═══ CHARTS STATS ═══ */
+.stats-global { }
+.stats-kpi-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 20px; }
+.charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.chart-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow); }
+.chart-card-title { font-size: .85rem; font-weight: 800; margin-bottom: 14px; color: var(--text); }
+.chart-wrap { position: relative; height: 200px; }
+.chart-wrap canvas { max-height: 200px; }
+.top-stag-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.top-stag-name { font-size: .78rem; font-weight: 600; width: 100px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.top-stag-bg { flex: 1; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+.top-stag-fill { height: 100%; border-radius: 4px; background: var(--rouge); transition: width .6s; }
+.top-stag-pct { font-size: .75rem; font-weight: 700; width: 36px; text-align: right; color: var(--text2); }
+@media (max-width: 768px) {
+  .stats-kpi-row { grid-template-columns: repeat(2,1fr); }
+  .charts-grid { grid-template-columns: 1fr; }
+  .top-stag-name { width: 80px; }
+}
 </style>
 </head>
 <body>
@@ -347,35 +377,11 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); colo
       <div id="sessions-list"><div class="loader"><span class="spin"></span>Chargement...</div></div>
     </div>
 
-    <!-- ─── STATS ─── -->
+    <!-- ─── STATS GLOBALES ─── -->
     <div id="page-stats" class="page">
-      <h2 class="page-title">Statistiques par session</h2>
-      <div class="card">
-        <div class="sel-wrap">
-          <label>Session :</label>
-          <select class="sel-mod" id="stats-sel" onchange="loadStatsSess(this.value)">
-            <option value="">— Choisir une session —</option>
-          </select>
-        </div>
-        <div id="stats-content">
-          <div class="empty"><div class="empty-icon">📊</div><p>Sélectionnez une session pour afficher les statistiques d'entraînement.</p></div>
-        </div>
-      </div>
-
-      <div id="stats-q-block" style="display:none;">
-        <div class="card">
-          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
-            <div>
-              <div class="card-title" style="margin-bottom:2px;">⚠️ Questions à retravailler en présentiel</div>
-              <div style="font-size:.72rem;color:var(--text3);">Classées par taux d'échec parmi les stagiaires de cette session</div>
-            </div>
-            <select class="sel-mod" id="stats-niv-fil" onchange="renderStatsQ()" style="max-width:150px;font-size:.76rem;padding:6px 11px;">
-              <option value="">Tous niveaux</option>
-              <option value="1">SSIAP 1</option><option value="2">SSIAP 2</option><option value="3">SSIAP 3</option>
-            </select>
-          </div>
-          <div id="stats-q-list"></div>
-        </div>
+      <h2 class="page-title">Statistiques globales</h2>
+      <div class="stats-global" id="stats-global-content">
+        <div class="loader"><span class="spin"></span>Chargement des statistiques...</div>
       </div>
     </div>
 
@@ -542,6 +548,7 @@ function showPage(name) {
   closeSidebar();
   if (name === 'questions') loadGlobalQ(1);
   if (name === 'profil') loadProfil();
+  if (name === 'stats') loadStatsGlobal();
 }
 
 /* ══════════════════════════════════════
@@ -701,23 +708,30 @@ function buildSessCard(sess, allStags, allEntr) {
   const taux  = entr.length ? Math.round(entr.filter(e=>scorePct(e)>=70).length/entr.length*100) : null;
 
   const rows = stags.map(stag => {
-    const se = entr.filter(e=>e.stagiaire_id===stag.id).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+    const se = entr.filter(e=>e.stagiaire_id===stag.id).sort((a,b)=>new Date(b.started_at||b.created_at)-new Date(a.started_at||a.created_at));
     const nb = se.length;
     const a  = nb ? Math.round(se.reduce((x,e)=>x+(e.max_score>0?Math.round((e.score||0)/e.max_score*100):0),0)/nb) : null;
     const l  = se[0]?.max_score>0 ? Math.round((se[0].score||0)/se[0].max_score*100) : null;
-    const p  = se[1]?.score ?? null;
+    const p  = se[1]?.max_score>0 ? Math.round((se[1].score||0)/se[1].max_score*100) : null;
     const tr = l===null?'—': p===null?'→': l>p?'↑': l<p?'↓':'→';
     const tCls = tr==='↑'?'trend-up':tr==='↓'?'trend-down':'trend-flat';
-    const hasEch = se.some(e=>(e.details_questions||[]).some(d=>!d.correct));
-    return `<tr>
-      <td style="font-weight:700;">${esc(stag.nom||'')} ${esc(stag.prenom||'')}</td>
-      <td style="color:var(--text3);">${nb}</td>
-      <td>${a!==null?sbar(a):'<span style="color:var(--text3);">—</span>'}</td>
-      <td>${l!==null?l+'%':'—'}</td>
-      <td class="${tCls}" style="font-size:.9rem;">${tr}</td>
-      <td><button class="btn-echecs" ${!hasEch?'disabled':''} onclick="showEchecs('${stag.id}','${sess.id}','${escA(stag.nom+' '+stag.prenom)}')">
-        ${hasEch?'⚠️ Voir échecs':'Aucun échec'}</button></td>
-    </tr>`;
+    const rowId = 'ech-'+stag.id.replace(/-/g,'')+'-'+sess.id.replace(/-/g,'');
+    return '<tr class="stag-row" onclick="toggleInlineEchecs(\''+rowId+'\',\''+stag.id+'\',\''+sess.id+'\',this)">'
+      + '<td style="font-weight:700;position:relative;padding-left:28px;">'
+      + '<span class="row-caret" id="caret-'+rowId+'">▶</span>'
+      + esc(stag.nom||'') + ' ' + esc(stag.prenom||'')
+      + '</td>'
+      + '<td style="color:var(--text3);">'+nb+'</td>'
+      + '<td>'+(a!==null?sbar(a):'<span style="color:var(--text3);">—</span>')+'</td>'
+      + '<td>'+(l!==null?l+'%':'—')+'</td>'
+      + '<td class="'+tCls+'" style="font-size:.9rem;">'+tr+'</td>'
+      + '<td>'+(nb?'<span class="badge badge-gray" style="font-size:.62rem;">▼ Voir détails</span>':'—')+'</td>'
+      + '</tr>'
+      + '<tr class="stag-echecs-row" id="'+rowId+'">'
+      + '<td colspan="6" style="padding:0;">'
+      + '<div id="'+rowId+'-content" style="padding:16px 18px;background:#fdfbfb;border-bottom:1px solid var(--border);">'
+      + '<div class="loader"><span class="spin"></span>Chargement...</div>'
+      + '</div></td></tr>';
   }).join('');
 
   return `<div class="sess-card">
@@ -1147,6 +1161,272 @@ function scoreBadge(score) {
   const c = score>=80?'var(--green)':score>=60?'var(--amber)':'var(--rouge)';
   return `<span style="font-weight:700;color:${c};">${score}%</span>`;
 }
+
+
+/* ══════════════════════════════════════
+   INLINE ÉCHECS (dans Mes Sessions)
+══════════════════════════════════════ */
+async function toggleInlineEchecs(rowId, stagId, sessId, tr) {
+  const row = document.getElementById(rowId);
+  const content = document.getElementById(rowId + '-content');
+  const caret = document.getElementById('caret-' + rowId);
+  const isOpen = row.classList.contains('open');
+
+  if (isOpen) {
+    row.classList.remove('open');
+    tr.classList.remove('expanded');
+    if (caret) caret.style.transform = 'translateY(-50%)';
+    return;
+  }
+
+  row.classList.add('open');
+  tr.classList.add('expanded');
+  if (caret) caret.style.transform = 'translateY(-50%) rotate(90deg)';
+
+  // Charger les entraînements du stagiaire
+  const { data: entrSess } = await window.supabase
+    .from('entrainement_sessions')
+    .select('id, score, max_score, niveau, started_at')
+    .eq('stagiaire_id', stagId)
+    .order('started_at', {ascending: false});
+
+  if (!entrSess || !entrSess.length) {
+    content.innerHTML = '<div class="empty" style="padding:14px;"><p>Aucun entraînement effectué.</p></div>';
+    return;
+  }
+
+  const entrIds = entrSess.map(e => e.id);
+  const { data: repData } = await window.supabase
+    .from('entrainement_reponses')
+    .select('session_id, question_id, est_correcte, reponse')
+    .in('session_id', entrIds)
+    .eq('est_correcte', false);
+
+  const failQIds = [...new Set((repData||[]).map(r=>r.question_id).filter(Boolean))];
+  let qMap = {};
+  if (failQIds.length) {
+    const { data: qData } = await window.supabase
+      .from('questions').select('id, question, explication, niveau').in('id', failQIds);
+    (qData||[]).forEach(q => { qMap[q.id] = q; });
+  }
+
+  // Agréger les échecs
+  const map = {};
+  (repData||[]).forEach(r => {
+    const id = r.question_id;
+    if (!map[id]) map[id] = { question: (qMap[id]||{}).question||'—', explication: (qMap[id]||{}).explication||'', niveau: (qMap[id]||{}).niveau||'', count: 0 };
+    map[id].count++;
+  });
+
+  const echecs = Object.values(map).sort((a,b)=>b.count-a.count);
+  const totalEntr = entrSess.length;
+
+  // Résumé entraînements
+  const avgScore = Math.round(entrSess.reduce((a,e)=>a+(e.max_score>0?Math.round((e.score||0)/e.max_score*100):0),0)/totalEntr);
+  const hist = entrSess.slice(0,6).reverse().map(e => {
+    const pct = e.max_score>0?Math.round((e.score||0)/e.max_score*100):0;
+    const col = pct>=80?'var(--green)':pct>=60?'var(--amber)':'var(--rouge)';
+    return '<div style="display:flex;flex-direction:column;align-items:center;gap:3px;">'
+      + '<div style="font-size:.65rem;font-weight:700;color:'+col+';">'+pct+'%</div>'
+      + '<div style="width:28px;background:var(--border);border-radius:3px;height:40px;display:flex;align-items:flex-end;overflow:hidden;">'
+      + '<div style="width:100%;height:'+pct+'%;background:'+col+';border-radius:2px;transition:height .4s;"></div></div>'
+      + '<div style="font-size:.58rem;color:var(--text3);">'+new Date(e.started_at).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'})+'</div>'
+      + '</div>';
+  }).join('');
+
+  if (!echecs.length) {
+    content.innerHTML = '<div style="display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap;">'
+      + '<div><div style="font-size:.72rem;font-weight:700;color:var(--text3);margin-bottom:8px;">PROGRESSION</div>'
+      + '<div style="display:flex;gap:6px;align-items:flex-end;">'+hist+'</div></div>'
+      + '<div style="flex:1;min-width:160px;">'
+      + '<div class="empty" style="padding:12px;"><div class="empty-icon" style="font-size:1.5rem;">✅</div><p>Aucune question échouée — moyenne '+avgScore+'%</p></div>'
+      + '</div></div>';
+    return;
+  }
+
+  content.innerHTML = '<div style="display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap;margin-bottom:14px;">'
+    + '<div><div style="font-size:.72rem;font-weight:700;color:var(--text3);margin-bottom:8px;">PROGRESSION ('+totalEntr+' sessions)</div>'
+    + '<div style="display:flex;gap:6px;align-items:flex-end;">'+hist+'</div></div>'
+    + '<div style="flex:1;min-width:160px;padding-top:20px;">'
+    + '<div style="font-size:.72rem;font-weight:700;color:var(--rouge);margin-bottom:4px;">'+echecs.length+' QUESTION'+(echecs.length>1?'S':'')+' ÉCHOUÉE'+(echecs.length>1?'S':'')</div>'
+    + '<div style="font-size:.76rem;color:var(--text3);">Moyenne globale : <b style="color:var(--text);">'+avgScore+'%</b></div>'
+    + '</div></div>'
+    + echecs.slice(0,8).map((q,i) => {
+        const pct = Math.round(q.count/totalEntr*100);
+        return '<div class="q-card" style="margin-bottom:8px;">'
+          + '<div class="q-top">'
+          + '<div style="flex:1;"><div class="q-num">Question '+(i+1)+(q.niveau?' · SSIAP '+q.niveau:'')+'</div>'
+          + '<div class="q-text">'+esc(q.question)+'</div>'
+          + '<div class="q-sub">Échouée '+q.count+' fois sur '+totalEntr+' entraînement'+(totalEntr>1?'s':'')+'</div></div>'
+          + '<div class="q-pct">'+pct+'%</div></div>'
+          + (q.explication?'<div class="q-details"><div class="q-box expl"><div class="q-box-lbl">💡 À revoir en présentiel</div>'+esc(q.explication)+'</div></div>':'')
+          + '</div>';
+      }).join('');
+}
+
+/* ══════════════════════════════════════
+   STATS GLOBALES VISUELLES
+══════════════════════════════════════ */
+let chartsInstances = {};
+
+async function loadStatsGlobal() {
+  const el = document.getElementById('stats-global-content');
+  if (!el) return;
+
+  if (!allStagiaires.length) await loadAll();
+
+  const stagIds = allStagiaires.map(s=>s.id).filter(Boolean);
+  let allEntrG = [];
+  if (stagIds.length) {
+    const { data } = await window.supabase
+      .from('entrainement_sessions')
+      .select('id, stagiaire_id, score, max_score, niveau, started_at')
+      .in('stagiaire_id', stagIds)
+      .order('started_at', {ascending: true});
+    allEntrG = data || [];
+  }
+
+  const pct = e => e.max_score>0 ? Math.round((e.score||0)/e.max_score*100) : 0;
+  const avgGlobal = allEntrG.length ? Math.round(allEntrG.reduce((a,e)=>a+pct(e),0)/allEntrG.length) : 0;
+  const tauxReussite = allEntrG.length ? Math.round(allEntrG.filter(e=>pct(e)>=70).length/allEntrG.length*100) : 0;
+
+  // Données pour graphes
+  // 1. Évolution score par semaine
+  const byWeek = {};
+  allEntrG.forEach(e => {
+    const d = new Date(e.started_at);
+    const week = d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'});
+    if (!byWeek[week]) byWeek[week] = [];
+    byWeek[week].push(pct(e));
+  });
+  const weekLabels = Object.keys(byWeek).slice(-10);
+  const weekData = weekLabels.map(w => Math.round(byWeek[w].reduce((a,b)=>a+b,0)/byWeek[w].length));
+
+  // 2. Distribution scores
+  const dist = [0,0,0,0,0]; // <40, 40-59, 60-79, 80-99, 100
+  allEntrG.forEach(e => {
+    const s = pct(e);
+    if (s===100) dist[4]++;
+    else if (s>=80) dist[3]++;
+    else if (s>=60) dist[2]++;
+    else if (s>=40) dist[1]++;
+    else dist[0]++;
+  });
+
+  // 3. Top stagiaires
+  const bySt = {};
+  allEntrG.forEach(e => {
+    if (!bySt[e.stagiaire_id]) bySt[e.stagiaire_id] = [];
+    bySt[e.stagiaire_id].push(pct(e));
+  });
+  const topStags = allStagiaires
+    .filter(s => bySt[s.id])
+    .map(s => ({ name: (s.prenom||'')+' '+(s.nom||''), avg: Math.round(bySt[s.id].reduce((a,b)=>a+b,0)/bySt[s.id].length), nb: bySt[s.id].length }))
+    .sort((a,b)=>b.avg-a.avg).slice(0,6);
+
+  // 4. Par niveau
+  const byNiv = {};
+  allEntrG.forEach(e => {
+    const n = e.niveau||'?';
+    if (!byNiv[n]) byNiv[n] = [];
+    byNiv[n].push(pct(e));
+  });
+  const nivLabels = Object.keys(byNiv);
+  const nivData = nivLabels.map(n => Math.round(byNiv[n].reduce((a,b)=>a+b,0)/byNiv[n].length));
+
+  el.innerHTML = \`
+    <div class="stats-kpi-row">
+      <div class="kpi-card"><div class="kpi-icon">📋</div><div class="kpi-val">\${allSessions.length}</div><div class="kpi-lbl">Sessions</div></div>
+      <div class="kpi-card"><div class="kpi-icon">👥</div><div class="kpi-val">\${allStagiaires.length}</div><div class="kpi-lbl">Stagiaires</div></div>
+      <div class="kpi-card"><div class="kpi-icon">🎯</div><div class="kpi-val">\${allEntrG.length}</div><div class="kpi-lbl">Entraînements</div></div>
+      <div class="kpi-card"><div class="kpi-icon">📈</div><div class="kpi-val" style="color:\${avgGlobal>=70?'var(--green)':avgGlobal>=50?'var(--amber)':'var(--rouge)'};">\${avgGlobal}%</div><div class="kpi-lbl">Score moyen global</div></div>
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-card-title">📈 Évolution du score moyen</div>
+        <div class="chart-wrap"><canvas id="chart-evolution"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-title">📊 Distribution des scores</div>
+        <div class="chart-wrap"><canvas id="chart-dist"></canvas></div>
+      </div>
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-card-title">🏆 Top stagiaires</div>
+        <div id="chart-top-stags">\${topStags.length ? topStags.map(s =>
+          '<div class="top-stag-bar">'
+          +'<div class="top-stag-name" title="'+esc(s.name)+'">'+esc(s.name)+'</div>'
+          +'<div class="top-stag-bg"><div class="top-stag-fill" style="width:'+s.avg+'%;background:'+(s.avg>=70?'var(--green)':s.avg>=50?'var(--amber)':'var(--rouge)')+'"></div></div>'
+          +'<div class="top-stag-pct">'+s.avg+'%</div>'
+          +'</div>'
+        ).join('') : '<div class="empty" style="padding:10px;"><p>Pas de données</p></div>'}</div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-title">🎓 Score moyen par niveau</div>
+        <div class="chart-wrap"><canvas id="chart-niveau"></canvas></div>
+      </div>
+    </div>
+  \`;
+
+  // Détruire anciens charts
+  Object.values(chartsInstances).forEach(ch => { try { ch.destroy(); } catch(e){} });
+  chartsInstances = {};
+
+  // Chart évolution
+  if (weekLabels.length) {
+    const ctx1 = document.getElementById('chart-evolution');
+    if (ctx1) chartsInstances.evo = new Chart(ctx1, {
+      type: 'line',
+      data: {
+        labels: weekLabels,
+        datasets: [{ label: 'Score moyen (%)', data: weekData,
+          borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,.1)',
+          borderWidth: 2.5, pointRadius: 4, pointBackgroundColor: '#2563eb',
+          fill: true, tension: .35 }]
+      },
+      options: { responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { min:0, max:100, ticks: { callback: v=>v+'%', font:{size:10} }, grid:{color:'rgba(0,0,0,.05)'} },
+                  x: { ticks: { font:{size:9} }, grid:{display:false} } } }
+    });
+  }
+
+  // Chart distribution
+  const ctx2 = document.getElementById('chart-dist');
+  if (ctx2) chartsInstances.dist = new Chart(ctx2, {
+    type: 'bar',
+    data: {
+      labels: ['< 40%', '40–59%', '60–79%', '80–99%', '100%'],
+      datasets: [{ data: dist,
+        backgroundColor: ['#ef4444','#f97316','#eab308','#22c55e','#16a34a'],
+        borderRadius: 6, borderSkipped: false }]
+    },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { y: { ticks: { stepSize:1, font:{size:10} }, grid:{color:'rgba(0,0,0,.05)'} },
+                x: { ticks: { font:{size:10} }, grid:{display:false} } } }
+  });
+
+  // Chart par niveau
+  if (nivLabels.length) {
+    const ctx4 = document.getElementById('chart-niveau');
+    if (ctx4) chartsInstances.niv = new Chart(ctx4, {
+      type: 'bar',
+      data: {
+        labels: nivLabels,
+        datasets: [{ label: 'Score moyen', data: nivData,
+          backgroundColor: ['#3b82f6','#8b5cf6','#ec4899'],
+          borderRadius: 8, borderSkipped: false }]
+      },
+      options: { responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { min:0, max:100, ticks: { callback: v=>v+'%', font:{size:10} }, grid:{color:'rgba(0,0,0,.05)'} },
+                  x: { ticks: { font:{size:10} }, grid:{display:false} } } }
+    });
+  }
+}
+
 </script>
 </body>
 </html>
