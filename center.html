@@ -1494,16 +1494,25 @@ window.loadAvis = async function() {
       el.innerHTML = '<div style="text-align:center;color:var(--text3);padding:30px;">Aucun avis envoyé.<br><small>Cliquez sur "+ Nouvel avis" pour partager votre retour.</small></div>';
       return;
     }
-    const typeIcons = {avis:'💬', demande:'📋', bug:'🐛', suggestion:'💡'};
+    const typeIcons = {avis:'💬', demande:'📋', bug:'🐛', suggestion:'💡', question:'❓', probleme:'⚠️'};
     const statutColors = {nouveau:'b-blue', en_cours:'b-orange', resolu:'b-green'};
+    const auteurBadge = t => {
+      if (t === 'stagiaire') return '<span style="font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:999px;background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;margin-right:6px;">👨‍🎓 Stagiaire</span>';
+      if (t === 'formateur') return '<span style="font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:999px;background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;margin-right:6px;">👨‍🏫 Formateur</span>';
+      return '<span style="font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:999px;background:#f3f4f6;color:#6b7280;border:1px solid #e5e7eb;margin-right:6px;">🏢 Centre</span>';
+    };
     el.innerHTML = data.map(a => {
       const date = UTILS.dateStr(a.created_at);
       const icon = typeIcons[a.type] || '💬';
       const cls = statutColors[a.statut] || 'b-gray';
       const stars = a.note ? '⭐'.repeat(a.note) : '';
+      const nom = a.auteur_nom ? '<span style="font-size:.78rem;font-weight:600;color:#374151;">' + a.auteur_nom + '</span>' : '';
       return '<div class="avis-card">'
-        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'
-        + '<span style="font-size:.82rem;font-weight:700;">' + icon + ' ' + (a.type||'avis') + ' — ' + date + (stars?' — '+stars:'') + '</span>'
+        + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;gap:8px;">'
+        + '<div>'
+        + '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-bottom:3px;">' + auteurBadge(a.auteur_type) + nom + '</div>'
+        + '<span style="font-size:.78rem;color:#6b7280;">' + icon + ' ' + (a.type||'avis') + ' · ' + date + (stars?' · '+stars:'') + '</span>'
+        + '</div>'
         + '<span class="badge ' + cls + '">' + (a.statut||'nouveau') + '</span></div>'
         + '<p style="font-size:.85rem;">' + (a.message||'') + '</p>'
         + (a.reponse ? '<div style="margin-top:10px;padding:10px;background:#eff6ff;border-radius:10px;font-size:.82rem;color:#1d4ed8;"><strong>Réponse MIB :</strong> ' + a.reponse + '</div>' : '')
