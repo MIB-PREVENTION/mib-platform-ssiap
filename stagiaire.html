@@ -5,53 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>MIB — Espace Stagiaire</title>
 <meta name="theme-color" content="#f0fdf4">
-<script src="https://cdn.tailwindcss.com">
-let currentNote = 0;
-function setNote(n) {
-  currentNote = n;
-  for(let i=1;i<=5;i++) {
-    document.getElementById('star-'+i).textContent = i<=n ? '★' : '☆';
-    document.getElementById('star-'+i).style.color = i<=n ? '#f59e0b' : '#d1d5db';
-  }
-}
-function openAvisModal() {
-  const m = document.getElementById('modal-avis-stag');
-  m.style.display = 'flex';
-  currentNote = 0;
-  for(let i=1;i<=5;i++) {
-    document.getElementById('star-'+i).textContent = '☆';
-    document.getElementById('star-'+i).style.color = '#d1d5db';
-  }
-  document.getElementById('avis-msg').value = '';
-  document.getElementById('avis-result').style.display = 'none';
-}
-function closeAvisModal() {
-  document.getElementById('modal-avis-stag').style.display = 'none';
-}
-async function submitAvis() {
-  const msg = document.getElementById('avis-msg').value.trim();
-  if (!msg) { alert('Veuillez écrire un message.'); return; }
-  const btn = document.getElementById('btn-submit-avis');
-  btn.disabled = true; btn.textContent = '⏳';
-  try {
-    const centerId = STAGIAIRE?.center_id || centerData?.id || null;
-    await supabase.from('avis_retours').insert({
-      center_id: centerId,
-      auteur_type: 'stagiaire',
-      auteur_id: STAGIAIRE?.id || null,
-      auteur_nom: (STAGIAIRE?.prenom||'') + ' ' + (STAGIAIRE?.nom||''),
-      type: document.getElementById('avis-type').value,
-      note: currentNote || null,
-      message: msg,
-      statut: 'nouveau'
-    });
-    document.getElementById('avis-result').style.display = 'block';
-    setTimeout(closeAvisModal, 2000);
-  } catch(e) { alert('Erreur : ' + e.message); }
-  finally { btn.disabled = false; btn.textContent = 'Envoyer →'; }
-}
-
-</script>
+<script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="supabase.js"></script>
 <style>
@@ -388,6 +342,51 @@ window.logout = function() {
   SESSION.clear('stagiaire');
   window.location.href = 'login-stagiaire.html';
 };
+
+let currentNote = 0;
+function setNote(n) {
+  currentNote = n;
+  for(let i=1;i<=5;i++) {
+    document.getElementById('star-'+i).textContent = i<=n ? '★' : '☆';
+    document.getElementById('star-'+i).style.color = i<=n ? '#f59e0b' : '#d1d5db';
+  }
+}
+function openAvisModal() {
+  const m = document.getElementById('modal-avis-stag');
+  m.style.display = 'flex';
+  currentNote = 0;
+  for(let i=1;i<=5;i++) {
+    document.getElementById('star-'+i).textContent = '☆';
+    document.getElementById('star-'+i).style.color = '#d1d5db';
+  }
+  document.getElementById('avis-msg').value = '';
+  document.getElementById('avis-result').style.display = 'none';
+}
+function closeAvisModal() {
+  document.getElementById('modal-avis-stag').style.display = 'none';
+}
+async function submitAvis() {
+  const msg = document.getElementById('avis-msg').value.trim();
+  if (!msg) { alert('Veuillez écrire un message.'); return; }
+  const btn = document.getElementById('btn-submit-avis');
+  btn.disabled = true; btn.textContent = '⏳';
+  try {
+    const centerId = STAGIAIRE?.center_id || centerData?.id || null;
+    await window.supabase.from('avis_retours').insert({
+      center_id: centerId,
+      auteur_type: 'stagiaire',
+      auteur_id: STAGIAIRE?.id || null,
+      auteur_nom: (STAGIAIRE?.prenom||'') + ' ' + (STAGIAIRE?.nom||''),
+      type: document.getElementById('avis-type').value,
+      note: currentNote || null,
+      message: msg,
+      statut: 'nouveau'
+    });
+    document.getElementById('avis-result').style.display = 'block';
+    setTimeout(closeAvisModal, 2000);
+  } catch(e) { alert('Erreur : ' + e.message); }
+  finally { btn.disabled = false; btn.textContent = 'Envoyer →'; }
+}
 </script>
 </body>
 </html>
