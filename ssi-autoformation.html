@@ -124,11 +124,7 @@ function playGeneralAlarm(){
   } catch(e){}
 }
 function onArretSonore(){
-  if(STATE.accessLevel<2){
-    showCustomAlert('⚠️ Niveau 2 SDI requis pour arrêter le signal sonore.<br>Utilisez le clavier : code 00000 + ✓');
-    return;
-  }
-  logAction('Arrêt signal sonore SDI','Bouton ARRÊT pressé - Niveau '+STATE.accessLevel);
+  logAction('Arrêt signal sonore SDI','Niveau '+STATE.accessLevel);
   stopAlarmSound();
   // Déclencher la modale de scénario si scénario DAI/DM actif
   const sc=STATE.activeScenario;
@@ -264,7 +260,12 @@ function forceGeneralAlarm(){
 }
 function acquitProcess(){
   if(STATE.smsiAccessLevel<2){
-    showCustomAlert('⚠️ Niveau 2 SMSI requis pour acquitter.<br>Utilisez la clé 🔑 pour passer en niveau 2.');
+    showCustomAlert('⚠️ Niveau 2 SMSI requis pour acquitter le processus.<br>Utilisez la clé 🔑 pour passer en niveau 2.');
+    return;
+  }
+  // Vérifier si on attend un acquit dans le flow scénario
+  if(STATE.scenarioState.waitingFor==='acquit_smsi'){
+    STATE.smsiAccessLevel>=2 ? onScenarioAcquit() : showCustomAlert('⚠️ Niveau 2 SMSI requis.');
     return;
   }
   if(STATE.uga.temporizationActive){
@@ -292,6 +293,8 @@ function resetSdiSystem(){
   stopAlarmSound(true);
   if(STATE.uga.temporizationActive){clearInterval(temporizationTimer);STATE.uga.temporizationActive=false;STATE.uga.temporizationRemaining=0;}
   logAction('Réarmement SDI');render();
+  // Flow scénario : attente réarmement SDI
+  if(STATE.scenarioState.waitingFor==='rearm_sdi'){onScenarioRearmSdi();}
 }
 function resetSmsiSystem(){
   if(!canResetSmsiSystem()){showGuidance('erreur_rearm_smsi');return;}
@@ -301,6 +304,8 @@ function resetSmsiSystem(){
   STATE.uga.alarmActive=false;STATE.uga.temporizationActive=false;STATE.uga.temporizationRemaining=0;
   stopGeneralAlarm();stopAlarmSound(true);
   logAction('Réarmement SMSI');
+  // Flow scénario : attente réarmement SMSI
+  if(STATE.scenarioState.waitingFor==='rearm_smsi'){onScenarioRearmSmsi();return;}
   if(STATE.activeScenario==='rearmement'){
     setTimeout(()=>{showScenarioEndModal('Réarmement terminé!','Le SSI a été entièrement réarmé.<br><br>• SDI réarmé ✅<br>• SMSI réarmé ✅<br>• DAS en attente ✅<br><br>N\'oubliez pas de consigner dans la main courante.');},500);
   }
@@ -768,7 +773,15 @@ if(STATE.scenarioState.defautDas){
 showSuccessModal('🎉 Bonne procédure!','Avant de réarmer, vous devez traiter le <strong>défaut de position de sécurité</strong> détecté sur un DAS.');
 setTimeout(()=>{showDefautDasModal();},2000);
 }else{
-showScenarioEndModal('Fausse alarme traitée!',getSuccessMessage(type)+'<br><br>Procédez au réarmement SDI puis SMSI.');
+// Flow guidé : le stagiaire doit effectuer les actions sur le panneau
+STATE.scenarioState.waitingFor='acquit_smsi';
+showStepGuidance('✅ Bonne réponse — Acquittez le processus',
+'La levée de doute confirme une fausse alarme.<br><br>'+
+'<strong>Action requise sur le SMSI :</strong><br>'+
+'1. Passez en niveau 2 SMSI (clé 🔑)<br>'+
+'2. Appuyez sur ✋ <strong>ACQUIT</strong> sur l'UGA<br><br>'+
+'<em>Le scénario continuera quand vous aurez effectué cette action.</em>'
+);
 }
 return;
 }
@@ -974,6 +987,77 @@ async function saveScenarioSession(){
       created_at:new Date().toISOString()
     });
   } catch(e){console.warn('Erreur sauvegarde session SSI:',e);}
+}
+
+/* ===================== FLOW SCÉNARIO GUIDÉ ===================== */
+
+// Affiche une modal d'instruction (pas de choix) — le stagiaire doit agir sur le panneau
+function showStepGuidance(title, msg){
+  document.querySelectorAll('.step-guidance').forEach(m=>m.remove());
+  const m=document.createElement('div');m.className='modal-overlay step-guidance';
+  m.innerHTML='<div class="modal-content" onclick="event.stopPropagation()">'+
+    '<div style="font-size:36px;margin-bottom:10px;text-align:center">📋</div>'+
+    '<h3 style="font-size:17px;font-weight:bold;margin-bottom:12px;color:#2563eb;text-align:center">'+title+'</h3>'+
+    '<div style="font-size:14px;margin-bottom:16px;line-height:1.7;background:#eff6ff;padding:12px;border-radius:8px;border-left:4px solid #3b82f6">'+msg+'</div>'+
+    '<button onclick="this.closest('.modal-overlay').remove()" style="width:100%;padding:12px;background:#2563eb;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:bold;font-size:14px">Compris, j'y vais ✓</button>'+
+    '</div>';
+  document.body.appendChild(m);
+}
+
+// Appelé quand le stagiaire fait ACQUIT dans le flow fausse alarme
+function onScenarioAcquit(){
+  if(!STATE.uga.temporizationActive&&!STATE.sdi.fireAlarmActive&&!STATE.uga.alarmActive){
+    showCustomAlert('⚠️ Il n'y a pas de processus d'alarme en cours à acquitter.');
+    return;
+  }
+  // Acquitter le processus
+  if(STATE.uga.temporizationActive){clearInterval(temporizationTimer);STATE.uga.temporizationActive=false;STATE.uga.temporizationRemaining=0;}
+  addSmsiMessage('Processus alarme acquitté');
+  logAction('Acquit processus alarme SMSI','Niveau '+STATE.smsiAccessLevel);
+  render();
+  // Étape suivante : réarmer SDI
+  STATE.scenarioState.waitingFor='rearm_sdi';
+  setTimeout(()=>{
+    document.querySelectorAll('.step-guidance').forEach(m=>m.remove());
+    showStepGuidance('✅ Processus acquitté — Réarmez le SDI',
+      '<strong>Action requise sur le SDI :</strong><br>'+
+      '1. Passez en niveau 2 SDI (code <strong>00000</strong> + ✓)<br>'+
+      '2. Appuyez sur 🔄 <strong>RÉARM</strong><br><br>'+
+      '<em>Vérifiez que tous les détecteurs sont bien réarmés physiquement.</em>'
+    );
+  },400);
+}
+
+// Appelé quand le stagiaire réarme le SDI dans le flow
+function onScenarioRearmSdi(){
+  STATE.scenarioState.waitingFor='rearm_smsi';
+  setTimeout(()=>{
+    document.querySelectorAll('.step-guidance').forEach(m=>m.remove());
+    showStepGuidance('✅ SDI réarmé — Réarmez le SMSI',
+      '<strong>Action requise sur le SMSI :</strong><br>'+
+      '1. Passez en niveau 2 SMSI (clé 🔑)<br>'+
+      '2. Vérifiez que tous les DAS sont en position d'attente<br>'+
+      '3. Appuyez sur 🔄 <strong>RÉARMEMENT SMSI</strong><br><br>'+
+      '<em>Le scénario se terminera après le réarmement SMSI.</em>'
+    );
+  },400);
+}
+
+// Appelé quand le stagiaire réarme le SMSI → fin du scénario
+function onScenarioRearmSmsi(){
+  STATE.scenarioState.waitingFor=null;
+  document.querySelectorAll('.step-guidance').forEach(m=>m.remove());
+  setTimeout(()=>{
+    showScenarioEndModal('🎉 Scénario terminé !',
+      'Procédure complète effectuée avec succès :<br><br>'+
+      '✅ Signal sonore arrêté<br>'+
+      '✅ Levée de doute effectuée<br>'+
+      '✅ Processus alarme acquitté (SMSI niv.2)<br>'+
+      '✅ SDI réarmé (SDI niv.2)<br>'+
+      '✅ SMSI réarmé (SMSI niv.2)<br><br>'+
+      '<em>N'oubliez pas de consigner dans la main courante.</em>'
+    );
+  },300);
 }
 
 /* ===================== HELPERS NOM ===================== */
