@@ -140,7 +140,7 @@ function goBack(){
 /* ===================== CORE SSI ===================== */
 function logAction(action,details){
   const u=STATE.currentUser;
-  const n=u?((u.prenom||'')+' '+(u.nom||'')).trim():'Stagiaire';
+  const n=u?_userName(u):'Stagiaire';
   STATE.actionLog.push({timestamp:new Date().toISOString(),trainee:n,action,details:details||''});
 }
 function addSmsiMessage(msg){
@@ -808,7 +808,7 @@ function renderTraining(){
   h+='<div class="w-px h-5 bg-gray-300"></div>';
   h+='<div>';
   h+='<h1 class="text-base font-bold text-gray-900">🔥 Simulateur SSI</h1>';
-  h+='<p class="text-xs text-gray-500">'+(u?u.prenom+' '+u.nom:'Auto-entraînement')+'</p>';
+  h+='<p class="text-xs text-gray-500">'+(u?_userName(u):'Auto-entraînement')+'</p>';
   h+='</div></div>';
   h+='<div class="flex items-center gap-2">';
   h+='<select onchange="if(this.value)startScenario(this.value);this.value=\'\'" class="px-3 py-1.5 bg-orange-500 text-white rounded-lg font-bold text-xs cursor-pointer border-0 outline-none"><option value="">🎯 Scénario...</option><option value="prise_de_poste">📋 Prise de poste</option><option value="declenchement_dai">🔍 Déclenchement DAI</option><option value="declenchement_dm">🚨 Déclenchement DM</option><option value="rearmement">🔄 Réarmement SSI</option><option value="mise_hs">🔒 Mise Hors Service</option><option value="remise_service">🔓 Remise en Service</option></select>';
@@ -974,6 +974,20 @@ function renderSmsiPanel(){
   h+='</div>';
   h+='</div>';
   return h;
+}
+
+/* ===================== HELPERS NOM ===================== */
+function _userName(u){
+  if(!u) return 'Stagiaire';
+  // Variantes possibles selon le rôle (stagiaire, formateur)
+  if(u.nom_affiche) return u.nom_affiche;
+  if(u.prenom && u.nom) return (u.prenom+' '+u.nom).trim();
+  if(u.prenom) return u.prenom;
+  if(u.nom) return u.nom;
+  if(u.stagiaire_nom) return u.stagiaire_nom;
+  if(u.formateur_nom) return u.formateur_nom;
+  if(u.email) return u.email.split('@')[0];
+  return 'Stagiaire';
 }
 
 /* ===================== INIT ===================== */
