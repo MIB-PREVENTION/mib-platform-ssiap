@@ -949,6 +949,19 @@ async function saveScenarioSession(){
   } catch(e){console.warn('Erreur sauvegarde session SSI:',e);}
 }
 
+/* ===================== HELPERS NOM ===================== */
+function _userName(u){
+  if(!u) return 'Stagiaire';
+  if(u.nom_affiche) return u.nom_affiche;
+  if(u.prenom && u.nom) return (u.prenom+' '+u.nom).trim();
+  if(u.prenom) return u.prenom;
+  if(u.nom) return u.nom;
+  if(u.stagiaire_nom) return u.stagiaire_nom;
+  if(u.formateur_nom) return u.formateur_nom;
+  if(u.email) return u.email.split('@')[0];
+  return 'Stagiaire';
+}
+
 /* ===================== RENDER ===================== */
 function render(){
   document.getElementById('app').innerHTML=renderTraining();
