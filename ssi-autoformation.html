@@ -123,6 +123,19 @@ function playGeneralAlarm(){
     o.start(); STATE.generalAlarmOsc=o;
   } catch(e){}
 }
+function onArretSonore(){
+  if(STATE.accessLevel<2){
+    showCustomAlert('⚠️ Niveau 2 SDI requis pour arrêter le signal sonore.<br>Utilisez le clavier : code 00000 + ✓');
+    return;
+  }
+  logAction('Arrêt signal sonore SDI','Bouton ARRÊT pressé - Niveau '+STATE.accessLevel);
+  stopAlarmSound();
+  // Déclencher la modale de scénario si scénario DAI/DM actif
+  const sc=STATE.activeScenario;
+  if(sc==='declenchement_dai'||sc==='declenchement_dm'){
+    setTimeout(()=>{showConduiteATenirModal();},300);
+  }
+}
 function stopAlarmSound(skipRender){
   if(STATE.alarmBeepInterval){clearInterval(STATE.alarmBeepInterval);STATE.alarmBeepInterval=null;}
   STATE.sdi.alarmSound=false;
@@ -250,6 +263,10 @@ function forceGeneralAlarm(){
   if(!STATE.uga.alarmActive)triggerGeneralAlarm();
 }
 function acquitProcess(){
+  if(STATE.smsiAccessLevel<2){
+    showCustomAlert('⚠️ Niveau 2 SMSI requis pour acquitter.<br>Utilisez la clé 🔑 pour passer en niveau 2.');
+    return;
+  }
   if(STATE.uga.temporizationActive){
     if(STATE.scenarioState.leveeResult==='feu_avere'){
       addSmsiMessage('❌ ERREUR: Feu avéré en cours!');
@@ -325,9 +342,13 @@ function openSmsiLevelModal(){
 }
 function setSmsiLevel(l){STATE.smsiAccessLevel=l;logAction('SMSI niveau '+l);addSmsiMessage('Niveau '+l);const m=document.getElementById('smsi-level-modal');if(m)m.remove();render();}
 function commandZone(zt,id){
+  if(STATE.smsiAccessLevel<2){
+    showCustomAlert('⚠️ Niveau 2 SMSI requis pour commander les DAS.<br>Utilisez la clé 🔑 pour passer en niveau 2.');
+    return;
+  }
   let z;
-  if(zt==='compartment'){z=STATE.smsi.compartmentZones.find(x=>x.id===id);addSmsiMessage('Commande fermeture '+z.address);logAction('Commande fermeture '+z.address);}
-  else{z=STATE.smsi.smokeZones.find(x=>x.id===id);addSmsiMessage('Commande démarrage '+z.address);logAction('Commande démarrage '+z.address);}
+  if(zt==='compartment'){z=STATE.smsi.compartmentZones.find(x=>x.id===id);addSmsiMessage('CMD fermeture '+z.zone+' - '+z.dasName);logAction('CMD fermeture '+z.zone,z.dasName);}
+  else{z=STATE.smsi.smokeZones.find(x=>x.id===id);addSmsiMessage('CMD désenfumage '+z.zone+' - '+z.dasName);logAction('CMD désenfumage '+z.zone,z.dasName);}
   z.commandActive=true;render();
 }
 function stopRelay(id){
@@ -465,7 +486,10 @@ defautDasInfo={type:'smoke',id:zn,zone:z.zone,dasName:z.dasName,dasLocation:z.da
 STATE.scenarioState.zone=zn;STATE.scenarioState.detectorId=daiId;STATE.scenarioState.detectorType='DAI';STATE.scenarioState.defautDas=defautDasInfo;
 setTimeout(()=>{
 triggerDetector('DAI',daiId,true);
-setZoneState('compartment',zn,'securite');setZoneState('smoke',zn,'securite');setZoneState('relay',zn,'securite');
+// Ne pas écraser le defaut-securite : on setZoneState seulement si pas de defaut sur ce type
+if(!defautDasInfo||defautDasInfo.type!=='compartment')setZoneState('compartment',zn,'securite');
+if(!defautDasInfo||defautDasInfo.type!=='smoke')setZoneState('smoke',zn,'securite');
+setZoneState('relay',zn,'securite');
 if(defautDasInfo){addSmsiMessage('⚠️ DÉFAUT SÉCURITÉ: '+defautDasInfo.dasName+' - '+defautDasInfo.dasLocation+' ('+defautDasInfo.zone+')');}
 render();
 },2000);
@@ -490,7 +514,9 @@ defautDasInfo={type:'smoke',id:zn,zone:z.zone,dasName:z.dasName,dasLocation:z.da
 STATE.scenarioState.zone=zn;STATE.scenarioState.detectorId=dmId;STATE.scenarioState.detectorType='DM';STATE.scenarioState.defautDas=defautDasInfo;
 setTimeout(()=>{
 triggerDetector('DM',dmId,true);
-setZoneState('compartment',zn,'securite');setZoneState('smoke',zn,'securite');setZoneState('relay',zn,'securite');
+if(!defautDasInfo||defautDasInfo.type!=='compartment')setZoneState('compartment',zn,'securite');
+if(!defautDasInfo||defautDasInfo.type!=='smoke')setZoneState('smoke',zn,'securite');
+setZoneState('relay',zn,'securite');
 if(defautDasInfo){addSmsiMessage('⚠️ DÉFAUT SÉCURITÉ: '+defautDasInfo.dasName+' - '+defautDasInfo.dasLocation+' ('+defautDasInfo.zone+')');}
 render();
 },2000);
@@ -1020,7 +1046,7 @@ h+='</div></div>';
 h+='<div class="bg-gray-800 px-2 py-2 rounded mb-2 flex items-center justify-between">';
 h+='<span class="text-white text-xs font-bold">ALARME FEU</span>';
 h+='<div class="flex items-center gap-2"><span class="led-light '+(STATE.sdi.fireAlarmActive?'led-red blink':'led-off')+'"></span>';
-if(STATE.sdi.alarmSound)h+='<button onclick="stopAlarmSound();render()" class="px-2 py-1 bg-yellow-600 text-white rounded text-xs font-bold">🔇 ARRÊT</button>';
+if(STATE.sdi.alarmSound)h+='<button onclick="onArretSonore()" class="px-2 py-1 bg-yellow-600 text-white rounded text-xs font-bold">🔇 ARRÊT</button>';
 h+='</div></div>';
 h+='<div class="grid grid-cols-4 gap-1 mb-2">';
 h+='<button onclick="toggleAccessLevel(\'sdi\')" class="py-2 text-xs font-bold text-white rounded '+(STATE.accessLevel===1?'bg-green-600':'bg-yellow-600')+'">🔑 Niv.'+STATE.accessLevel+'</button>';
