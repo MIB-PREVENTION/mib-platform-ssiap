@@ -110,6 +110,7 @@ function _beep(freq,dur,vol=0.25){
 }
 function playAlarmSound(){
   stopAlarmSound(true);
+  STATE.sdi.alarmSound=true; // remettre à true après le stop (stop remet à false)
   _beep(970,0.2);
   STATE.alarmBeepInterval = setInterval(()=>{ if(STATE.sdi.alarmSound) _beep(970,0.2); },600);
 }
@@ -177,7 +178,7 @@ function setZoneState(zt,id,state){
   let z;
   if(zt==='compartment'){z=STATE.smsi.compartmentZones.find(x=>x.id===id);if(z){z.state=state;updateZoneLeds(z);addSmsiMessage(z.address+': '+state);}}
   else if(zt==='smoke'){z=STATE.smsi.smokeZones.find(x=>x.id===id);if(z){z.state=state;updateZoneLeds(z);addSmsiMessage(z.address+': '+state);}}
-  else if(zt==='relay'){z=STATE.smsi.relayBoxes.find(x=>x.id===id);if(z){z.state=state;updateRelayLeds(z);addSmsiMessage(z.address+': '+state);}}
+  else if(zt==='relay'){z=STATE.smsi.relayBoxes.find(x=>x.id===id);if(z){z.state=state;updateRelayLeds(z);addSmsiMessage('Coffret CR'+z.id+': '+state);}}
 }
 function updateZoneLeds(z){
   z.ledRed={on:false,blink:false};z.ledOrange={on:false,blink:false};z.ledGreen={on:false,blink:false};
