@@ -1016,7 +1016,7 @@ function showStepGuidance(title, msg){
 // Appelé quand le stagiaire fait ACQUIT dans le flow fausse alarme
 function onScenarioAcquit(){
   if(!STATE.uga.temporizationActive&&!STATE.sdi.fireAlarmActive&&!STATE.uga.alarmActive){
-    showCustomAlert('⚠️ Il n\'y a pas de processus en cours à acquitter.');
+    showCustomAlert('⚠️ Il n\'y a pas de processus en cours a acquitter.');
     return;
   }
   // Acquitter le processus
@@ -1057,14 +1057,14 @@ function onScenarioRearmSmsi(){
   STATE.scenarioState.waitingFor=null;
   document.querySelectorAll('.step-guidance').forEach(m=>m.remove());
   setTimeout(()=>{
-    showScenarioEndModal('🎉 Scénario terminé !',
-      'Procédure complète effectuée avec succès :<br><br>'+
-      '✅ Signal sonore arrêté<br>'+
-      '✅ Levée de doute effectuée<br>'+
-      '✅ Processus alarme acquitté (SMSI niv.2)<br>'+
-      '✅ SDI réarmé (SDI niv.2)<br>'+
-      '✅ SMSI réarmé (SMSI niv.2)<br><br>'+
-      '<em>N'oubliez pas de consigner dans la main courante.</em>'
+    showScenarioEndModal('Scenario termine !',
+      'Procedure complete avec succes :<br><br>'+
+      'Signal sonore arrete<br>'+
+      'Levee de doute effectuee<br>'+
+      'Processus alarme acquitte (SMSI niv.2)<br>'+
+      'SDI rearm\u00e9 (SDI niv.2)<br>'+
+      'SMSI rearm\u00e9 (SMSI niv.2)<br><br>'+
+      'N\'oubliez pas de consigner dans la main courante.'
     );
   },300);
 }
