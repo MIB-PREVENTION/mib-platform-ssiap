@@ -779,7 +779,7 @@ showStepGuidance('✅ Bonne réponse — Acquittez le processus',
 'La levée de doute confirme une fausse alarme.<br><br>'+
 '<strong>Action requise sur le SMSI :</strong><br>'+
 '1. Passez en niveau 2 SMSI (clé 🔑)<br>'+
-'2. Appuyez sur ✋ <strong>ACQUIT</strong> sur l'UGA<br><br>'+
+'2. Appuyez sur ✋ <strong>ACQUIT</strong> sur l\'UGA<br><br>'+
 '<em>Le scénario continuera quand vous aurez effectué cette action.</em>'
 );
 }
@@ -1007,7 +1007,7 @@ function showStepGuidance(title, msg){
 // Appelé quand le stagiaire fait ACQUIT dans le flow fausse alarme
 function onScenarioAcquit(){
   if(!STATE.uga.temporizationActive&&!STATE.sdi.fireAlarmActive&&!STATE.uga.alarmActive){
-    showCustomAlert('⚠️ Il n'y a pas de processus d'alarme en cours à acquitter.');
+    showCustomAlert('⚠️ Il n\'y a pas de processus d'alarme en cours à acquitter.');
     return;
   }
   // Acquitter le processus
@@ -1036,7 +1036,7 @@ function onScenarioRearmSdi(){
     showStepGuidance('✅ SDI réarmé — Réarmez le SMSI',
       '<strong>Action requise sur le SMSI :</strong><br>'+
       '1. Passez en niveau 2 SMSI (clé 🔑)<br>'+
-      '2. Vérifiez que tous les DAS sont en position d'attente<br>'+
+      '2. Vérifiez que tous les DAS sont en position d\'attente<br>'+
       '3. Appuyez sur 🔄 <strong>RÉARMEMENT SMSI</strong><br><br>'+
       '<em>Le scénario se terminera après le réarmement SMSI.</em>'
     );
