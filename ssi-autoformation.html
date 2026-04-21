@@ -993,21 +993,30 @@ async function saveScenarioSession(){
 
 // Affiche une modal d'instruction (pas de choix) — le stagiaire doit agir sur le panneau
 function showStepGuidance(title, msg){
-  document.querySelectorAll('.step-guidance').forEach(m=>m.remove());
-  const m=document.createElement('div');m.className='modal-overlay step-guidance';
-  m.innerHTML='<div class="modal-content" onclick="event.stopPropagation()">'+
-    '<div style="font-size:36px;margin-bottom:10px;text-align:center">📋</div>'+
-    '<h3 style="font-size:17px;font-weight:bold;margin-bottom:12px;color:#2563eb;text-align:center">'+title+'</h3>'+
-    '<div style="font-size:14px;margin-bottom:16px;line-height:1.7;background:#eff6ff;padding:12px;border-radius:8px;border-left:4px solid #3b82f6">'+msg+'</div>'+
-    '<button onclick="this.closest('.modal-overlay').remove()" style="width:100%;padding:12px;background:#2563eb;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:bold;font-size:14px">Compris, j'y vais ✓</button>'+
-    '</div>';
-  document.body.appendChild(m);
+  document.querySelectorAll('.step-guidance').forEach(function(m){m.remove();});
+  var overlay=document.createElement('div');
+  overlay.className='modal-overlay step-guidance';
+  var box=document.createElement('div');
+  box.className='modal-content';
+  box.style.cssText='text-align:center';
+  box.setAttribute('onclick','event.stopPropagation()');
+  box.innerHTML='<div style="font-size:36px;margin-bottom:10px">📋</div>'+
+    '<h3 style="font-size:17px;font-weight:bold;margin-bottom:12px;color:#2563eb">'+title+'</h3>'+
+    '<div style="font-size:14px;margin-bottom:16px;line-height:1.7;background:#eff6ff;padding:12px;border-radius:8px;border-left:4px solid #3b82f6;text-align:left">'+msg+'</div>';
+  var btn=document.createElement('button');
+  btn.style.cssText='width:100%;padding:12px;background:#2563eb;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:bold;font-size:14px';
+  btn.textContent='Compris, j’y vais ✓';
+  btn.onclick=function(){overlay.remove();};
+  box.appendChild(btn);
+  overlay.appendChild(box);
+  overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});
+  document.body.appendChild(overlay);
 }
 
 // Appelé quand le stagiaire fait ACQUIT dans le flow fausse alarme
 function onScenarioAcquit(){
   if(!STATE.uga.temporizationActive&&!STATE.sdi.fireAlarmActive&&!STATE.uga.alarmActive){
-    showCustomAlert('⚠️ Il n\'y a pas de processus d'alarme en cours à acquitter.');
+    showCustomAlert('⚠️ Il n\'y a pas de processus en cours à acquitter.');
     return;
   }
   // Acquitter le processus
