@@ -307,6 +307,17 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); colo
   .charts-grid { grid-template-columns: 1fr; }
   .top-stag-name { width: 80px; }
 }
+
+/* ═══ SHORTCUT BUTTONS ═══ */
+.shortcut-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 9px; border: 1px solid transparent; border-radius: 8px;
+  font-size: .67rem; font-weight: 700; text-decoration: none;
+  transition: all .14s; white-space: nowrap; cursor: pointer;
+}
+@media (max-width: 600px) {
+  .shortcut-btn { padding: 3px 7px; font-size: .62rem; }
+}
 </style>
 </head>
 <body>
@@ -792,7 +803,25 @@ function buildSessCard(sess, allStags, allEntr) {
         <div class="sess-name">${esc(sess.titre||sess.nom||(sess.type_formation?sess.type_formation+' '+sess.niveau:sess.id.substring(0,8)+'…'))}</div>
         <div class="sess-meta">${sess.niveau||''} · ${fmtDate(sess.date_debut||sess.created_at)}</div>
       </div>
-      <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;">
+        <a href="ssi-supervise.html?session=${sess.id}&role=formateur" target="_blank"
+           onclick="event.stopPropagation()"
+           class="shortcut-btn" style="background:#fef2f2;color:#dc2626;border-color:#fecaca;"
+           onmouseover="this.style.background='#dc2626';this.style.color='#fff'" onmouseout="this.style.background='#fef2f2';this.style.color='#dc2626'">
+           🛡️ SSI Supervisé
+        </a>
+        <a href="ssiap-patrol.html?session=${sess.id}&formateur=${FSESSION.formateurId||''}" target="_blank"
+           onclick="event.stopPropagation()"
+           class="shortcut-btn" style="background:#f0fdf4;color:#16a34a;border-color:#bbf7d0;"
+           onmouseover="this.style.background='#16a34a';this.style.color='#fff'" onmouseout="this.style.background='#f0fdf4';this.style.color='#16a34a'">
+           🚶 Patrol
+        </a>
+        <a href="quiz-salle.html?session=${sess.id}&formateur=${FSESSION.formateurId||''}" target="_blank"
+           onclick="event.stopPropagation()"
+           class="shortcut-btn" style="background:#eff6ff;color:#2563eb;border-color:#bfdbfe;"
+           onmouseover="this.style.background='#2563eb';this.style.color='#fff'" onmouseout="this.style.background='#eff6ff';this.style.color='#2563eb'">
+           🎯 Quiz Salle
+        </a>
         <span class="badge ${sess.statut==='actif'?'badge-green':'badge-gray'}">${sess.statut||'en cours'}</span>
         <span class="badge badge-blue">${stags.length} stag.</span>
         <span class="sess-chev" id="chev-${sess.id}">▼</span>
