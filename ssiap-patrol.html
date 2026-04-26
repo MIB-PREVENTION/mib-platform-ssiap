@@ -481,8 +481,15 @@ async function login() {
 
   let pinOk = false;
   try {
-    const pwdHash = await UTILS.hash(pwd);
-    pinOk = (pwdHash === agent.pinHash);
+    // Vérifier via hash SHA-256
+    if (agent.pinHash) {
+      const pwdHash = await UTILS.hash(pwd);
+      pinOk = (pwdHash === agent.pinHash);
+    }
+    // Fallback : comparaison directe pin_clair (formateurs MIB)
+    if (!pinOk && agent.pinClair) {
+      pinOk = (pwd === agent.pinClair);
+    }
   } catch(e) {}
 
   if (!pinOk) return showLoginError('Code PIN incorrect');
@@ -1401,15 +1408,18 @@ function renderAgents() {
 
 async function importerFormateurs() {
   showToast('Importation en cours...','info');
-  const { data: formateurs } = await supabase.from('formateurs').select('id, nom, prenom, pin_hash, email, telephone').eq('center_id', currentCenter.id).eq('actif', true);
+  const { data: formateurs } = await supabase.from('formateurs').select('id, nom, prenom, pin_hash, pin_clair, email, telephone').eq('center_id', currentCenter.id).eq('actif', true);
   if (!formateurs?.length) { showToast('Aucun formateur trouvé pour ce centre','warning'); return; }
   let added=0;
-  formateurs.forEach(f => {
+  for (const f of formateurs) {
     if (!DB.agents.find(a => String(a.id) === String(f.id))) {
-      DB.agents.push({ id:f.id, nom:f.nom, prenom:f.prenom, qualification:'SSIAP 2', entreprise:currentCenter?.nom||'', email:f.email||'', telephone:f.telephone||'', pinHash:f.pin_hash, actif:true, type:'formateur', dateDebutContrat:new Date().toISOString().split('T')[0] });
+      // Utiliser pin_hash si dispo, sinon hasher pin_clair
+      let pinHash = f.pin_hash || null;
+      if (!pinHash && f.pin_clair) { pinHash = await UTILS.hash(f.pin_clair); }
+      DB.agents.push({ id:f.id, nom:f.nom, prenom:f.prenom, qualification:'SSIAP 2', entreprise:currentCenter?.nom||'', email:f.email||'', telephone:f.telephone||'', pinHash, pinClair:f.pin_clair||null, actif:true, type:'formateur', dateDebutContrat:new Date().toISOString().split('T')[0] });
       added++;
     }
-  });
+  }
   if (added>0) { sauvegarderVersSupabase(); showToast(`✅ ${added} formateur(s) importé(s)`); navigate('agents'); }
   else showToast('Tous les formateurs sont déjà dans Patrol','info');
 }
