@@ -92,7 +92,7 @@ body{font-family:'Poppins',sans-serif;background:#f8fafc;}
 </head>
 <body>
 
-<!-- ════ LOGIN : SÉLECTION CENTRE ════ -->
+<!-- ════ LOGIN ════ -->
 <div id="loginScreen" class="gradient-bg min-h-screen flex items-center justify-center p-4">
   <div class="card p-8 w-full max-w-md fade-in">
     <div class="text-center mb-8">
@@ -100,10 +100,10 @@ body{font-family:'Poppins',sans-serif;background:#f8fafc;}
         <i class="fas fa-shield-alt text-white text-3xl"></i>
       </div>
       <h1 class="text-2xl font-bold text-gray-800">SSIAP Patrol</h1>
-      <p class="text-gray-500 mt-1">MIB Prévention — Gestion des rondes</p>
+      <p class="text-gray-500 mt-1" id="login-subtitle">Système de gestion des rondes</p>
     </div>
 
-    <!-- Étape 1 : Centre -->
+    <!-- Sélection centre (masqué si center= dans URL) -->
     <div id="step-centre">
       <label class="block text-sm font-semibold text-gray-700 mb-2">Centre de formation</label>
       <select id="loginCenter" class="input mb-4" onchange="onCentreChange(this.value)">
@@ -115,7 +115,7 @@ body{font-family:'Poppins',sans-serif;background:#f8fafc;}
       </div>
     </div>
 
-    <!-- Étape 2 : Agent + PIN -->
+    <!-- Agent + PIN (affiché directement si center= dans URL) -->
     <div id="step-agent" class="hidden space-y-4">
       <div>
         <label class="block text-sm font-semibold text-gray-700 mb-2">Agent</label>
@@ -129,7 +129,7 @@ body{font-family:'Poppins',sans-serif;background:#f8fafc;}
       <button onclick="login()" class="btn btn-primary w-full justify-center py-3">
         <i class="fas fa-sign-in-alt"></i> Se connecter
       </button>
-      <button onclick="resetCentre()" class="btn btn-secondary w-full justify-center">
+      <button onclick="resetCentre()" class="btn btn-secondary w-full justify-center" id="btn-changer-centre" style="display:none;">
         <i class="fas fa-arrow-left"></i> Changer de centre
       </button>
     </div>
@@ -457,29 +457,28 @@ async function forcerSync() {
 // ══════════════════════════════════════════
 
 async function initLoginScreen() {
-  // Vérifier paramètre URL ?center=xxx pour mode rondier
   const params = new URLSearchParams(window.location.search);
   const centerId = params.get('center');
   
-  const { data: centers } = await supabase.from('centers')
-    .select('id, nom').eq('license_status','active').order('nom');
-  
-  const sel = document.getElementById('loginCenter');
-  sel.innerHTML = '<option value="">— Sélectionnez votre centre —</option>';
-  (centers || []).forEach(c => {
-    const opt = document.createElement('option');
-    opt.value = c.id; opt.textContent = c.nom;
-    sel.appendChild(opt);
-  });
-
   if (centerId) {
-    sel.value = centerId;
+    // URL avec center= : masquer sélection centre, charger directement
+    document.getElementById('step-centre').style.display = 'none';
+    document.getElementById('loadingCentre').classList.remove('hidden');
     await onCentreChange(centerId);
-    // Importer les stagiaires si session fournie en URL
-    const sessionId = params.get('session');
-    if (sessionId) {
-      await importerStagiairesSession(sessionId);
-    }
+    const btnChanger = document.getElementById('btn-changer-centre');
+    if (btnChanger) btnChanger.style.display = 'none';
+  } else {
+    // Pas de center dans URL : afficher le sélecteur de centre
+    const { data: centers } = await supabase.from('centers')
+      .select('id, nom').eq('license_status','active').order('nom');
+    const sel = document.getElementById('loginCenter');
+    sel.innerHTML = '<option value="">— Sélectionnez votre centre —</option>';
+    (centers || []).forEach(ct => {
+      const opt = document.createElement('option');
+      opt.value = ct.id; opt.textContent = ct.nom;
+      sel.appendChild(opt);
+    });
+    document.getElementById('step-centre').style.display = '';
   }
 }
 
@@ -518,8 +517,16 @@ async function onCentreChange(centerId) {
 }
 
 function resetCentre() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('center')) {
+    // URL fixe avec center= : ne pas afficher le sélecteur, juste vider le PIN
+    document.getElementById('loginPassword').value = '';
+    document.getElementById('loginAgent').selectedIndex = 0;
+    return;
+  }
   currentCenter = null;
   document.getElementById('step-agent').classList.add('hidden');
+  document.getElementById('step-centre').style.display = '';
   document.getElementById('loginCenter').value = '';
   document.getElementById('loginPassword').value = '';
 }
