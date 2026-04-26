@@ -1563,21 +1563,18 @@ async function loadAvisStag() {
    SSIAP PATROL — Auto-login formateur
 ══════════════════════════════════════════ */
 function openPatrol(sessionId) {
-  // Sauvegarder les infos formateur pour auto-login dans Patrol
-  const patrolSession = {
-    centerId: FSESSION.centerId || FSESSION.center_id,
-    centerName: FSESSION.centreName || FSESSION.center_name || '',
-    formateurId: FSESSION.formateurId || FSESSION.formateur_id,
-    formateurNom: FSESSION.nom || '',
-    formateurPrenom: FSESSION.prenom || '',
-    sessionId: sessionId,
-    autoLogin: true,
-    ts: Date.now()
-  };
-  localStorage.setItem('mib_patrol_autologin', JSON.stringify(patrolSession));
-  
+  const centerId    = FSESSION.centerId    || FSESSION.center_id    || '';
+  const formateurId = FSESSION.formateurId || FSESSION.formateur_id || '';
+  const fnom        = encodeURIComponent(FSESSION.nom    || '');
+  const fprenom     = encodeURIComponent(FSESSION.prenom || '');
   const base = window.location.href.replace(/[^/]*$/, '');
-  const url = base + 'ssiap-patrol.html?center=' + patrolSession.centerId + '&session=' + sessionId + '&autologin=1';
+  const url = base + 'ssiap-patrol.html'
+    + '?center='   + centerId
+    + '&session='  + sessionId
+    + '&autologin=1'
+    + '&fid='      + formateurId
+    + '&fnom='     + fnom
+    + '&fprenom='  + fprenom;
   window.open(url, '_blank');
 }
 
