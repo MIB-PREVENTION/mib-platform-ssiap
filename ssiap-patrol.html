@@ -100,28 +100,17 @@ body{font-family:'Poppins',sans-serif;background:#f8fafc;}
         <i class="fas fa-shield-alt text-white text-3xl"></i>
       </div>
       <h1 class="text-2xl font-bold text-gray-800">SSIAP Patrol</h1>
-      <p class="text-gray-500 mt-1">Système de gestion des rondes</p>
+      <p class="text-gray-500 mt-1">Systeme de gestion des rondes</p>
     </div>
-    <!-- Sélecteur centre : visible seulement sans ?center= dans URL -->
-    <div id="step-centre" style="display:none;">
-      <label class="block text-sm font-semibold text-gray-700 mb-2">Centre de formation</label>
-      <select id="loginCenter" class="input mb-4" onchange="onCentreChange(this.value)">
-        <option value="">Chargement...</option>
-      </select>
-      <div id="loginCenterError" class="text-red-500 text-sm font-medium hidden mb-2"></div>
-      <div id="loadingCentre" class="text-center py-4 hidden">
-        <i class="fas fa-spinner fa-spin text-indigo-500 mr-2"></i>Chargement des agents...
-      </div>
-    </div>
-    <!-- Agent + PIN : affiché directement quand ?center= dans URL -->
-    <div id="step-agent" class="hidden space-y-5">
+    <div id="login-msg" class="hidden text-red-500 text-sm font-medium mb-4 text-center"></div>
+    <div id="step-agent" class="space-y-5">
       <div>
         <label class="block text-sm font-semibold text-gray-700 mb-2">Agent</label>
-        <select id="loginAgent" class="input"></select>
+        <select id="loginAgent" class="input"><option value="">Chargement...</option></select>
       </div>
       <div>
         <label class="block text-sm font-semibold text-gray-700 mb-2">Code PIN</label>
-        <input type="password" id="loginPassword" class="input" placeholder="••••••" maxlength="6" inputmode="numeric">
+        <input type="password" id="loginPassword" class="input" placeholder="..." maxlength="6" inputmode="numeric">
       </div>
       <div id="loginError" class="text-red-500 text-sm font-medium hidden"></div>
       <button onclick="login()" class="btn btn-primary w-full justify-center py-3">
@@ -130,7 +119,7 @@ body{font-family:'Poppins',sans-serif;background:#f8fafc;}
     </div>
     <div class="pt-4 border-t mt-4">
       <button onclick="accederModeRondier()" class="btn btn-secondary w-full justify-center">
-        <i class="fas fa-mobile-alt"></i> Accès Rondier Mobile
+        <i class="fas fa-mobile-alt"></i> Acces Rondier Mobile
       </button>
     </div>
   </div>
@@ -451,24 +440,40 @@ async function forcerSync() {
 // ══════════════════════════════════════════
 
 async function initLoginScreen() {
-  const params = new URLSearchParams(window.location.search);
-  const centerId = params.get('center');
-  if (centerId) {
-    // ?center=ID dans URL : afficher directement Agent + PIN
-    document.getElementById('step-centre').style.display = 'none';
-    await onCentreChange(centerId);
-  } else {
-    // Pas de center : afficher sélecteur centre
-    document.getElementById('step-centre').style.display = '';
-    const { data: centers } = await supabase.from('centers')
-      .select('id, nom').eq('license_status','active').order('nom');
-    const sel = document.getElementById('loginCenter');
-    sel.innerHTML = '<option value="">— Sélectionnez votre centre —</option>';
-    (centers || []).forEach(ct => {
-      const opt = document.createElement('option');
-      opt.value = ct.id; opt.textContent = ct.nom;
+  var params = new URLSearchParams(window.location.search);
+  var centerId = params.get("center");
+  if (!centerId) {
+    document.getElementById("login-msg").textContent = "Lien invalide. Utilisez le lien fourni par votre centre.";
+    document.getElementById("login-msg").classList.remove("hidden");
+    document.getElementById("step-agent").style.display = "none";
+    return;
+  }
+  try {
+    var resp = await supabase.from("centers").select("*").eq("id", centerId).single();
+    var centre = resp.data;
+    if (!centre) {
+      document.getElementById("login-msg").textContent = "Centre introuvable.";
+      document.getElementById("login-msg").classList.remove("hidden");
+      return;
+    }
+    currentCenter = centre;
+    await chargerDonnees(centerId);
+    var agentsActifs = DB.agents.filter(function(a) { return a.actif; }).sort(function(a, b) {
+      var o = { "SSIAP 3": 0, "SSIAP 2": 1, "SSIAP 1": 2 };
+      return (o[a.qualification] || 3) - (o[b.qualification] || 3);
+    });
+    var sel = document.getElementById("loginAgent");
+    sel.innerHTML = "<option value="">Selectionner un agent...</option>";
+    agentsActifs.forEach(function(a) {
+      var opt = document.createElement("option");
+      opt.value = a.id;
+      opt.textContent = a.prenom + " " + a.nom + " - " + a.qualification;
       sel.appendChild(opt);
     });
+  } catch(e) {
+    console.error(e);
+    document.getElementById("login-msg").textContent = "Erreur de chargement.";
+    document.getElementById("login-msg").classList.remove("hidden");
   }
 }
 
@@ -1691,52 +1696,46 @@ function showToast(message, type='success') {
 // INIT
 // ══════════════════════════════════════════
 
-window.addEventListener('DOMContentLoaded', async () => {
-  console.log('SSIAP Patrol v3.0 — MIB Prevention');
-  const params = new URLSearchParams(window.location.search);
+window.addEventListener("DOMContentLoaded", async function() {
+  var params = new URLSearchParams(window.location.search);
+  var centerId   = params.get("center");
+  var autoLogin  = params.get("autologin");
+  var formateurId= params.get("fid");
+  var fnom       = params.get("fnom")   || "";
+  var fprenom    = params.get("fprenom") || "";
 
-  // Auto-login depuis bouton Patrol du formateur
-  if (params.get('autologin') === '1') {
+  if (autoLogin === "1" && centerId && formateurId) {
     try {
-      const raw = localStorage.getItem('mib_patrol_autologin');
-      if (raw) {
-        const stored = JSON.parse(raw);
-        if (stored.centerId && (Date.now() - stored.ts) < 300000) {
-          localStorage.removeItem('mib_patrol_autologin');
-          const { data: centre } = await supabase.from('centers').select('*').eq('id', stored.centerId).single();
-          if (centre && centre.module_patrol) {
-            currentCenter = centre;
-            await chargerDonnees(stored.centerId);
-            // Connecter le formateur comme administrateur
-            currentUser = {
-              id: stored.formateurId,
-              nom: stored.formateurNom || 'Formateur',
-              prenom: stored.formateurPrenom || '',
-              qualification: 'SSIAP 3',
-              actif: true,
-              type: 'formateur',
-              entreprise: centre.nom || ''
-            };
-            document.getElementById('loginScreen').classList.add('hidden');
-            document.getElementById('mainApp').classList.remove('hidden');
-            document.getElementById('centreBadge').textContent = centre.nom || '';
-            document.getElementById('userBadge').innerHTML = '<span class="badge badge-purple">Administrateur</span>';
-            initApp();
-            const sessId = params.get('session');
-            if (sessId && typeof importerStagiairesSession === 'function') {
-              await importerStagiairesSession(sessId);
-            }
-            showToast('Bienvenue ' + currentUser.prenom + ' ' + currentUser.nom);
-            return; // Pas d'écran de login
-          }
+      var resp = await supabase.from("centers").select("*").eq("id", centerId).single();
+      var centre = resp.data;
+      if (centre) {
+        currentCenter = centre;
+        await chargerDonnees(centerId);
+        var agent = DB.agents.find(function(a) { return String(a.id) === String(formateurId); });
+        if (!agent) {
+          agent = { id: formateurId, nom: decodeURIComponent(fnom), prenom: decodeURIComponent(fprenom), qualification: "SSIAP 3", actif: true, type: "formateur", entreprise: centre.nom || "" };
+        } else {
+          agent = Object.assign({}, agent, { qualification: "SSIAP 3" });
         }
+        currentUser = Object.assign({}, agent);
+        document.getElementById("loginScreen").classList.add("hidden");
+        document.getElementById("mainApp").classList.remove("hidden");
+        document.getElementById("centreBadge").textContent = centre.nom || "";
+        document.getElementById("userBadge").innerHTML = "<span class="badge badge-purple">Administrateur</span>";
+        initApp();
+        var sessId = params.get("session");
+        if (sessId && typeof importerStagiairesSession === "function") {
+          await importerStagiairesSession(sessId);
+        }
+        showToast("Bienvenue " + currentUser.prenom + " " + currentUser.nom);
+        return;
       }
-    } catch(e) { console.error('Auto-login error:', e); }
+    } catch(e) { console.error("Auto-login error:", e); }
   }
 
-  // Login normal
   await initLoginScreen();
 });
+
 
 document.addEventListener('keydown', e => {
   if (e.key==='Enter' && document.getElementById('step-agent')?.classList.contains('hidden')===false) login();
