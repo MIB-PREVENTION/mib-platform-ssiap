@@ -329,6 +329,50 @@ async function chargerDonnees(centerId) {
   }
 }
 
+async function importerStagiairesSession(sessionId) {
+  if (!sessionId || !currentCenter) return;
+  try {
+    // Charger les stagiaires de la session
+    const { data: parts } = await supabase
+      .from('session_participants')
+      .select('*, stagiaires(id, nom, prenom, niveau, pin_hash, pin_clair, email, telephone)')
+      .eq('session_id', sessionId);
+    
+    if (!parts?.length) return;
+
+    // Charger la session pour avoir le niveau
+    const { data: sess } = await supabase
+      .from('sessions_formation')
+      .select('niveau, type_formation')
+      .eq('id', sessionId)
+      .single();
+    
+    const niveau = sess?.niveau || 'SSIAP 1';
+    const qualif = niveau === 'SSIAP3' ? 'SSIAP 3' : niveau === 'SSIAP2' ? 'SSIAP 2' : 'SSIAP 1';
+
+    let added = 0;
+    for (const p of parts) {
+      const s = p.stagiaires;
+      if (!s) continue;
+      if (DB.agents.find(a => String(a.id) === String(s.id))) continue;
+      DB.agents.push({
+        id: s.id, nom: s.nom, prenom: s.prenom,
+        qualification: qualif,
+        entreprise: currentCenter?.nom || '',
+        email: s.email || '', telephone: s.telephone || '',
+        pinHash: s.pin_hash || null, pinClair: s.pin_clair || null,
+        actif: true, type: 'stagiaire',
+        dateDebutContrat: new Date().toISOString().split('T')[0]
+      });
+      added++;
+    }
+    if (added > 0) {
+      await sauvegarderVersSupabase();
+      showToast('✅ ' + added + ' stagiaire(s) importé(s) depuis la session');
+    }
+  } catch(e) { console.error('Import stagiaires session:', e); }
+}
+
 async function initialiserNouveauCentre(centerId) {
   // Importer les formateurs existants comme agents patrol
   const { data: formateurs } = await supabase
@@ -431,6 +475,11 @@ async function initLoginScreen() {
   if (centerId) {
     sel.value = centerId;
     await onCentreChange(centerId);
+    // Importer les stagiaires si session fournie en URL
+    const sessionId = params.get('session');
+    if (sessionId) {
+      await importerStagiairesSession(sessionId);
+    }
   }
 }
 
@@ -441,6 +490,14 @@ async function onCentreChange(centerId) {
 
   const { data: centre } = await supabase.from('centers').select('*').eq('id', centerId).single();
   if (!centre) { document.getElementById('loginCenterError').textContent = 'Centre introuvable.'; document.getElementById('loginCenterError').classList.remove('hidden'); document.getElementById('loadingCentre').classList.add('hidden'); return; }
+  
+  // Vérifier que le module Patrol est activé pour ce centre
+  if (!centre.module_patrol) {
+    document.getElementById('loginCenterError').textContent = '⚠️ Le module SSIAP Patrol n'est pas activé pour ce centre. Contactez MIB Prévention.';
+    document.getElementById('loginCenterError').classList.remove('hidden');
+    document.getElementById('loadingCentre').classList.add('hidden');
+    return;
+  }
   
   currentCenter = centre;
   await chargerDonnees(centerId);
