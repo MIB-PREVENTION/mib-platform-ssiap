@@ -1460,18 +1460,42 @@ const MODULE_DEFS = [
   {key:'module_challenge_cup',icon:'🏆',title:'Challenge Cup',desc:'Jeu gamifié avec équipes et classement'},
   {key:'module_ssi_supervise',icon:'🔴',title:'SSI Supervisé',desc:'Simulation panneau SSI supervisée'},
   {key:'module_ssi_autoformation',icon:'🟡',title:'SSI Auto-formation',desc:'Scénarios SSI guidés en autonomie'},
+  {key:'module_patrol',icon:'🚶',title:'SSIAP Patrol',desc:'Gestion des rondes, matériels et consignes'},
 ];
 
 window.renderModules = function() {
   const grid = document.getElementById('grid-modules');
+  const base = window.location.origin + window.location.pathname.replace(/[^/]*$/, '');
   grid.innerHTML = MODULE_DEFS.map(m => {
     const on = CENTER && CENTER[m.key];
+    let extra = '';
+    if (on && m.key === 'module_patrol' && CENTER.id) {
+      const patrolUrl = base + 'ssiap-patrol.html?center=' + CENTER.id;
+      extra = '<div style="margin-top:10px;display:flex;flex-direction:column;gap:6px;">'
+        + '<a href="' + patrolUrl + '" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 12px;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border-radius:9px;font-size:.75rem;font-weight:700;text-decoration:none;">🚶 Ouvrir SSIAP Patrol</a>'
+        + '<button onclick="copyPatrolUrl('' + patrolUrl.replace(/'/g,"\'") + '')" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:7px 12px;background:#eff6ff;color:#1d4ed8;border:1.5px solid #bfdbfe;border-radius:9px;font-size:.75rem;font-weight:700;cursor:pointer;">📋 Copier le lien</button>'
+        + '<div style="font-size:.65rem;color:var(--text3);text-align:center;word-break:break-all;padding:0 4px;">' + patrolUrl + '</div>'
+        + '</div>';
+    }
     return '<div class="mod-card ' + (on?'mod-on':'mod-off') + '">'
       + '<div class="mod-icon">' + m.icon + '</div>'
       + '<div class="mod-title">' + m.title + '</div>'
       + '<div class="mod-desc">' + m.desc + '</div>'
-      + '<div class="mod-status">' + (on?'✅ Activé':'⭕ Non inclus dans votre plan') + '</div></div>';
+      + '<div class="mod-status">' + (on?'✅ Activé':'⭕ Non inclus dans votre plan') + '</div>'
+      + extra + '</div>';
   }).join('');
+};
+
+window.copyPatrolUrl = function(url) {
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = event.target.closest('button');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '✅ Copié !';
+    btn.style.background = '#f0fdf4';
+    btn.style.color = '#065f46';
+    btn.style.borderColor = '#bbf7d0';
+    setTimeout(() => { btn.innerHTML = orig; btn.style.background=''; btn.style.color=''; btn.style.borderColor=''; }, 2000);
+  }).catch(() => { alert('Lien : ' + url); });
 };
 
 // ============================================================
