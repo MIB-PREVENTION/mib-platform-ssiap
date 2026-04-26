@@ -1563,19 +1563,19 @@ async function loadAvisStag() {
    SSIAP PATROL — Auto-login formateur
 ══════════════════════════════════════════ */
 function openPatrol(sessionId) {
-  const centerId    = FSESSION.centerId    || FSESSION.center_id    || '';
-  const formateurId = FSESSION.formateurId || FSESSION.formateur_id || '';
-  const fnom        = encodeURIComponent(FSESSION.nom    || '');
-  const fprenom     = encodeURIComponent(FSESSION.prenom || '');
-  const base = window.location.href.replace(/[^/]*$/, '');
-  const url = base + 'ssiap-patrol.html'
-    + '?center='   + centerId
-    + '&session='  + sessionId
-    + '&autologin=1'
-    + '&fid='      + formateurId
-    + '&fnom='     + fnom
-    + '&fprenom='  + fprenom;
-  window.open(url, '_blank');
+  var centerId    = FSESSION.centerId    || FSESSION.center_id    || "";
+  var formateurId = FSESSION.formateurId || FSESSION.formateur_id || "";
+  var fnom        = encodeURIComponent(FSESSION.nom    || "");
+  var fprenom     = encodeURIComponent(FSESSION.prenom || "");
+  var base = window.location.href.replace(/[^/]*$/, "");
+  var url = base + "ssiap-patrol.html"
+    + "?center="   + centerId
+    + "&session="  + sessionId
+    + "&autologin=1"
+    + "&fid="      + formateurId
+    + "&fnom="     + fnom
+    + "&fprenom="  + fprenom;
+  window.open(url, "_blank");
 }
 
 </script>
