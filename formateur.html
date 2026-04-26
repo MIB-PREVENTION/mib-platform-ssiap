@@ -810,8 +810,8 @@ function buildSessCard(sess, allStags, allEntr) {
            onmouseover="this.style.background='#dc2626';this.style.color='#fff'" onmouseout="this.style.background='#fef2f2';this.style.color='#dc2626'">
            🛡️ SSI Supervisé
         </a>
-        <a href="ssiap-patrol.html?session=${sess.id}&formateur=${FSESSION.formateurId||''}" target="_blank"
-           onclick="event.stopPropagation()"
+        <a href="javascript:void(0)"
+           onclick="event.stopPropagation();openPatrol('${sess.id}')"
            class="shortcut-btn" style="background:#f0fdf4;color:#16a34a;border-color:#bbf7d0;"
            onmouseover="this.style.background='#16a34a';this.style.color='#fff'" onmouseout="this.style.background='#f0fdf4';this.style.color='#16a34a'">
            🚶 Patrol
@@ -1557,6 +1557,28 @@ async function loadAvisStag() {
     + '<div style="font-size:.82rem;color:var(--text2);line-height:1.5;">'+esc(a.message||'')+'</div>'
     + '</div>'
   ).join('');
+}
+
+/* ══════════════════════════════════════════
+   SSIAP PATROL — Auto-login formateur
+══════════════════════════════════════════ */
+function openPatrol(sessionId) {
+  // Sauvegarder les infos formateur pour auto-login dans Patrol
+  const patrolSession = {
+    centerId: FSESSION.centerId || FSESSION.center_id,
+    centerName: FSESSION.centreName || FSESSION.center_name || '',
+    formateurId: FSESSION.formateurId || FSESSION.formateur_id,
+    formateurNom: FSESSION.nom || '',
+    formateurPrenom: FSESSION.prenom || '',
+    sessionId: sessionId,
+    autoLogin: true,
+    ts: Date.now()
+  };
+  localStorage.setItem('mib_patrol_autologin', JSON.stringify(patrolSession));
+  
+  const base = window.location.href.replace(/[^/]*$/, '');
+  const url = base + 'ssiap-patrol.html?center=' + patrolSession.centerId + '&session=' + sessionId + '&autologin=1';
+  window.open(url, '_blank');
 }
 
 </script>
