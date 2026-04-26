@@ -1474,15 +1474,12 @@ window.renderModules = function() {
     if (on && m.key === 'module_patrol' && CENTER.id) {
       window._patrolUrl = base + 'ssiap-patrol.html?center=' + CENTER.id;
       extra = '<div style="margin-top:10px;display:flex;flex-direction:column;gap:6px;">'
-        + '<a href="' + window._patrolUrl + '" target="_blank" '
-        + 'style="display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 12px;'
-        + 'background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border-radius:9px;'
-        + 'font-size:.75rem;font-weight:700;text-decoration:none;">🚶 Ouvrir SSIAP Patrol</a>'
         + '<button onclick="copyPatrolUrl()" '
-        + 'style="display:flex;align-items:center;justify-content:center;gap:6px;padding:7px 12px;'
-        + 'background:#eff6ff;color:#1d4ed8;border:1.5px solid #bfdbfe;border-radius:9px;'
-        + 'font-size:.75rem;font-weight:700;cursor:pointer;">📋 Copier le lien</button>'
-        + '<div style="font-size:.65rem;color:var(--text3);text-align:center;word-break:break-all;padding:0 4px;">'
+        + 'style="display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 14px;'
+        + 'background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:none;border-radius:9px;'
+        + 'font-size:.78rem;font-weight:700;cursor:pointer;width:100%;">📋 Copier le lien Patrol</button>'
+        + '<div style="font-size:.62rem;color:var(--text3);text-align:center;word-break:break-all;padding:2px 4px;'
+        + 'background:#f8faff;border-radius:7px;border:1px solid #e0e7ff;">'
         + window._patrolUrl + '</div>'
         + '</div>';
     }
