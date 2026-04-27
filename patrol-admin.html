@@ -389,13 +389,13 @@ window.addEventListener("DOMContentLoaded", async function() {
   // CAS 2 : session stockee dans sessionStorage
   PATROL_SESSION = JSON.parse(sessionStorage.getItem("patrol_session") || "null");
   if (!PATROL_SESSION || !PATROL_SESSION.centerId || (Date.now() - (PATROL_SESSION.ts||0)) > 86400000) {
-    window.location.href = "patrol-login.html" + window.location.search;
+    window.location.href = "patrol_login.html" + window.location.search;
     return;
   }
 
   // Verifier qualification
   if (PATROL_SESSION.qualification === "SSIAP 1") {
-    window.location.href = "patrol-rondier.html";
+    window.location.href = "patrol_rondier.html";
     return;
   }
 
@@ -459,11 +459,16 @@ function initUI() {
   if (PATROL_SESSION.sessionId) {
     document.getElementById("btn-import-stag").style.display = "flex";
   }
+  // Cacher toutes les pages sauf dashboard
+  PAGES.forEach(function(p) {
+    var el = document.getElementById("page-"+p);
+    if (el) el.style.display = (p==="dashboard") ? "block" : "none";
+  });
   showPage("dashboard");
   // QR code acces rondier
   setTimeout(function() {
     var base = window.location.href.replace(/patrol-admin\.html.*/, "");
-    var rondierUrl = base + "patrol-login.html?center=" + PATROL_SESSION.centerId + (PATROL_SESSION.sessionId ? "&session="+PATROL_SESSION.sessionId : "");
+    var rondierUrl = base + "patrol_login.html?center=" + PATROL_SESSION.centerId + (PATROL_SESSION.sessionId ? "&session="+PATROL_SESSION.sessionId : "");
     window._rondierUrl = rondierUrl;
     var qrDiv = document.getElementById("qr-rondier");
     if (qrDiv && typeof QRCode !== "undefined") {
@@ -476,25 +481,41 @@ function initUI() {
 // ═══ NAVIGATION ═══
 function showPage(name) {
   PAGES.forEach(function(p) {
-    var el = document.getElementById("page-"+p);
+    var el  = document.getElementById("page-"+p);
     var nav = document.getElementById("nav-"+p);
-    if(el) el.className = "page" + (p===name?" active fade-in":"");
-    if(nav) nav.className = "nav-link" + (p===name?" active":"");
+    if (el)  { el.style.display  = (p===name) ? "block" : "none"; el.className = "page" + (p===name?" active":""); }
+    if (nav) nav.className = "nav-link" + (p===name?" active":"");
   });
-  renderCurrentPage();
+  // Fermer sidebar mobile
+  document.getElementById("sidebar").classList.remove("open");
+  document.getElementById("overlay").style.display = "none";
+  // Rendre la page active
+  if (name==="dashboard")    renderDashboard();
+  if (name==="priseposte")   renderPrisePoste();
+  if (name==="rondes")       renderRondes();
+  if (name==="mainCourante") renderMainCourante();
+  if (name==="evenements")   renderEvenements();
+  if (name==="materiels")    renderMateriels();
+  if (name==="consignes")    renderConsignes();
+  if (name==="agents")       renderAgents();
+  if (name==="admin")        renderAdmin();
 }
 
 function renderCurrentPage() {
-  var active = PAGES.find(function(p){ return document.getElementById("page-"+p)?.classList.contains("active"); });
-  if (active === "dashboard") renderDashboard();
-  if (active === "priseposte") renderPrisePoste();
-  if (active === "rondes") renderRondes();
+  var active = null;
+  PAGES.forEach(function(p) {
+    var el = document.getElementById("page-"+p);
+    if (el && el.classList.contains("active")) active = p;
+  });
+  if (active === "dashboard")    renderDashboard();
+  if (active === "priseposte")   renderPrisePoste();
+  if (active === "rondes")       renderRondes();
   if (active === "mainCourante") renderMainCourante();
-  if (active === "evenements") renderEvenements();
-  if (active === "materiels") renderMateriels();
-  if (active === "consignes") renderConsignes();
-  if (active === "agents") renderAgents();
-  if (active === "admin") renderAdmin();
+  if (active === "evenements")   renderEvenements();
+  if (active === "materiels")    renderMateriels();
+  if (active === "consignes")    renderConsignes();
+  if (active === "agents")       renderAgents();
+  if (active === "admin")        renderAdmin();
 }
 
 // ═══ DASHBOARD ═══
@@ -851,7 +872,7 @@ function showModalMsg(elId, msg, type) { var el=document.getElementById(elId); e
 
 function logout() {
   sessionStorage.removeItem("patrol_session");
-  window.location.href = "patrol-login.html?center=" + PATROL_SESSION.centerId;
+  window.location.href = "patrol_login.html?center=" + PATROL_SESSION.centerId;
 }
 
 function copyLink() {
