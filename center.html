@@ -1472,7 +1472,7 @@ window.renderModules = function() {
     const on = CENTER && CENTER[m.key];
     let extra = '';
     if (on && m.key === 'module_patrol' && CENTER.id) {
-      window._patrolUrl = base + 'patrol_login.html?center=' + CENTER.id;
+      window._patrolUrl = base + 'patrol-login.html?center=' + CENTER.id;
       extra = '<div style="margin-top:10px;display:flex;flex-direction:column;gap:6px;">'
         + '<button onclick="copyPatrolUrl()" '
         + 'style="display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 14px;'
