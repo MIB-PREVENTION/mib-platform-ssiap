@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SSIAP Patrol — Administrateur</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;color:#1e293b;}
+.sidebar{width:220px;min-height:100vh;background:#fff;border-right:1px solid #f1f5f9;position:fixed;top:0;left:0;bottom:0;display:flex;flex-direction:column;z-index:50;}
+.nav-link{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;cursor:pointer;font-size:.83rem;font-weight:600;color:#64748b;transition:all .15s;margin-bottom:2px;}
+.nav-link:hover{background:#f8fafc;color:#1e293b;}
+.nav-link.active{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;box-shadow:0 4px 14px rgba(99,102,241,.3);}
+.main{margin-left:220px;min-height:100vh;padding:28px 28px 60px;}
+.card{background:#fff;border-radius:16px;border:1px solid #f1f5f9;box-shadow:0 1px 3px rgba(0,0,0,.05),0 4px 16px rgba(0,0,0,.04);padding:22px;}
+.kpi{background:#f8fafc;border-radius:14px;padding:18px;border:1px solid #f1f5f9;}
+.btn{padding:9px 16px;border-radius:10px;border:none;font-weight:700;font-size:.8rem;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px;font-family:inherit;}
+.btn:hover{transform:translateY(-1px);}
+.btn-primary{background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;box-shadow:0 4px 12px rgba(99,102,241,.3);}
+.btn-green{background:linear-gradient(135deg,#10b981,#059669);color:#fff;}
+.btn-red{background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;}
+.btn-orange{background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;}
+.btn-gray{background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;}
+.btn-sm{padding:6px 11px;font-size:.74rem;border-radius:8px;}
+.input{width:100%;padding:10px 13px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:.85rem;font-family:inherit;outline:none;transition:all .15s;}
+.input:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.1);}
+.badge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:.67rem;font-weight:700;}
+.b-purple{background:#f5f3ff;color:#7c3aed;border:1px solid #ddd6fe;}
+.b-blue{background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;}
+.b-green{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;}
+.b-orange{background:#fff7ed;color:#ea580c;border:1px solid #fed7aa;}
+.b-red{background:#fef2f2;color:#dc2626;border:1px solid #fecaca;}
+.b-gray{background:#f8fafc;color:#64748b;border:1px solid #e2e8f0;}
+.tbl{width:100%;border-collapse:collapse;}
+.tbl th{padding:9px 13px;font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8;background:#f8fafc;text-align:left;border-bottom:1px solid #f1f5f9;}
+.tbl td{padding:11px 13px;font-size:.82rem;border-bottom:1px solid #f8fafc;vertical-align:middle;}
+.tbl tbody tr:hover td{background:#fafbff;}
+.modal-bg{position:fixed;inset:0;background:rgba(15,23,42,.4);backdrop-filter:blur(4px);z-index:100;display:flex;align-items:center;justify-content:center;padding:16px;}
+.modal-box{background:#fff;border-radius:20px;padding:26px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;box-shadow:0 25px 60px rgba(0,0,0,.2);animation:mIn .2s ease;}
+@keyframes mIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:none}}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:#1e293b;color:#fff;padding:11px 20px;border-radius:12px;font-size:.83rem;font-weight:600;opacity:0;transition:all .28s;z-index:999;pointer-events:none;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.ok{background:#059669;}
+.toast.err{background:#dc2626;}
+.page{display:none;}
+.page.active{display:block;}
+.status-dot{width:10px;height:10px;border-radius:50%;display:inline-block;}
+.dot-green{background:#10b981;box-shadow:0 0 6px #10b981;animation:pulse 2s infinite;}
+.dot-orange{background:#f59e0b;animation:pulse 2s infinite;}
+.dot-red{background:#ef4444;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+.fade-in{animation:fadeIn .2s ease both;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media(max-width:768px){.sidebar{transform:translateX(-100%);transition:transform .25s;}.sidebar.open{transform:translateX(0);box-shadow:4px 0 24px rgba(0,0,0,.15);}.main{margin-left:0;padding:70px 14px 40px;}}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div style="padding:18px 16px 14px;border-bottom:1px solid #f1f5f9;">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <i class="fas fa-shield-alt text-white" style="font-size:.9rem;"></i>
+      </div>
+      <div>
+        <div style="font-size:.88rem;font-weight:800;color:#1e293b;">SSIAP Patrol</div>
+        <div style="font-size:.68rem;color:#94a3b8;" id="sb-centre">—</div>
+      </div>
+    </div>
+    <div style="margin-top:10px;display:flex;align-items:center;gap:6px;">
+      <span class="status-dot dot-green"></span>
+      <span style="font-size:.72rem;color:#64748b;" id="sb-user">Chargement...</span>
+    </div>
+    <span class="badge b-purple" style="margin-top:6px;" id="sb-role">Admin</span>
+  </div>
+  <nav style="flex:1;padding:10px 8px;overflow-y:auto;">
+    <div class="nav-link active" id="nav-dashboard" onclick="showPage('dashboard')"><i class="fas fa-tachometer-alt" style="width:16px;text-align:center;"></i> Tableau de bord</div>
+    <div class="nav-link" id="nav-priseposte" onclick="showPage('priseposte')"><i class="fas fa-user-clock" style="width:16px;text-align:center;"></i> Prise de Poste</div>
+    <div class="nav-link" id="nav-rondes" onclick="showPage('rondes')"><i class="fas fa-route" style="width:16px;text-align:center;"></i> Rondes</div>
+    <div class="nav-link" id="nav-mainCourante" onclick="showPage('mainCourante')"><i class="fas fa-clipboard-list" style="width:16px;text-align:center;"></i> Main Courante</div>
+    <div class="nav-link" id="nav-evenements" onclick="showPage('evenements')"><i class="fas fa-exclamation-triangle" style="width:16px;text-align:center;"></i> Evenements</div>
+    <div class="nav-link" id="nav-materiels" onclick="showPage('materiels')"><i class="fas fa-fire-extinguisher" style="width:16px;text-align:center;"></i> Materiels</div>
+    <div class="nav-link" id="nav-consignes" onclick="showPage('consignes')"><i class="fas fa-file-alt" style="width:16px;text-align:center;"></i> Consignes</div>
+    <div class="nav-link" id="nav-agents" onclick="showPage('agents')"><i class="fas fa-users" style="width:16px;text-align:center;"></i> Agents</div>
+    <div class="nav-link" id="nav-admin" onclick="showPage('admin')"><i class="fas fa-cog" style="width:16px;text-align:center;"></i> Administration</div>
+  </nav>
+  <div style="padding:12px 8px;border-top:1px solid #f1f5f9;">
+    <button onclick="syncData()" class="btn btn-green" style="width:100%;justify-content:center;margin-bottom:8px;"><i class="fas fa-sync-alt"></i> Synchroniser</button>
+    <button onclick="logout()" class="btn btn-gray" style="width:100%;justify-content:center;"><i class="fas fa-sign-out-alt"></i> Deconnexion</button>
+  </div>
+</aside>
+
+<!-- MOBILE HEADER -->
+<header style="display:none;position:fixed;top:0;left:0;right:0;background:#fff;border-bottom:1px solid #f1f5f9;padding:12px 16px;z-index:40;align-items:center;gap:10px;" id="mob-header">
+  <button onclick="toggleSidebar()" style="width:36px;height:36px;border:1px solid #e2e8f0;border-radius:9px;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#64748b;">
+    <i class="fas fa-bars"></i>
+  </button>
+  <span style="font-weight:800;font-size:.9rem;">SSIAP Patrol</span>
+</header>
+<div id="overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:39;" onclick="toggleSidebar()"></div>
+
+<!-- MAIN -->
+<main class="main" id="main-content">
+
+  <!-- DASHBOARD -->
+  <div id="page-dashboard" class="page active fade-in">
+    <h2 style="font-size:1.15rem;font-weight:800;margin-bottom:20px;">Tableau de bord</h2>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;" id="kpi-grid">
+      <div class="kpi"><div style="font-size:1.4rem;margin-bottom:6px;">👥</div><div style="font-size:1.6rem;font-weight:800;color:#6366f1;" id="kpi-poste">—</div><div style="font-size:.72rem;color:#94a3b8;margin-top:3px;">Agents en poste</div></div>
+      <div class="kpi"><div style="font-size:1.4rem;margin-bottom:6px;">🚶</div><div style="font-size:1.6rem;font-weight:800;color:#10b981;" id="kpi-rondes">—</div><div style="font-size:.72rem;color:#94a3b8;margin-top:3px;">Rondes en cours</div></div>
+      <div class="kpi"><div style="font-size:1.4rem;margin-bottom:6px;">⚠️</div><div style="font-size:1.6rem;font-weight:800;color:#f59e0b;" id="kpi-evts">—</div><div style="font-size:.72rem;color:#94a3b8;margin-top:3px;">Evenements actifs</div></div>
+      <div class="kpi"><div style="font-size:1.4rem;margin-bottom:6px;">📋</div><div style="font-size:1.6rem;font-weight:800;color:#8b5cf6;" id="kpi-actions">—</div><div style="font-size:.72rem;color:#94a3b8;margin-top:3px;">Actions aujourd'hui</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div class="card">
+        <div style="font-size:.88rem;font-weight:800;margin-bottom:14px;">👥 Equipe en poste</div>
+        <div id="dash-equipe"><div style="color:#94a3b8;font-size:.83rem;">Aucun agent en poste</div></div>
+      </div>
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+          <div style="font-size:.88rem;font-weight:800;">🔗 Acces rapide</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="font-size:.72rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px;">Lien rondier</div>
+          <div id="qr-rondier" style="display:flex;justify-content:center;padding:8px;background:#f8fafc;border-radius:10px;"></div>
+          <button onclick="copyLink()" class="btn btn-gray" style="width:100%;justify-content:center;font-size:.77rem;"><i class="fas fa-copy"></i> Copier le lien</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRISE DE POSTE -->
+  <div id="page-priseposte" class="page fade-in">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <h2 style="font-size:1.1rem;font-weight:800;">Prise de Poste</h2>
+      <button onclick="showModalPrisePoste()" class="btn btn-primary"><i class="fas fa-plus"></i> Nouveau</button>
+    </div>
+    <div class="card">
+      <div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>Agent</th><th>Qualification</th><th>Poste</th><th>Debut</th><th>Actions</th></tr></thead>
+      <tbody id="body-priseposte"><tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:24px;">Aucun agent en poste</td></tr></tbody></table></div>
+    </div>
+  </div>
+
+  <!-- RONDES -->
+  <div id="page-rondes" class="page fade-in">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <h2 style="font-size:1.1rem;font-weight:800;">Rondes</h2>
+    </div>
+    <div class="card">
+      <div id="body-rondes" style="overflow-x:auto;"><table class="tbl"><thead><tr><th>Type</th><th>Agent</th><th>Debut</th><th>Fin</th><th>Points</th><th>Statut</th></tr></thead>
+      <tbody id="tbl-rondes"><tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:24px;">Aucune ronde</td></tr></tbody></table></div>
+    </div>
+  </div>
+
+  <!-- MAIN COURANTE -->
+  <div id="page-mainCourante" class="page fade-in">
+    <h2 style="font-size:1.1rem;font-weight:800;margin-bottom:20px;">Main Courante</h2>
+    <div class="card">
+      <div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>Date/Heure</th><th>Type</th><th>Description</th><th>Agent</th></tr></thead>
+      <tbody id="tbl-main-courante"><tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:24px;">Aucune entree</td></tr></tbody></table></div>
+    </div>
+  </div>
+
+  <!-- EVENEMENTS -->
+  <div id="page-evenements" class="page fade-in">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <h2 style="font-size:1.1rem;font-weight:800;">Evenements</h2>
+      <button onclick="showModalEvenement()" class="btn btn-red"><i class="fas fa-plus"></i> Nouvel evenement</button>
+    </div>
+    <div id="body-evenements"><div style="text-align:center;color:#94a3b8;padding:32px;">Aucun evenement</div></div>
+  </div>
+
+  <!-- MATERIELS -->
+  <div id="page-materiels" class="page fade-in">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <h2 style="font-size:1.1rem;font-weight:800;">Materiels</h2>
+      <button onclick="showModalMateriel()" class="btn btn-primary"><i class="fas fa-plus"></i> Ajouter</button>
+    </div>
+    <div class="card">
+      <div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>Materiel</th><th>Type</th><th>Localisation</th><th>Statut</th><th>Actions</th></tr></thead>
+      <tbody id="tbl-materiels"><tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:24px;">Aucun materiel</td></tr></tbody></table></div>
+    </div>
+  </div>
+
+  <!-- CONSIGNES -->
+  <div id="page-consignes" class="page fade-in">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <h2 style="font-size:1.1rem;font-weight:800;">Consignes</h2>
+      <button onclick="showModalConsigne()" class="btn btn-primary"><i class="fas fa-plus"></i> Nouvelle</button>
+    </div>
+    <div id="body-consignes"><div style="text-align:center;color:#94a3b8;padding:32px;">Aucune consigne</div></div>
+  </div>
+
+  <!-- AGENTS -->
+  <div id="page-agents" class="page fade-in">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <h2 style="font-size:1.1rem;font-weight:800;">Agents</h2>
+      <div style="display:flex;gap:8px;">
+        <button onclick="importerFormateurs()" class="btn btn-green btn-sm"><i class="fas fa-download"></i> Importer formateurs</button>
+        <button onclick="importerStagiaires()" class="btn btn-blue btn-sm" id="btn-import-stag" style="display:none;"><i class="fas fa-users"></i> Importer stagiaires session</button>
+        <button onclick="showModalAgent()" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Nouveau</button>
+      </div>
+    </div>
+    <div class="card">
+      <div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>Agent</th><th>Qualification</th><th>Type</th><th>Statut</th><th>Actions</th></tr></thead>
+      <tbody id="tbl-agents"><tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:24px;">Aucun agent</td></tr></tbody></table></div>
+    </div>
+  </div>
+
+  <!-- ADMINISTRATION -->
+  <div id="page-admin" class="page fade-in">
+    <h2 style="font-size:1.1rem;font-weight:800;margin-bottom:20px;">Administration</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div class="card">
+        <div style="font-size:.88rem;font-weight:800;margin-bottom:14px;">📊 Statistiques</div>
+        <div id="admin-stats" style="color:#94a3b8;font-size:.83rem;">Chargement...</div>
+      </div>
+      <div class="card">
+        <div style="font-size:.88rem;font-weight:800;margin-bottom:14px;">🗄️ Donnees</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <button onclick="syncData()" class="btn btn-green" style="justify-content:center;"><i class="fas fa-sync-alt"></i> Synchroniser avec Supabase</button>
+          <button onclick="exporterDonnees()" class="btn btn-gray" style="justify-content:center;"><i class="fas fa-download"></i> Exporter JSON</button>
+          <button onclick="reinitialiser()" class="btn btn-red" style="justify-content:center;"><i class="fas fa-trash"></i> Reinitialiser donnees operationnelles</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- MODALS -->
+<div id="modal-priseposte" class="modal-bg hidden">
+  <div class="modal-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+      <h3 style="font-size:1rem;font-weight:800;">Prise de Poste</h3>
+      <button onclick="closeModal('modal-priseposte')" style="width:30px;height:30px;border-radius:50%;background:#f1f5f9;border:none;cursor:pointer;color:#64748b;">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div><label style="font-size:.75rem;font-weight:700;color:#64748b;display:block;margin-bottom:5px;">Agent</label><select id="pp-agent" class="input"></select></div>
+      <div><label style="font-size:.75rem;font-weight:700;color:#64748b;display:block;margin-bottom:5px;">Poste</label>
+        <select id="pp-poste" class="input"><option value="Chef de poste">Chef de poste</option><option value="Chef d'equipe">Chef d'equipe</option><option value="Equipier">Equipier</option></select>
+      </div>
+      <div id="pp-msg" style="display:none;"></div>
+      <div style="display:flex;gap:10px;margin-top:4px;">
+        <button onclick="closeModal('modal-priseposte')" class="btn btn-gray" style="flex:1;justify-content:center;">Annuler</button>
+        <button onclick="savePrisePoste()" class="btn btn-primary" style="flex:1;justify-content:center;">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="modal-evenement" class="modal-bg hidden">
+  <div class="modal-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+      <h3 style="font-size:1rem;font-weight:800;">Nouvel Evenement</h3>
+      <button onclick="closeModal('modal-evenement')" style="width:30px;height:30px;border-radius:50%;background:#f1f5f9;border:none;cursor:pointer;">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div><label style="font-size:.75rem;font-weight:700;color:#64748b;display:block;margin-bottom:5px;">Type</label>
+        <select id="evt-type" class="input"><option>Alarme Incendie</option><option>Secours a personne</option><option>Incident</option><option>Intrusion</option><option>Probleme technique</option><option>Autre</option></select>
+      </div>
+      <div><label style="font-size:.75rem;font-weight:700;color:#64748b;display:block;margin-bottom:5px;">Localisation</label><input type="text" id="evt-loc" class="input" placeholder="Zone concernee..."></div>
+      <div><label style="font-size:.75rem;font-weight:700;color:#64748b;display:block;margin-bottom:5px;">Description *</label><textarea id="evt-desc" class="input" rows="3" placeholder="Decrivez l'evenement..."></textarea></div>
+      <div style="display:flex;gap:10px;margin-top:4px;">
+        <button onclick="closeModal('modal-evenement')" class="btn btn-gray" style="flex:1;justify-content:center;">Annuler</button>
+        <button onclick="saveEvenement()" class="btn btn-red" style="flex:1;justify-content:center;">Creer (Alerte)</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="modal-materiel" class="modal-bg hidden">
+  <div class="modal-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+      <h3 style="font-size:1rem;font-weight:800;" id="modal-mat-title">Nouveau Materiel</h3>
+      <button onclick="closeModal('modal-materiel')" style="width:30px;height:30px;border-radius:50%;background:#f1f5f9;border:none;cursor:pointer;">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div><label style="font-size:.75rem;font-weight:700;color:#64748b;display:block;margin-bottom:5px;">Nom *</label><input type="text" id="mat-nom" class="input" placeholder="Ex: Extincteur CO2 Hall"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div><label style="font-size:.75rem;font-weight:700;color:#64748b;display:block;margin-bottom:5px;">Type</label>
+          <select id="mat-type" class="input"><option>Extincteur</option><option>RIA</option><option>Detecteur</option><option>Porte CF</option><option>BAES</option><option>Autre</option></select>
+        </div>
+        <div><label style="font-size:.75rem;font-weight:700;color:#64748b;display:block;margin-bottom:5px;">Statut</label>
+          <select id="mat-statut" class="input"><option>Operationnel</option><option>A verifier</option><option>Hors Service</option></select>
+        </div>
+      </div>
+      <div><label style="font-size:.75rem;font-weight:700;color:#64748b;display:block;margin-bottom:5px;">Localisation</label><input type="text" id="mat-loc" class="input" placeholder="Batiment, etage, zone..."></div>
+      <div><label style="font-size:.75rem;font-weight:700;color:#64748b;display:block;margin-bottom:5px;">Code QR (optionnel)</label><input type="text" id="mat-qr" class="input" placeholder="MAT-EXT-001"></div>
+      <input type="hidden" id="mat-id" value="">
+      <div style="display:flex;gap:10px;margin-top:4px;">
+        <button onclick="closeModal('modal-materiel')" class="btn btn-gray" style="flex:1;justify-content:center;">Annuler</button>
+        <button onclick="saveMateriel()" class="btn btn-primary" style="flex:1;justify-content:center;">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="modal-consigne" class="modal-bg hidden">
+  <div class="modal-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+      <h3 style="font-size:1rem;font-weight:800;">Nouvelle Consigne</h3>
+      <button onclick="closeModal('modal-consigne')" style="width:30px;height:30px;border-radius:50%;background:#f1f5f9;border:none;cursor:pointer;">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div><label style="font-size:.75rem;font-weight:700;color:#64748b;display:block;margin-bottom:5px;">Titre *</label><input type="text" id="cons-titre" class="input" placeholder="Titre de la consigne"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div><label style="font-size:.75rem;font-weight:700;color:#64748b;display:block;margin-bottom:5px;">Niveau</label>
+          <select id="cons-niveau" class="input"><option>Permanente</option><option>Particuliere</option><option>Temporaire</option></select>
+        </div>
+        <div><label style="font-size:.75rem;font-weight:700;color:#64748b;display:block;margin-bottom:5px;">Priorite</label>
+          <select id="cons-prio" class="input"><option>Normale</option><option>Haute</option><option>Urgente</option><option>Basse</option></select>
+        </div>
+      </div>
+      <div><label style="font-size:.75rem;font-weight:700;color:#64748b;display:block;margin-bottom:5px;">Contenu *</label><textarea id="cons-contenu" class="input" rows="4" placeholder="Detaillez la consigne..."></textarea></div>
+      <div style="display:flex;gap:10px;margin-top:4px;">
+        <button onclick="closeModal('modal-consigne')" class="btn btn-gray" style="flex:1;justify-content:center;">Annuler</button>
+        <button onclick="saveConsigne()" class="btn btn-primary" style="flex:1;justify-content:center;">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="modal-agent" class="modal-bg hidden">
+  <div class="modal-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+      <h3 style="font-size:1rem;font-weight:800;">Nouvel Agent</h3>
+      <button onclick="closeModal('modal-agent')" style="width:30px;height:30px;border-radius:50%;background:#f1f5f9;border:none;cursor:pointer;">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div><label style="font-size:.75rem;font-weight:700;color:#64748b;display:block;margin-bottom:5px;">Prenom *</label><input type="text" id="ag-prenom" class="input"></div>
+        <div><label style="font-size:.75rem;font-weight:700;color:#64748b;display:block;margin-bottom:5px;">Nom *</label><input type="text" id="ag-nom" class="input"></div>
+      </div>
+      <div><label style="font-size:.75rem;font-weight:700;color:#64748b;display:block;margin-bottom:5px;">Qualification</label>
+        <select id="ag-qualif" class="input"><option>SSIAP 1</option><option>SSIAP 2</option><option>SSIAP 3</option></select>
+      </div>
+      <div><label style="font-size:.75rem;font-weight:700;color:#64748b;display:block;margin-bottom:5px;">Code PIN (6 chiffres) *</label><input type="password" id="ag-pin" class="input" placeholder="......" maxlength="6" inputmode="numeric"></div>
+      <div style="display:flex;gap:10px;margin-top:4px;">
+        <button onclick="closeModal('modal-agent')" class="btn btn-gray" style="flex:1;justify-content:center;">Annuler</button>
+        <button onclick="saveAgent()" class="btn btn-primary" style="flex:1;justify-content:center;">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+var sb = window.supabase;
+var PATROL_SESSION = null;
+var CENTER = null;
+var DB = { agents:[], materiels:[], prisesPoste:[], rondes:[], evenements:[], mainCourante:[], consignes:[] };
+var configEtab = { nom:"Etablissement", batiments:[] };
+var typesRondes = ["Ronde de securite","Ronde Extincteurs","Ronde BAES","Ouverture","Fermeture"];
+var PAGES = ["dashboard","priseposte","rondes","mainCourante","evenements","materiels","consignes","agents","admin"];
+
+// ═══ INIT ═══
+window.addEventListener("DOMContentLoaded", async function() {
+  var params = new URLSearchParams(window.location.search);
+  var autologin = params.get("autologin");
+  var centerId  = params.get("center");
+  var sessionId = params.get("session");
+  var fid       = params.get("fid");
+  var fnom      = params.get("fnom")    || "";
+  var fprenom   = params.get("fprenom") || "";
+
+  // CAS 1 : autologin depuis formateur.html
+  if (autologin === "1" && centerId && fid) {
+    try {
+      var cr = await sb.from("centers").select("*").eq("id", centerId).single();
+      CENTER = cr.data;
+      PATROL_SESSION = { centerId:centerId, sessionId:sessionId||null, agentId:fid, nom:decodeURIComponent(fnom), prenom:decodeURIComponent(fprenom), qualification:"SSIAP 3", type:"formateur" };
+      sessionStorage.setItem("patrol_session", JSON.stringify(PATROL_SESSION));
+      await chargerDonnees();
+      initUI();
+      if (sessionId) await importerStagiairesSession(sessionId);
+      return;
+    } catch(e) { console.error("autologin error:", e); }
+  }
+
+  // CAS 2 : session stockee dans sessionStorage
+  PATROL_SESSION = JSON.parse(sessionStorage.getItem("patrol_session") || "null");
+  if (!PATROL_SESSION || !PATROL_SESSION.centerId || (Date.now() - (PATROL_SESSION.ts||0)) > 86400000) {
+    window.location.href = "patrol-login.html" + window.location.search;
+    return;
+  }
+
+  // Verifier qualification
+  if (PATROL_SESSION.qualification === "SSIAP 1") {
+    window.location.href = "patrol-rondier.html";
+    return;
+  }
+
+  try {
+    var cr2 = await sb.from("centers").select("*").eq("id", PATROL_SESSION.centerId).single();
+    CENTER = cr2.data;
+    await chargerDonnees();
+    initUI();
+  } catch(e) { console.error(e); }
+});
+
+async function chargerDonnees() {
+  var q = sb.from("patrol_data").select("*").eq("center_id", PATROL_SESSION.centerId);
+  if (PATROL_SESSION.sessionId) q = q.eq("session_id", PATROL_SESSION.sessionId);
+  else q = q.is("session_id", null);
+  var {data} = await q.maybeSingle();
+  if (data) {
+    if (data.agents)        DB.agents        = data.agents;
+    if (data.materiels)     DB.materiels     = data.materiels;
+    if (data.prises_poste)  DB.prisesPoste   = data.prises_poste;
+    if (data.rondes)        DB.rondes        = data.rondes;
+    if (data.evenements)    DB.evenements    = data.evenements;
+    if (data.main_courante) DB.mainCourante  = data.main_courante;
+    if (data.consignes)     DB.consignes     = data.consignes;
+    if (data.config)        configEtab       = data.config;
+    if (data.types_rondes)  typesRondes      = data.types_rondes;
+  }
+}
+
+async function sauvegarder() {
+  var payload = {
+    center_id:     PATROL_SESSION.centerId,
+    session_id:    PATROL_SESSION.sessionId || null,
+    formateur_id:  PATROL_SESSION.agentId || null,
+    agents:        DB.agents,
+    materiels:     DB.materiels,
+    prises_poste:  DB.prisesPoste,
+    rondes:        DB.rondes,
+    evenements:    DB.evenements,
+    main_courante: DB.mainCourante.slice(0,500),
+    consignes:     DB.consignes,
+    config:        configEtab,
+    types_rondes:  typesRondes,
+    updated_at:    new Date().toISOString()
+  };
+  await sb.from("patrol_data").upsert(payload, {onConflict:"center_id,session_id"});
+}
+
+async function syncData() {
+  toast("Synchronisation...");
+  await sauvegarder();
+  await chargerDonnees();
+  renderCurrentPage();
+  toast("Synchronise !", "ok");
+}
+
+function initUI() {
+  document.getElementById("sb-centre").textContent = CENTER ? CENTER.nom : "";
+  document.getElementById("sb-user").textContent = PATROL_SESSION.prenom + " " + PATROL_SESSION.nom;
+  document.getElementById("sb-role").textContent = PATROL_SESSION.qualification || "Admin";
+  if (PATROL_SESSION.sessionId) {
+    document.getElementById("btn-import-stag").style.display = "flex";
+  }
+  showPage("dashboard");
+  // QR code acces rondier
+  setTimeout(function() {
+    var base = window.location.href.replace(/patrol-admin\.html.*/, "");
+    var rondierUrl = base + "patrol-login.html?center=" + PATROL_SESSION.centerId + (PATROL_SESSION.sessionId ? "&session="+PATROL_SESSION.sessionId : "");
+    window._rondierUrl = rondierUrl;
+    var qrDiv = document.getElementById("qr-rondier");
+    if (qrDiv && typeof QRCode !== "undefined") {
+      try { new QRCode(qrDiv, {text:rondierUrl, width:80, height:80, colorDark:"#1e293b", colorLight:"#f8fafc"}); }
+      catch(e) {}
+    }
+  }, 500);
+}
+
+// ═══ NAVIGATION ═══
+function showPage(name) {
+  PAGES.forEach(function(p) {
+    var el = document.getElementById("page-"+p);
+    var nav = document.getElementById("nav-"+p);
+    if(el) el.className = "page" + (p===name?" active fade-in":"");
+    if(nav) nav.className = "nav-link" + (p===name?" active":"");
+  });
+  renderCurrentPage();
+}
+
+function renderCurrentPage() {
+  var active = PAGES.find(function(p){ return document.getElementById("page-"+p)?.classList.contains("active"); });
+  if (active === "dashboard") renderDashboard();
+  if (active === "priseposte") renderPrisePoste();
+  if (active === "rondes") renderRondes();
+  if (active === "mainCourante") renderMainCourante();
+  if (active === "evenements") renderEvenements();
+  if (active === "materiels") renderMateriels();
+  if (active === "consignes") renderConsignes();
+  if (active === "agents") renderAgents();
+  if (active === "admin") renderAdmin();
+}
+
+// ═══ DASHBOARD ═══
+function getAgentsEnPoste() {
+  return DB.prisesPoste.filter(function(p){ return !p.finPoste; }).map(function(p){
+    var a = DB.agents.find(function(a){ return String(a.id)===String(p.agentId); });
+    return a ? Object.assign({},a,{prisePosteId:p.id,poste:p.poste,heureDebut:p.heureDebut}) : null;
+  }).filter(Boolean);
+}
+
+function renderDashboard() {
+  var enPoste = getAgentsEnPoste();
+  var rondesEnCours = DB.rondes.filter(function(r){ return !r.heureFin; });
+  var evtsActifs = DB.evenements.filter(function(e){ return e.statut !== "Termine"; });
+  var today = new Date().toDateString();
+  var actions = DB.mainCourante.filter(function(m){ return new Date(m.date).toDateString()===today; });
+
+  document.getElementById("kpi-poste").textContent    = enPoste.length;
+  document.getElementById("kpi-rondes").textContent   = rondesEnCours.length;
+  document.getElementById("kpi-evts").textContent     = evtsActifs.length;
+  document.getElementById("kpi-actions").textContent  = actions.length;
+
+  var chef = enPoste.find(function(a){ return a.poste==="Chef de poste"; });
+  var equipeHtml = enPoste.length ? enPoste.map(function(a){
+    var cls = a.poste==="Chef de poste"?"b-orange":"b-blue";
+    return "<div style=\"display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f8fafc;\">"
+      +"<div style=\"width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;color:#fff;font-size:.78rem;font-weight:700;flex-shrink:0;\">"+a.prenom[0]+a.nom[0]+"</div>"
+      +"<div style=\"flex:1;\"><div style=\"font-size:.83rem;font-weight:700;\">"+a.prenom+" "+a.nom+"</div><div style=\"font-size:.72rem;color:#94a3b8;\">"+a.qualification+" &bull; "+a.poste+"</div></div>"
+      +"<button onclick=\"finPoste("+a.prisePosteId+")\" style=\"padding:4px 8px;border-radius:7px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;font-size:.68rem;font-weight:700;cursor:pointer;\">Fin</button>"
+      +"</div>";
+  }).join("") : "<div style=\"color:#94a3b8;font-size:.83rem;\">Aucun agent en poste</div>";
+  document.getElementById("dash-equipe").innerHTML = equipeHtml;
+}
+
+// ═══ PRISE DE POSTE ═══
+function showModalPrisePoste() {
+  var enPoste = new Set(getAgentsEnPoste().map(function(a){ return String(a.id); }));
+  var sel = document.getElementById("pp-agent");
+  sel.innerHTML = "<option value=\"\">Selectionner...</option>";
+  DB.agents.filter(function(a){ return a.actif && !enPoste.has(String(a.id)); }).forEach(function(a){
+    var o = document.createElement("option"); o.value=a.id; o.textContent=a.prenom+" "+a.nom+" - "+a.qualification; sel.appendChild(o);
+  });
+  document.getElementById("pp-msg").style.display="none";
+  openModal("modal-priseposte");
+}
+
+async function savePrisePoste() {
+  var agentId = document.getElementById("pp-agent").value;
+  var poste   = document.getElementById("pp-poste").value;
+  if (!agentId) { showModalMsg("pp-msg","Selectionnez un agent.","err"); return; }
+  DB.prisesPoste.push({ id:genId(), agentId:agentId, poste:poste, heureDebut:new Date().toISOString(), finPoste:null });
+  var agent = DB.agents.find(function(a){ return String(a.id)===String(agentId); });
+  addMC("Prise de Poste", poste+" - "+(agent?agent.prenom+" "+agent.nom:""), agentId);
+  await sauvegarder(); closeModal("modal-priseposte"); toast("Prise de poste enregistree","ok");
+  renderDashboard(); renderPrisePoste();
+}
+
+function renderPrisePoste() {
+  var enPoste = getAgentsEnPoste();
+  var tbody = document.getElementById("body-priseposte");
+  if (!tbody) return;
+  if (!enPoste.length) { tbody.innerHTML="<tr><td colspan=\"5\" style=\"text-align:center;color:#94a3b8;padding:24px;\">Aucun agent en poste</td></tr>"; return; }
+  tbody.innerHTML = enPoste.map(function(a){
+    return "<tr><td style=\"font-weight:700;\">"+a.prenom+" "+a.nom+"</td>"
+      +"<td><span class=\"badge b-blue\">"+a.qualification+"</span></td>"
+      +"<td><span class=\"badge b-orange\">"+a.poste+"</span></td>"
+      +"<td style=\"font-size:.78rem;color:#64748b;\">"+fmtDT(a.heureDebut)+"</td>"
+      +"<td><button onclick=\"finPoste("+a.prisePosteId+")\" class=\"btn btn-red btn-sm\">Fin de poste</button></td></tr>";
+  }).join("");
+}
+
+async function finPoste(id) {
+  var pp = DB.prisesPoste.find(function(p){ return p.id===id; });
+  if (!pp) return;
+  pp.finPoste = new Date().toISOString();
+  var agent = DB.agents.find(function(a){ return String(a.id)===String(pp.agentId); });
+  addMC("Fin de Poste", (agent?agent.prenom+" "+agent.nom:""), pp.agentId);
+  await sauvegarder(); toast("Fin de poste enregistree","ok"); renderDashboard(); renderPrisePoste();
+}
+
+// ═══ RONDES ═══
+function renderRondes() {
+  var tbody = document.getElementById("tbl-rondes");
+  if (!tbody) return;
+  var rondes = DB.rondes.slice().sort(function(a,b){ return new Date(b.heureDebut)-new Date(a.heureDebut); });
+  if (!rondes.length) { tbody.innerHTML="<tr><td colspan=\"6\" style=\"text-align:center;color:#94a3b8;padding:24px;\">Aucune ronde</td></tr>"; return; }
+  tbody.innerHTML = rondes.map(function(r){
+    var agent = DB.agents.find(function(a){ return String(a.id)===String(r.agentId); });
+    var pts = (r.pointsControle||[]).filter(function(p){ return p.valide; }).length;
+    var tot = (r.pointsControle||[]).length;
+    var hasHS  = (r.anomalies||[]).some(function(a){ return a.horsService; });
+    var hasAno = (r.anomalies||[]).length > 0;
+    var statut = r.heureFin ? (hasHS?"<span class=\"badge b-red\">HS</span>":hasAno?"<span class=\"badge b-orange\">Anomalie</span>":"<span class=\"badge b-green\">OK</span>") : "<span class=\"badge b-blue\">En cours</span>";
+    return "<tr>"
+      +"<td style=\"font-weight:600;font-size:.82rem;\">"+r.type+"</td>"
+      +"<td style=\"font-size:.8rem;\">"+((agent?agent.prenom+" "+agent.nom:"—"))+"</td>"
+      +"<td style=\"font-size:.78rem;color:#64748b;\">"+fmtDT(r.heureDebut)+"</td>"
+      +"<td style=\"font-size:.78rem;color:#64748b;\">"+(r.heureFin?fmtDT(r.heureFin):"—")+"</td>"
+      +"<td style=\"font-size:.8rem;\">"+pts+"/"+tot+"</td>"
+      +"<td>"+statut+"</td>"
+      +"</tr>";
+  }).join("");
+}
+
+// ═══ MAIN COURANTE ═══
+function renderMainCourante() {
+  var tbody = document.getElementById("tbl-main-courante");
+  if (!tbody) return;
+  if (!DB.mainCourante.length) { tbody.innerHTML="<tr><td colspan=\"4\" style=\"text-align:center;color:#94a3b8;padding:24px;\">Aucune entree</td></tr>"; return; }
+  tbody.innerHTML = DB.mainCourante.slice(0,100).map(function(m){
+    return "<tr><td style=\"font-size:.78rem;white-space:nowrap;\">"+fmtDT(m.date)+"</td>"
+      +"<td><span class=\"badge b-blue\" style=\"font-size:.64rem;\">"+m.type+"</span></td>"
+      +"<td style=\"font-size:.82rem;\">"+esc(m.description)+"</td>"
+      +"<td style=\"font-size:.78rem;color:#64748b;\">"+esc(m.agent||"")+"</td></tr>";
+  }).join("");
+}
+
+// ═══ EVENEMENTS ═══
+function showModalEvenement() {
+  document.getElementById("evt-desc").value="";
+  document.getElementById("evt-loc").value="";
+  openModal("modal-evenement");
+}
+
+async function saveEvenement() {
+  var type = document.getElementById("evt-type").value;
+  var loc  = document.getElementById("evt-loc").value.trim();
+  var desc = document.getElementById("evt-desc").value.trim();
+  if (!desc) { toast("Description requise.","err"); return; }
+  var evt = { id:genId(), type:type, statut:"Debut", localisation:loc, description:desc, date:new Date().toISOString(), agentId:PATROL_SESSION.agentId, commentaire:"", compteRendu:"" };
+  DB.evenements.unshift(evt);
+  addMC(type, "DEBUT: "+desc.substring(0,50), PATROL_SESSION.agentId);
+  await sauvegarder(); closeModal("modal-evenement"); toast("Evenement cree !","ok"); renderEvenements();
+}
+
+function renderEvenements() {
+  var el = document.getElementById("body-evenements");
+  if (!el) return;
+  if (!DB.evenements.length) { el.innerHTML="<div style=\"text-align:center;color:#94a3b8;padding:32px;\">Aucun evenement</div>"; return; }
+  el.innerHTML = DB.evenements.map(function(e){
+    var col = e.statut==="Debut"?"b-red":e.statut==="En cours"?"b-orange":"b-green";
+    return "<div class=\"card\" style=\"margin-bottom:10px;\">"
+      +"<div style=\"display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;\">"
+      +"<div><div style=\"font-weight:700;font-size:.88rem;\">"+e.type+"</div>"
+      +"<div style=\"font-size:.75rem;color:#64748b;margin-top:2px;\">"+esc(e.localisation||"")+" &bull; "+fmtDT(e.date)+"</div></div>"
+      +"<span class=\"badge "+col+"\">"+e.statut+"</span></div>"
+      +"<div style=\"margin-top:8px;font-size:.83rem;\">"+esc(e.description)+"</div>"
+      +"</div>";
+  }).join("");
+}
+
+// ═══ MATERIELS ═══
+function showModalMateriel(id) {
+  document.getElementById("mat-id").value = id || "";
+  document.getElementById("modal-mat-title").textContent = id ? "Modifier Materiel" : "Nouveau Materiel";
+  if (id) {
+    var m = DB.materiels.find(function(x){ return x.id===id; });
+    if (m) {
+      document.getElementById("mat-nom").value = m.nom||"";
+      document.getElementById("mat-type").value = m.type||"Extincteur";
+      document.getElementById("mat-statut").value = m.statut||"Operationnel";
+      document.getElementById("mat-loc").value = m.localisation||"";
+      document.getElementById("mat-qr").value = m.codeQR||"";
+    }
+  } else {
+    ["mat-nom","mat-loc","mat-qr"].forEach(function(id){ document.getElementById(id).value=""; });
+    document.getElementById("mat-type").value="Extincteur";
+    document.getElementById("mat-statut").value="Operationnel";
+  }
+  openModal("modal-materiel");
+}
+
+async function saveMateriel() {
+  var nom = document.getElementById("mat-nom").value.trim();
+  if (!nom) { toast("Nom requis.","err"); return; }
+  var existingId = document.getElementById("mat-id").value;
+  if (existingId) {
+    var m = DB.materiels.find(function(x){ return String(x.id)===String(existingId); });
+    if (m) { m.nom=nom; m.type=document.getElementById("mat-type").value; m.statut=document.getElementById("mat-statut").value; m.localisation=document.getElementById("mat-loc").value.trim(); m.codeQR=document.getElementById("mat-qr").value.trim(); }
+  } else {
+    var newId = genId();
+    var qr = document.getElementById("mat-qr").value.trim() || "MAT-"+document.getElementById("mat-type").value.substring(0,3).toUpperCase()+"-"+String(newId).slice(-4);
+    DB.materiels.push({ id:newId, nom:nom, type:document.getElementById("mat-type").value, statut:document.getElementById("mat-statut").value, localisation:document.getElementById("mat-loc").value.trim(), codeQR:qr });
+  }
+  await sauvegarder(); closeModal("modal-materiel"); toast("Materiel enregistre !","ok"); renderMateriels();
+}
+
+function renderMateriels() {
+  var tbody = document.getElementById("tbl-materiels");
+  if (!tbody) return;
+  if (!DB.materiels.length) { tbody.innerHTML="<tr><td colspan=\"5\" style=\"text-align:center;color:#94a3b8;padding:24px;\">Aucun materiel</td></tr>"; return; }
+  tbody.innerHTML = DB.materiels.map(function(m){
+    var sc = m.statut==="Operationnel"?"b-green":m.statut==="A verifier"?"b-orange":"b-red";
+    return "<tr><td style=\"font-weight:600;\">"+esc(m.nom)+"</td>"
+      +"<td style=\"font-size:.8rem;color:#64748b;\">"+m.type+"</td>"
+      +"<td style=\"font-size:.78rem;color:#64748b;\">"+esc(m.localisation||"—")+"</td>"
+      +"<td><span class=\"badge "+sc+"\">"+m.statut+"</span></td>"
+      +"<td><button onclick=\"showModalMateriel("+m.id+")\" class=\"btn btn-gray btn-sm\"><i class=\"fas fa-edit\"></i></button></td></tr>";
+  }).join("");
+}
+
+// ═══ CONSIGNES ═══
+function showModalConsigne() {
+  document.getElementById("cons-titre").value="";
+  document.getElementById("cons-contenu").value="";
+  openModal("modal-consigne");
+}
+
+async function saveConsigne() {
+  var titre   = document.getElementById("cons-titre").value.trim();
+  var contenu = document.getElementById("cons-contenu").value.trim();
+  if (!titre || !contenu) { toast("Titre et contenu requis.","err"); return; }
+  DB.consignes.push({ id:genId(), titre:titre, niveau:document.getElementById("cons-niveau").value, priorite:document.getElementById("cons-prio").value, contenu:contenu, active:true, dateDebut:new Date().toISOString().split("T")[0], dateFin:null });
+  await sauvegarder(); closeModal("modal-consigne"); toast("Consigne creee !","ok"); renderConsignes();
+}
+
+function renderConsignes() {
+  var el = document.getElementById("body-consignes");
+  if (!el) return;
+  var actives = DB.consignes.filter(function(c){ return c.active; });
+  if (!actives.length) { el.innerHTML="<div style=\"text-align:center;color:#94a3b8;padding:32px;\">Aucune consigne active</div>"; return; }
+  el.innerHTML = actives.map(function(c){
+    var prio = c.priorite==="Urgente"||c.priorite==="Haute"?"b-red":"b-blue";
+    return "<div class=\"card\" style=\"margin-bottom:10px;\">"
+      +"<div style=\"display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px;\">"
+      +"<div style=\"font-weight:700;font-size:.88rem;\">"+esc(c.titre)+"</div>"
+      +"<div style=\"display:flex;gap:5px;\"><span class=\"badge b-purple\">"+c.niveau+"</span><span class=\"badge "+prio+"\">"+c.priorite+"</span>"
+      +"<button onclick=\"supprimerConsigne("+c.id+")\" class=\"btn btn-red btn-sm\" style=\"padding:3px 8px;\"><i class=\"fas fa-trash\"></i></button></div></div>"
+      +"<div style=\"font-size:.82rem;color:#64748b;\">"+esc(c.contenu.substring(0,150))+(c.contenu.length>150?"...":"")+"</div>"
+      +"</div>";
+  }).join("");
+}
+
+async function supprimerConsigne(id) {
+  DB.consignes = DB.consignes.filter(function(c){ return c.id!==id; });
+  await sauvegarder(); renderConsignes(); toast("Consigne supprimee","ok");
+}
+
+// ═══ AGENTS ═══
+function showModalAgent() {
+  ["ag-prenom","ag-nom","ag-pin"].forEach(function(id){ document.getElementById(id).value=""; });
+  openModal("modal-agent");
+}
+
+async function saveAgent() {
+  var prenom = document.getElementById("ag-prenom").value.trim();
+  var nom    = document.getElementById("ag-nom").value.trim();
+  var pin    = document.getElementById("ag-pin").value;
+  if (!prenom||!nom||pin.length!==6) { toast("Remplissez tous les champs (PIN 6 chiffres).","err"); return; }
+  var pinHash = await UTILS.hash(pin);
+  DB.agents.push({ id:genId(), prenom:prenom, nom:nom, qualification:document.getElementById("ag-qualif").value, pinHash:pinHash, pinClair:pin, actif:true, type:"agent_secu", entreprise:CENTER?CENTER.nom:"" });
+  await sauvegarder(); closeModal("modal-agent"); toast("Agent cree !","ok"); renderAgents();
+}
+
+async function importerFormateurs() {
+  toast("Importation formateurs...");
+  var {data} = await sb.from("formateurs").select("id,nom,prenom,pin_hash,pin_clair,email,telephone").eq("center_id", PATROL_SESSION.centerId).eq("actif", true);
+  var added = 0;
+  for (var f of (data||[])) {
+    if (DB.agents.find(function(a){ return String(a.id)===String(f.id); })) continue;
+    var pinHash = f.pin_hash || (f.pin_clair ? await UTILS.hash(f.pin_clair) : null);
+    DB.agents.push({ id:f.id, nom:f.nom, prenom:f.prenom, qualification:"SSIAP 2", entreprise:CENTER?CENTER.nom:"", email:f.email||"", telephone:f.telephone||"", pinHash:pinHash, pinClair:f.pin_clair||null, actif:true, type:"formateur" });
+    added++;
+  }
+  if (added) { await sauvegarder(); toast(added+" formateur(s) importe(s) !","ok"); renderAgents(); }
+  else toast("Tous les formateurs sont deja presents.","ok");
+}
+
+async function importerStagiaires() {
+  if (!PATROL_SESSION.sessionId) { toast("Aucune session liee.","err"); return; }
+  await importerStagiairesSession(PATROL_SESSION.sessionId);
+  renderAgents();
+}
+
+async function importerStagiairesSession(sessionId) {
+  var {data:parts} = await sb.from("session_participants").select("*, stagiaires(id,nom,prenom,niveau,pin_hash,pin_clair,email,telephone)").eq("session_id", sessionId);
+  var added = 0;
+  for (var p of (parts||[])) {
+    var s = p.stagiaires;
+    if (!s || DB.agents.find(function(a){ return String(a.id)===String(s.id); })) continue;
+    var pinHash = s.pin_hash || (s.pin_clair ? await UTILS.hash(s.pin_clair) : null);
+    var niv = s.niveau||"SSIAP1";
+    var qualif = niv==="SSIAP3"?"SSIAP 3":niv==="SSIAP2"?"SSIAP 2":"SSIAP 1";
+    DB.agents.push({ id:s.id, nom:s.nom, prenom:s.prenom, qualification:qualif, pinHash:pinHash, pinClair:s.pin_clair||null, actif:true, type:"stagiaire", entreprise:CENTER?CENTER.nom:"" });
+    added++;
+  }
+  if (added) { await sauvegarder(); toast(added+" stagiaire(s) importe(s) !","ok"); }
+}
+
+function renderAgents() {
+  var tbody = document.getElementById("tbl-agents");
+  if (!tbody) return;
+  if (!DB.agents.length) { tbody.innerHTML="<tr><td colspan=\"5\" style=\"text-align:center;color:#94a3b8;padding:24px;\">Aucun agent</td></tr>"; return; }
+  tbody.innerHTML = DB.agents.map(function(a){
+    var qcls = a.qualification==="SSIAP 3"?"b-purple":a.qualification==="SSIAP 2"?"b-blue":"b-green";
+    var tcls = a.type==="formateur"?"b-orange":a.type==="stagiaire"?"b-blue":"b-gray";
+    return "<tr><td><div style=\"font-weight:700;font-size:.83rem;\">"+esc(a.prenom)+" "+esc(a.nom)+"</div><div style=\"font-size:.72rem;color:#94a3b8;\">"+esc(a.email||"")+"</div></td>"
+      +"<td><span class=\"badge "+qcls+"\">"+a.qualification+"</span></td>"
+      +"<td><span class=\"badge "+tcls+"\">"+a.type+"</span></td>"
+      +"<td><span class=\"badge "+(a.actif?"b-green":"b-red")+"\">"+(a.actif?"Actif":"Inactif")+"</span></td>"
+      +"<td><button onclick=\"toggleAgent('"+a.id+"',"+a.actif+")\" class=\"btn btn-gray btn-sm\">"+(a.actif?"Desactiver":"Activer")+"</button></td></tr>";
+  }).join("");
+}
+
+async function toggleAgent(id, actif) {
+  var a = DB.agents.find(function(x){ return String(x.id)===String(id); });
+  if (a) { a.actif = !actif; await sauvegarder(); renderAgents(); }
+}
+
+// ═══ ADMINISTRATION ═══
+function renderAdmin() {
+  var el = document.getElementById("admin-stats");
+  if (!el) return;
+  el.innerHTML = "<div style=\"display:grid;grid-template-columns:1fr 1fr;gap:10px;\">"
+    +"<div class=\"kpi\"><div style=\"font-size:1.4rem;font-weight:800;color:#6366f1;\">"+DB.agents.length+"</div><div style=\"font-size:.72rem;color:#94a3b8;\">Agents</div></div>"
+    +"<div class=\"kpi\"><div style=\"font-size:1.4rem;font-weight:800;color:#10b981;\">"+DB.materiels.length+"</div><div style=\"font-size:.72rem;color:#94a3b8;\">Materiels</div></div>"
+    +"<div class=\"kpi\"><div style=\"font-size:1.4rem;font-weight:800;color:#8b5cf6;\">"+DB.rondes.length+"</div><div style=\"font-size:.72rem;color:#94a3b8;\">Rondes</div></div>"
+    +"<div class=\"kpi\"><div style=\"font-size:1.4rem;font-weight:800;color:#f59e0b;\">"+DB.mainCourante.length+"</div><div style=\"font-size:.72rem;color:#94a3b8;\">Main courante</div></div>"
+    +"</div>";
+}
+
+async function reinitialiser() {
+  if (!confirm("Supprimer toutes les rondes, evenements et main courante ?")) return;
+  DB.prisesPoste=[]; DB.rondes=[]; DB.evenements=[]; DB.mainCourante=[];
+  await sauvegarder(); toast("Donnees reinitialises","ok"); renderCurrentPage();
+}
+
+function exporterDonnees() {
+  var data = { version:"3.1", date:new Date().toISOString(), centre:CENTER?CENTER.nom:"", ...DB };
+  var blob = new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+  var a = document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="patrol-"+(CENTER?CENTER.nom.replace(/\s/g,"-"):"")+"-"+new Date().toISOString().split("T")[0]+".json"; a.click();
+}
+
+// ═══ UTILS ═══
+function genId() { return Date.now()+Math.floor(Math.random()*1000); }
+function esc(s) { return (s||"").toString().replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function fmtDate(d) { return d?new Date(d).toLocaleDateString("fr-FR"):"-"; }
+function fmtTime(d) { return d?new Date(d).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}):"-"; }
+function fmtDT(d)   { return d?fmtDate(d)+" "+fmtTime(d):"-"; }
+
+function addMC(type, description, agentId) {
+  var agent = DB.agents.find(function(a){ return String(a.id)===String(agentId); });
+  DB.mainCourante.unshift({ id:genId(), date:new Date().toISOString(), type:type, description:description, agent:agent?agent.prenom+" "+agent.nom:"Systeme", agentId:agentId });
+}
+
+function toast(msg, cls) {
+  var t = document.getElementById("toast");
+  t.textContent=msg; t.className="toast show"+(cls?" "+cls:"");
+  clearTimeout(t._t); t._t=setTimeout(function(){ t.className="toast"; },2800);
+}
+function openModal(id) { document.getElementById(id)?.classList.remove("hidden"); }
+function closeModal(id) { document.getElementById(id)?.classList.add("hidden"); }
+function showModalMsg(elId, msg, type) { var el=document.getElementById(elId); el.innerHTML="<div style=\"padding:8px;border-radius:8px;font-size:.8rem;background:"+(type==="err"?"#fef2f2":"#f0fdf4")+";color:"+(type==="err"?"#dc2626":"#16a34a")+";\">"+msg+"</div>"; el.style.display="block"; }
+
+function logout() {
+  sessionStorage.removeItem("patrol_session");
+  window.location.href = "patrol-login.html?center=" + PATROL_SESSION.centerId;
+}
+
+function copyLink() {
+  var url = window._rondierUrl || "";
+  navigator.clipboard.writeText(url).then(function(){ toast("Lien copie !","ok"); }).catch(function(){ alert("Lien: "+url); });
+}
+
+function toggleSidebar() {
+  document.getElementById("sidebar").classList.toggle("open");
+  document.getElementById("overlay").style.display = document.getElementById("sidebar").classList.contains("open") ? "block":"none";
+}
+
+// Responsive : afficher header mobile
+function checkMobile() {
+  var hdr = document.getElementById("mob-header");
+  if (window.innerWidth <= 768) hdr.style.display="flex";
+  else hdr.style.display="none";
+}
+window.addEventListener("resize", checkMobile);
+checkMobile();
+</script>
+</body>
+</html>
