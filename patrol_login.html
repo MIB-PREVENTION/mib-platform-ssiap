@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SSIAP Patrol — Connexion</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="supabase.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:'Plus Jakarta Sans',sans-serif; background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); min-height:100vh; display:flex; align-items:center; justify-content:center; padding:16px; }
+.card { background:#fff; border-radius:24px; padding:40px 36px; width:100%; max-width:420px; box-shadow:0 30px 80px rgba(0,0,0,.25); animation:fadeIn .3s ease-out; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:none} }
+.logo { width:72px; height:72px; border-radius:20px; background:linear-gradient(135deg,#6366f1,#8b5cf6); display:flex; align-items:center; justify-content:center; margin:0 auto 20px; box-shadow:0 8px 24px rgba(99,102,241,.4); }
+.input { width:100%; padding:13px 16px; border:1.5px solid #e2e8f0; border-radius:12px; font-size:.95rem; font-family:inherit; outline:none; transition:all .15s; background:#fff; color:#1e293b; }
+.input:focus { border-color:#6366f1; box-shadow:0 0 0 3px rgba(99,102,241,.12); }
+.btn-login { width:100%; padding:14px; background:linear-gradient(135deg,#6366f1,#4f46e5); color:#fff; border:none; border-radius:12px; font-family:inherit; font-size:.95rem; font-weight:700; cursor:pointer; transition:all .15s; display:flex; align-items:center; justify-content:center; gap:8px; }
+.btn-login:hover { transform:translateY(-1px); box-shadow:0 8px 20px rgba(99,102,241,.4); }
+.btn-login:active { transform:scale(.98); }
+.spin { width:18px; height:18px; border:2.5px solid rgba(255,255,255,.3); border-top-color:#fff; border-radius:50%; animation:sp .6s linear infinite; display:inline-block; }
+@keyframes sp { to{transform:rotate(360deg)} }
+.err { background:#fef2f2; border:1px solid #fecaca; border-radius:10px; padding:10px 14px; color:#dc2626; font-size:.83rem; font-weight:600; margin-bottom:12px; display:none; }
+.rondier-btn { width:100%; padding:12px; background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; font-family:inherit; font-size:.88rem; font-weight:600; cursor:pointer; color:#64748b; transition:all .15s; display:flex; align-items:center; justify-content:center; gap:8px; }
+.rondier-btn:hover { background:#f1f5f9; color:#1e293b; }
+select.input { cursor:pointer; }
+option { padding:8px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo"><i class="fas fa-shield-alt text-white text-2xl"></i></div>
+  <h1 style="text-align:center;font-size:1.5rem;font-weight:800;color:#1e293b;margin-bottom:4px;">SSIAP Patrol</h1>
+  <p style="text-align:center;color:#94a3b8;font-size:.85rem;margin-bottom:28px;" id="subtitle">Chargement...</p>
+
+  <div class="err" id="err-msg"></div>
+
+  <div style="display:flex;flex-direction:column;gap:14px;">
+    <div>
+      <label style="display:block;font-size:.75rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Agent</label>
+      <select id="sel-agent" class="input">
+        <option value="">Chargement des agents...</option>
+      </select>
+    </div>
+    <div>
+      <label style="display:block;font-size:.75rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Code PIN</label>
+      <input type="password" id="inp-pin" class="input" placeholder="••••••" maxlength="6" inputmode="numeric">
+    </div>
+    <button class="btn-login" id="btn-login" onclick="doLogin()">
+      <i class="fas fa-sign-in-alt"></i> Se connecter
+    </button>
+  </div>
+
+  <div style="margin-top:16px;padding-top:16px;border-top:1px solid #f1f5f9;">
+    <button class="rondier-btn" onclick="accesRondier()">
+      <i class="fas fa-mobile-alt"></i> Acces Rondier Mobile
+    </button>
+  </div>
+</div>
+
+<script>
+var CENTER   = null;
+var SESSION_PATROL = null;
+var DB_AGENTS = [];
+
+window.addEventListener("DOMContentLoaded", async function() {
+  var params    = new URLSearchParams(window.location.search);
+  var centerId  = params.get("center");
+  var sessionId = params.get("session");
+
+  if (!centerId) {
+    document.getElementById("subtitle").textContent = "Lien invalide";
+    showErr("Utilisez le lien fourni par votre centre de formation.");
+    return;
+  }
+
+  document.getElementById("subtitle").textContent = "Chargement...";
+
+  try {
+    var cr = await window.supabase.from("centers").select("*").eq("id", centerId).single();
+    if (!cr.data) { showErr("Centre introuvable."); return; }
+    CENTER = cr.data;
+    document.getElementById("subtitle").textContent = CENTER.nom || "Connexion";
+
+    // Charger les donnees patrol de cette session
+    var q = window.supabase.from("patrol_data").select("agents").eq("center_id", centerId);
+    if (sessionId) q = q.eq("session_id", sessionId);
+    else q = q.is("session_id", null);
+    var pr = await q.maybeSingle();
+
+    DB_AGENTS = (pr.data && pr.data.agents) ? pr.data.agents.filter(function(a){return a.actif;}) : [];
+
+    // Si pas d'agents encore → initialiser depuis formateurs du centre
+    if (!DB_AGENTS.length) {
+      var fr = await window.supabase.from("formateurs").select("id,nom,prenom,pin_hash,pin_clair,email,telephone").eq("center_id", centerId).eq("actif", true);
+      DB_AGENTS = (fr.data||[]).map(function(f){
+        return { id:f.id, nom:f.nom, prenom:f.prenom, qualification:"SSIAP 2", actif:true, type:"formateur", entreprise:CENTER.nom||"", pinHash:f.pin_hash||null, pinClair:f.pin_clair||null };
+      });
+    }
+
+    // Trier et remplir le select
+    DB_AGENTS.sort(function(a,b){
+      var o = {"SSIAP 3":0,"SSIAP 2":1,"SSIAP 1":2,"Administrateur":-1};
+      return ((o[a.qualification]===undefined?3:o[a.qualification])) - ((o[b.qualification]===undefined?3:o[b.qualification]));
+    });
+
+    var sel = document.getElementById("sel-agent");
+    sel.innerHTML = "<option value=\"\">Selectionner un agent...</option>";
+    DB_AGENTS.forEach(function(a){
+      var o = document.createElement("option");
+      o.value = a.id;
+      o.textContent = a.prenom + " " + a.nom + " - " + a.qualification;
+      sel.appendChild(o);
+    });
+
+  } catch(e) {
+    console.error(e);
+    showErr("Erreur de chargement. Verifiez votre connexion.");
+  }
+});
+
+async function doLogin() {
+  var agentId = document.getElementById("sel-agent").value;
+  var pin     = document.getElementById("inp-pin").value;
+  if (!agentId) { showErr("Selectionnez un agent."); return; }
+  if (!pin)     { showErr("Entrez votre code PIN."); return; }
+
+  var btn = document.getElementById("btn-login");
+  btn.innerHTML = "<span class=\"spin\"></span>";
+  btn.disabled = true;
+  hideErr();
+
+  var agent = DB_AGENTS.find(function(a){ return String(a.id) === String(agentId); });
+  if (!agent) { showErr("Agent introuvable."); btn.innerHTML="<i class=\"fas fa-sign-in-alt\"></i> Se connecter"; btn.disabled=false; return; }
+
+  // Verifier PIN
+  var ok = false;
+  try {
+    if (agent.pinHash) {
+      var h = await UTILS.hash(pin);
+      ok = (h === agent.pinHash);
+    }
+    if (!ok && agent.pinClair) ok = (pin === agent.pinClair);
+  } catch(e){ console.error(e); }
+
+  if (!ok) {
+    showErr("Code PIN incorrect.");
+    btn.innerHTML="<i class=\"fas fa-sign-in-alt\"></i> Se connecter"; btn.disabled=false;
+    return;
+  }
+
+  // Stocker la session et rediriger
+  var params = new URLSearchParams(window.location.search);
+  var sessionId = params.get("session") || null;
+  var patrolSession = {
+    agentId: agent.id,
+    nom: agent.nom,
+    prenom: agent.prenom,
+    qualification: agent.qualification,
+    type: agent.type || "agent",
+    centerId: CENTER.id,
+    centerNom: CENTER.nom,
+    sessionId: sessionId,
+    ts: Date.now()
+  };
+  sessionStorage.setItem("patrol_session", JSON.stringify(patrolSession));
+
+  // Redirection selon qualification
+  var base = window.location.href.replace(/patrol-login\.html.*/, "");
+  if (agent.qualification === "SSIAP 1") {
+    window.location.href = base + "patrol-rondier.html";
+  } else {
+    window.location.href = base + "patrol-agent.html";
+  }
+}
+
+function accesRondier() {
+  var params    = new URLSearchParams(window.location.search);
+  var centerId  = params.get("center");
+  var sessionId = params.get("session");
+  if (CENTER) {
+    var url = "patrol-rondier.html?center=" + centerId + (sessionId?"&session="+sessionId:"");
+    window.location.href = url;
+  }
+}
+
+function showErr(msg) {
+  var el = document.getElementById("err-msg");
+  el.textContent = msg; el.style.display="block";
+  var btn=document.getElementById("btn-login");
+  btn.innerHTML="<i class=\"fas fa-sign-in-alt\"></i> Se connecter"; btn.disabled=false;
+}
+function hideErr() { document.getElementById("err-msg").style.display="none"; }
+
+document.addEventListener("keydown", function(e){
+  if(e.key==="Enter") doLogin();
+});
+</script>
+</body>
+</html>
