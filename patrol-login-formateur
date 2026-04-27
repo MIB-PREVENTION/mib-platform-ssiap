@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SSIAP Patrol — Accès Formateur</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="supabase.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:linear-gradient(135deg,#1e293b 0%,#334155 50%,#1e293b 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;}
+.card{background:#fff;border-radius:24px;padding:36px 32px;width:100%;max-width:440px;box-shadow:0 30px 80px rgba(0,0,0,.35);animation:fadeIn .3s ease-out;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.logo{width:68px;height:68px;border-radius:18px;background:linear-gradient(135deg,#f59e0b,#d97706);display:flex;align-items:center;justify-content:center;margin:0 auto 18px;box-shadow:0 8px 24px rgba(245,158,11,.4);}
+.step{display:none;}
+.step.active{display:block;}
+.input{width:100%;padding:12px 15px;border:1.5px solid #e2e8f0;border-radius:11px;font-size:.9rem;font-family:inherit;outline:none;transition:all .15s;background:#fff;color:#1e293b;}
+.input:focus{border-color:#f59e0b;box-shadow:0 0 0 3px rgba(245,158,11,.12);}
+.btn{width:100%;padding:13px;border-radius:11px;border:none;font-weight:700;font-size:.9rem;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit;}
+.btn:hover{transform:translateY(-1px);}
+.btn-primary{background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;box-shadow:0 4px 14px rgba(245,158,11,.35);}
+.btn-gray{background:#f8fafc;color:#64748b;border:1.5px solid #e2e8f0;}
+.err{background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:10px 14px;color:#dc2626;font-size:.82rem;font-weight:600;display:none;margin-bottom:12px;}
+.session-card{width:100%;padding:16px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:14px;cursor:pointer;transition:all .18s;text-align:left;font-family:inherit;margin-bottom:10px;display:flex;align-items:center;gap:14px;}
+.session-card:hover{background:#fffbeb;border-color:#f59e0b;box-shadow:0 4px 14px rgba(245,158,11,.15);}
+.session-card:active{transform:scale(.98);}
+.sess-icon{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#f59e0b,#d97706);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1rem;color:#fff;}
+.badge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:.67rem;font-weight:700;}
+.b-blue{background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;}
+.b-green{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;}
+.b-orange{background:#fff7ed;color:#ea580c;border:1px solid #fed7aa;}
+.b-purple{background:#f5f3ff;color:#7c3aed;border:1px solid #ddd6fe;}
+.b-gray{background:#f8fafc;color:#64748b;border:1px solid #e2e8f0;}
+.spin{width:18px;height:18px;border:2.5px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .6s linear infinite;display:inline-block;}
+@keyframes sp{to{transform:rotate(360deg)}}
+.label{font-size:.73rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px;}
+</style>
+</head>
+<body>
+<div class="card">
+
+  <!-- LOGO -->
+  <div class="logo"><i class="fas fa-shield-alt" style="font-size:1.4rem;"></i></div>
+  <h1 style="text-align:center;font-size:1.35rem;font-weight:800;color:#1e293b;margin-bottom:4px;">SSIAP Patrol</h1>
+  <p style="text-align:center;color:#94a3b8;font-size:.83rem;margin-bottom:24px;" id="subtitle">Acces Formateur</p>
+
+  <!-- ETAPE 1 : LOGIN FORMATEUR -->
+  <div id="step-login" class="step active">
+    <div class="err" id="err-login"></div>
+    <div style="display:flex;flex-direction:column;gap:13px;">
+      <div>
+        <label class="label">Formateur</label>
+        <select id="sel-formateur" class="input">
+          <option value="">Chargement...</option>
+        </select>
+      </div>
+      <div>
+        <label class="label">Code PIN</label>
+        <input type="password" id="inp-pin" class="input" placeholder="......" maxlength="6" inputmode="numeric">
+      </div>
+      <button class="btn btn-primary" id="btn-login" onclick="doLogin()">
+        <i class="fas fa-sign-in-alt"></i> Se connecter
+      </button>
+      <button class="btn btn-gray" onclick="window.history.back()">
+        <i class="fas fa-arrow-left"></i> Retour
+      </button>
+    </div>
+  </div>
+
+  <!-- ETAPE 2 : CHOIX DE SESSION -->
+  <div id="step-sessions" class="step">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid #f1f5f9;">
+      <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#f59e0b,#d97706);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:.85rem;flex-shrink:0;" id="formateur-initiales">FM</div>
+      <div>
+        <div style="font-weight:800;font-size:.9rem;" id="formateur-nom">Formateur</div>
+        <div style="font-size:.72rem;color:#94a3b8;">Selectionnez votre session</div>
+      </div>
+    </div>
+    <div id="sessions-list"></div>
+    <button class="btn btn-gray" style="margin-top:6px;" onclick="retourLogin()">
+      <i class="fas fa-arrow-left"></i> Changer de formateur
+    </button>
+  </div>
+
+</div>
+
+<script>
+var sb = window.supabase;
+var CENTER_ID = null;
+var currentFormateur = null;
+
+window.addEventListener("DOMContentLoaded", async function() {
+  var params = new URLSearchParams(window.location.search);
+  CENTER_ID = params.get("center");
+
+  if (!CENTER_ID) {
+    document.getElementById("subtitle").textContent = "Lien invalide";
+    showErr("err-login", "Utilisez le lien fourni par votre centre.");
+    return;
+  }
+
+  // Charger les formateurs du centre
+  try {
+    var cr = await sb.from("centers").select("nom").eq("id", CENTER_ID).single();
+    if (cr.data) document.getElementById("subtitle").textContent = cr.data.nom;
+
+    var fr = await sb.from("formateurs").select("id,nom,prenom,pin_hash,pin_clair").eq("center_id", CENTER_ID).eq("actif", true).order("nom");
+    var formateurs = fr.data || [];
+
+    var sel = document.getElementById("sel-formateur");
+    sel.innerHTML = "<option value=\"\">Selectionner un formateur...</option>";
+    formateurs.forEach(function(f) {
+      var o = document.createElement("option");
+      o.value = f.id;
+      o.textContent = f.prenom + " " + f.nom;
+      o.dataset.pinHash  = f.pin_hash  || "";
+      o.dataset.pinClair = f.pin_clair || "";
+      o.dataset.prenom   = f.prenom;
+      o.dataset.nom      = f.nom;
+      sel.appendChild(o);
+    });
+  } catch(e) {
+    showErr("err-login", "Erreur de chargement.");
+  }
+});
+
+async function doLogin() {
+  hideErr("err-login");
+  var sel    = document.getElementById("sel-formateur");
+  var pin    = document.getElementById("inp-pin").value.trim();
+  var opt    = sel.options[sel.selectedIndex];
+  var fid    = sel.value;
+
+  if (!fid)  { showErr("err-login", "Selectionnez un formateur."); return; }
+  if (!pin)  { showErr("err-login", "Entrez votre code PIN."); return; }
+
+  var btn = document.getElementById("btn-login");
+  btn.innerHTML = "<span class=\"spin\"></span>";
+  btn.disabled = true;
+
+  // Verifier PIN
+  var ok = false;
+  try {
+    var pinHash  = opt.dataset.pinHash;
+    var pinClair = opt.dataset.pinClair;
+    if (pinHash) {
+      var h = await UTILS.hash(pin);
+      ok = (h === pinHash);
+    }
+    if (!ok && pinClair) ok = (pin === pinClair);
+  } catch(e) { console.error(e); }
+
+  if (!ok) {
+    showErr("err-login", "Code PIN incorrect.");
+    btn.innerHTML = "<i class=\"fas fa-sign-in-alt\"></i> Se connecter";
+    btn.disabled = false;
+    return;
+  }
+
+  // Login OK — charger les sessions du formateur
+  currentFormateur = { id: fid, prenom: opt.dataset.prenom, nom: opt.dataset.nom };
+
+  var initiales = (opt.dataset.prenom[0] || "") + (opt.dataset.nom[0] || "");
+  document.getElementById("formateur-initiales").textContent = initiales.toUpperCase();
+  document.getElementById("formateur-nom").textContent = opt.dataset.prenom + " " + opt.dataset.nom;
+
+  try {
+    var sr = await sb.from("sessions_formation")
+      .select("id, type_formation, niveau, date_debut, date_fin, statut")
+      .eq("center_id", CENTER_ID)
+      .eq("formateur_id", fid)
+      .in("statut", ["planifiee", "en_cours"])
+      .order("date_debut", { ascending: false });
+
+    var sessions = sr.data || [];
+    renderSessions(sessions);
+    showStep("step-sessions");
+  } catch(e) {
+    showErr("err-login", "Erreur chargement sessions.");
+  }
+
+  btn.innerHTML = "<i class=\"fas fa-sign-in-alt\"></i> Se connecter";
+  btn.disabled = false;
+}
+
+function renderSessions(sessions) {
+  var el = document.getElementById("sessions-list");
+
+  if (!sessions.length) {
+    el.innerHTML = "<div style=\"text-align:center;padding:32px 20px;color:#94a3b8;\">"
+      + "<div style=\"font-size:2rem;margin-bottom:10px;\">📋</div>"
+      + "<div style=\"font-weight:700;margin-bottom:4px;\">Aucune session en cours</div>"
+      + "<div style=\"font-size:.82rem;\">Creez une session depuis le dashboard formateur.</div>"
+      + "</div>";
+    return;
+  }
+
+  var niveauBadge = { SSIAP1:"b-blue", SSIAP2:"b-orange", SSIAP3:"b-purple" };
+  var typeBadge   = { INI:"b-green", REC:"b-orange", RAN:"b-purple" };
+  var typeLabel   = { INI:"Initial", REC:"Recyclage", RAN:"Remise a niveau" };
+
+  el.innerHTML = sessions.map(function(s) {
+    var dateCode = s.date_debut
+      ? "." + s.date_debut.slice(8,10) + s.date_debut.slice(5,7) + s.date_debut.slice(2,4)
+      : "";
+    var titre = s.type_formation + "_" + s.niveau + dateCode;
+    var nbc = niveauBadge[s.niveau] || "b-gray";
+    var tbc = typeBadge[s.type_formation]  || "b-gray";
+    var tbl = typeLabel[s.type_formation]  || s.type_formation;
+    var dateStr = s.date_debut ? new Date(s.date_debut).toLocaleDateString("fr-FR",{day:"2-digit",month:"short",year:"numeric"}) : "";
+
+    return "<button class=\"session-card\" onclick=\"choisirSession('" + s.id + "')\">"
+      + "<div class=\"sess-icon\"><i class=\"fas fa-clipboard-list\"></i></div>"
+      + "<div style=\"flex:1;\">"
+      + "<div style=\"font-weight:800;font-size:.88rem;color:#1e293b;margin-bottom:5px;\">" + titre + "</div>"
+      + "<div style=\"display:flex;gap:5px;flex-wrap:wrap;\">"
+      + "<span class=\"badge " + tbc + "\">" + tbl + "</span>"
+      + "<span class=\"badge " + nbc + "\">" + s.niveau + "</span>"
+      + (dateStr ? "<span class=\"badge b-gray\">" + dateStr + "</span>" : "")
+      + "</div></div>"
+      + "<i class=\"fas fa-chevron-right\" style=\"color:#e2e8f0;flex-shrink:0;\"></i>"
+      + "</button>";
+  }).join("");
+}
+
+function choisirSession(sessionId) {
+  // Stocker le formateur dans sessionStorage pour patrol-admin
+  var patrolSession = {
+    centerId:   CENTER_ID,
+    sessionId:  sessionId,
+    agentId:    currentFormateur.id,
+    nom:        currentFormateur.nom,
+    prenom:     currentFormateur.prenom,
+    qualification: "SSIAP 3",
+    type:       "formateur",
+    ts:         Date.now()
+  };
+  sessionStorage.setItem("patrol_session", JSON.stringify(patrolSession));
+
+  // Ouvrir patrol-admin directement (formateur = admin)
+  var base = window.location.href.replace(/patrol-login-formateur\.html.*/, "");
+  window.location.href = base + "patrol-admin.html?center=" + CENTER_ID + "&session=" + sessionId + "&autologin=1&fid=" + currentFormateur.id + "&fnom=" + encodeURIComponent(currentFormateur.nom) + "&fprenom=" + encodeURIComponent(currentFormateur.prenom);
+}
+
+function retourLogin() {
+  currentFormateur = null;
+  document.getElementById("inp-pin").value = "";
+  hideErr("err-login");
+  showStep("step-login");
+}
+
+function showStep(id) {
+  document.getElementById("step-login").classList.remove("active");
+  document.getElementById("step-sessions").classList.remove("active");
+  document.getElementById(id).classList.add("active");
+}
+
+function showErr(id, msg) {
+  var el = document.getElementById(id);
+  el.textContent = msg; el.style.display = "block";
+}
+function hideErr(id) {
+  document.getElementById(id).style.display = "none";
+}
+
+document.addEventListener("keydown", function(e) {
+  if (e.key === "Enter") {
+    if (document.getElementById("step-login").classList.contains("active")) doLogin();
+  }
+});
+</script>
+</body>
+</html>
