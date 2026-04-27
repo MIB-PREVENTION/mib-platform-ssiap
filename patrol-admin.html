@@ -389,13 +389,13 @@ window.addEventListener("DOMContentLoaded", async function() {
   // CAS 2 : session stockee dans sessionStorage
   PATROL_SESSION = JSON.parse(sessionStorage.getItem("patrol_session") || "null");
   if (!PATROL_SESSION || !PATROL_SESSION.centerId || (Date.now() - (PATROL_SESSION.ts||0)) > 86400000) {
-    window.location.href = "patrol_login.html" + window.location.search;
+    window.location.href = "patrol-login.html" + window.location.search;
     return;
   }
 
   // Verifier qualification
   if (PATROL_SESSION.qualification === "SSIAP 1") {
-    window.location.href = "patrol_rondier.html";
+    window.location.href = "patrol-rondier.html";
     return;
   }
 
@@ -468,7 +468,7 @@ function initUI() {
   // QR code acces rondier
   setTimeout(function() {
     var base = window.location.href.replace(/patrol-admin\.html.*/, "");
-    var rondierUrl = base + "patrol_login.html?center=" + PATROL_SESSION.centerId + (PATROL_SESSION.sessionId ? "&session="+PATROL_SESSION.sessionId : "");
+    var rondierUrl = base + "patrol-login.html?center=" + PATROL_SESSION.centerId + (PATROL_SESSION.sessionId ? "&session="+PATROL_SESSION.sessionId : "");
     window._rondierUrl = rondierUrl;
     var qrDiv = document.getElementById("qr-rondier");
     if (qrDiv && typeof QRCode !== "undefined") {
@@ -872,7 +872,7 @@ function showModalMsg(elId, msg, type) { var el=document.getElementById(elId); e
 
 function logout() {
   sessionStorage.removeItem("patrol_session");
-  window.location.href = "patrol_login.html?center=" + PATROL_SESSION.centerId;
+  window.location.href = "patrol-login.html?center=" + PATROL_SESSION.centerId;
 }
 
 function copyLink() {
