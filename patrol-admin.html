@@ -357,7 +357,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;color:#1e293b
 var sb = window.supabase;
 var PATROL_SESSION = null;
 var CENTER = null;
-var DB = { agents:[], materiels:[], prisesPoste:[], rondes:[], evenements:[], mainCourante:[], consignes:[] };
+var PTRDB = { agents:[], materiels:[], prisesPoste:[], rondes:[], evenements:[], mainCourante:[], consignes:[] };
 var configEtab = { nom:"Etablissement", batiments:[] };
 var typesRondes = ["Ronde de securite","Ronde Extincteurs","Ronde BAES","Ouverture","Fermeture"];
 var PAGES = ["dashboard","priseposte","rondes","mainCourante","evenements","materiels","consignes","agents","admin"];
@@ -413,13 +413,13 @@ async function chargerDonnees() {
   else q = q.is("session_id", null);
   var {data} = await q.maybeSingle();
   if (data) {
-    if (data.agents)        DB.agents        = data.agents;
-    if (data.materiels)     DB.materiels     = data.materiels;
-    if (data.prises_poste)  DB.prisesPoste   = data.prises_poste;
-    if (data.rondes)        DB.rondes        = data.rondes;
-    if (data.evenements)    DB.evenements    = data.evenements;
-    if (data.main_courante) DB.mainCourante  = data.main_courante;
-    if (data.consignes)     DB.consignes     = data.consignes;
+    if (data.agents)        PTRDB.agents        = data.agents;
+    if (data.materiels)     PTRDB.materiels     = data.materiels;
+    if (data.prises_poste)  PTRDB.prisesPoste   = data.prises_poste;
+    if (data.rondes)        PTRDB.rondes        = data.rondes;
+    if (data.evenements)    PTRDB.evenements    = data.evenements;
+    if (data.main_courante) PTRDB.mainCourante  = data.main_courante;
+    if (data.consignes)     PTRDB.consignes     = data.consignes;
     if (data.config)        configEtab       = data.config;
     if (data.types_rondes)  typesRondes      = data.types_rondes;
   }
@@ -430,13 +430,13 @@ async function sauvegarder() {
     center_id:     PATROL_SESSION.centerId,
     session_id:    PATROL_SESSION.sessionId || null,
     formateur_id:  PATROL_SESSION.agentId || null,
-    agents:        DB.agents,
-    materiels:     DB.materiels,
-    prises_poste:  DB.prisesPoste,
-    rondes:        DB.rondes,
-    evenements:    DB.evenements,
-    main_courante: DB.mainCourante.slice(0,500),
-    consignes:     DB.consignes,
+    agents:        PTRDB.agents,
+    materiels:     PTRDB.materiels,
+    prises_poste:  PTRDB.prisesPoste,
+    rondes:        PTRDB.rondes,
+    evenements:    PTRDB.evenements,
+    main_courante: PTRDB.mainCourante.slice(0,500),
+    consignes:     PTRDB.consignes,
     config:        configEtab,
     types_rondes:  typesRondes,
     updated_at:    new Date().toISOString()
@@ -520,18 +520,18 @@ function renderCurrentPage() {
 
 // ═══ DASHBOARD ═══
 function getAgentsEnPoste() {
-  return DB.prisesPoste.filter(function(p){ return !p.finPoste; }).map(function(p){
-    var a = DB.agents.find(function(a){ return String(a.id)===String(p.agentId); });
+  return PTRDB.prisesPoste.filter(function(p){ return !p.finPoste; }).map(function(p){
+    var a = PTRDB.agents.find(function(a){ return String(a.id)===String(p.agentId); });
     return a ? Object.assign({},a,{prisePosteId:p.id,poste:p.poste,heureDebut:p.heureDebut}) : null;
   }).filter(Boolean);
 }
 
 function renderDashboard() {
   var enPoste = getAgentsEnPoste();
-  var rondesEnCours = DB.rondes.filter(function(r){ return !r.heureFin; });
-  var evtsActifs = DB.evenements.filter(function(e){ return e.statut !== "Termine"; });
+  var rondesEnCours = PTRDB.rondes.filter(function(r){ return !r.heureFin; });
+  var evtsActifs = PTRDB.evenements.filter(function(e){ return e.statut !== "Termine"; });
   var today = new Date().toDateString();
-  var actions = DB.mainCourante.filter(function(m){ return new Date(m.date).toDateString()===today; });
+  var actions = PTRDB.mainCourante.filter(function(m){ return new Date(m.date).toDateString()===today; });
 
   document.getElementById("kpi-poste").textContent    = enPoste.length;
   document.getElementById("kpi-rondes").textContent   = rondesEnCours.length;
@@ -555,7 +555,7 @@ function showModalPrisePoste() {
   var enPoste = new Set(getAgentsEnPoste().map(function(a){ return String(a.id); }));
   var sel = document.getElementById("pp-agent");
   sel.innerHTML = "<option value=\"\">Selectionner...</option>";
-  DB.agents.filter(function(a){ return a.actif && !enPoste.has(String(a.id)); }).forEach(function(a){
+  PTRDB.agents.filter(function(a){ return a.actif && !enPoste.has(String(a.id)); }).forEach(function(a){
     var o = document.createElement("option"); o.value=a.id; o.textContent=a.prenom+" "+a.nom+" - "+a.qualification; sel.appendChild(o);
   });
   document.getElementById("pp-msg").style.display="none";
@@ -566,8 +566,8 @@ async function savePrisePoste() {
   var agentId = document.getElementById("pp-agent").value;
   var poste   = document.getElementById("pp-poste").value;
   if (!agentId) { showModalMsg("pp-msg","Selectionnez un agent.","err"); return; }
-  DB.prisesPoste.push({ id:genId(), agentId:agentId, poste:poste, heureDebut:new Date().toISOString(), finPoste:null });
-  var agent = DB.agents.find(function(a){ return String(a.id)===String(agentId); });
+  PTRDB.prisesPoste.push({ id:genId(), agentId:agentId, poste:poste, heureDebut:new Date().toISOString(), finPoste:null });
+  var agent = PTRDB.agents.find(function(a){ return String(a.id)===String(agentId); });
   addMC("Prise de Poste", poste+" - "+(agent?agent.prenom+" "+agent.nom:""), agentId);
   await sauvegarder(); closeModal("modal-priseposte"); toast("Prise de poste enregistree","ok");
   renderDashboard(); renderPrisePoste();
@@ -588,10 +588,10 @@ function renderPrisePoste() {
 }
 
 async function finPoste(id) {
-  var pp = DB.prisesPoste.find(function(p){ return p.id===id; });
+  var pp = PTRDB.prisesPoste.find(function(p){ return p.id===id; });
   if (!pp) return;
   pp.finPoste = new Date().toISOString();
-  var agent = DB.agents.find(function(a){ return String(a.id)===String(pp.agentId); });
+  var agent = PTRDB.agents.find(function(a){ return String(a.id)===String(pp.agentId); });
   addMC("Fin de Poste", (agent?agent.prenom+" "+agent.nom:""), pp.agentId);
   await sauvegarder(); toast("Fin de poste enregistree","ok"); renderDashboard(); renderPrisePoste();
 }
@@ -600,10 +600,10 @@ async function finPoste(id) {
 function renderRondes() {
   var tbody = document.getElementById("tbl-rondes");
   if (!tbody) return;
-  var rondes = DB.rondes.slice().sort(function(a,b){ return new Date(b.heureDebut)-new Date(a.heureDebut); });
+  var rondes = PTRDB.rondes.slice().sort(function(a,b){ return new Date(b.heureDebut)-new Date(a.heureDebut); });
   if (!rondes.length) { tbody.innerHTML="<tr><td colspan=\"6\" style=\"text-align:center;color:#94a3b8;padding:24px;\">Aucune ronde</td></tr>"; return; }
   tbody.innerHTML = rondes.map(function(r){
-    var agent = DB.agents.find(function(a){ return String(a.id)===String(r.agentId); });
+    var agent = PTRDB.agents.find(function(a){ return String(a.id)===String(r.agentId); });
     var pts = (r.pointsControle||[]).filter(function(p){ return p.valide; }).length;
     var tot = (r.pointsControle||[]).length;
     var hasHS  = (r.anomalies||[]).some(function(a){ return a.horsService; });
@@ -624,8 +624,8 @@ function renderRondes() {
 function renderMainCourante() {
   var tbody = document.getElementById("tbl-main-courante");
   if (!tbody) return;
-  if (!DB.mainCourante.length) { tbody.innerHTML="<tr><td colspan=\"4\" style=\"text-align:center;color:#94a3b8;padding:24px;\">Aucune entree</td></tr>"; return; }
-  tbody.innerHTML = DB.mainCourante.slice(0,100).map(function(m){
+  if (!PTRDB.mainCourante.length) { tbody.innerHTML="<tr><td colspan=\"4\" style=\"text-align:center;color:#94a3b8;padding:24px;\">Aucune entree</td></tr>"; return; }
+  tbody.innerHTML = PTRDB.mainCourante.slice(0,100).map(function(m){
     return "<tr><td style=\"font-size:.78rem;white-space:nowrap;\">"+fmtDT(m.date)+"</td>"
       +"<td><span class=\"badge b-blue\" style=\"font-size:.64rem;\">"+m.type+"</span></td>"
       +"<td style=\"font-size:.82rem;\">"+esc(m.description)+"</td>"
@@ -646,7 +646,7 @@ async function saveEvenement() {
   var desc = document.getElementById("evt-desc").value.trim();
   if (!desc) { toast("Description requise.","err"); return; }
   var evt = { id:genId(), type:type, statut:"Debut", localisation:loc, description:desc, date:new Date().toISOString(), agentId:PATROL_SESSION.agentId, commentaire:"", compteRendu:"" };
-  DB.evenements.unshift(evt);
+  PTRDB.evenements.unshift(evt);
   addMC(type, "DEBUT: "+desc.substring(0,50), PATROL_SESSION.agentId);
   await sauvegarder(); closeModal("modal-evenement"); toast("Evenement cree !","ok"); renderEvenements();
 }
@@ -654,8 +654,8 @@ async function saveEvenement() {
 function renderEvenements() {
   var el = document.getElementById("body-evenements");
   if (!el) return;
-  if (!DB.evenements.length) { el.innerHTML="<div style=\"text-align:center;color:#94a3b8;padding:32px;\">Aucun evenement</div>"; return; }
-  el.innerHTML = DB.evenements.map(function(e){
+  if (!PTRDB.evenements.length) { el.innerHTML="<div style=\"text-align:center;color:#94a3b8;padding:32px;\">Aucun evenement</div>"; return; }
+  el.innerHTML = PTRDB.evenements.map(function(e){
     var col = e.statut==="Debut"?"b-red":e.statut==="En cours"?"b-orange":"b-green";
     return "<div class=\"card\" style=\"margin-bottom:10px;\">"
       +"<div style=\"display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;\">"
@@ -672,7 +672,7 @@ function showModalMateriel(id) {
   document.getElementById("mat-id").value = id || "";
   document.getElementById("modal-mat-title").textContent = id ? "Modifier Materiel" : "Nouveau Materiel";
   if (id) {
-    var m = DB.materiels.find(function(x){ return x.id===id; });
+    var m = PTRDB.materiels.find(function(x){ return x.id===id; });
     if (m) {
       document.getElementById("mat-nom").value = m.nom||"";
       document.getElementById("mat-type").value = m.type||"Extincteur";
@@ -693,12 +693,12 @@ async function saveMateriel() {
   if (!nom) { toast("Nom requis.","err"); return; }
   var existingId = document.getElementById("mat-id").value;
   if (existingId) {
-    var m = DB.materiels.find(function(x){ return String(x.id)===String(existingId); });
+    var m = PTRDB.materiels.find(function(x){ return String(x.id)===String(existingId); });
     if (m) { m.nom=nom; m.type=document.getElementById("mat-type").value; m.statut=document.getElementById("mat-statut").value; m.localisation=document.getElementById("mat-loc").value.trim(); m.codeQR=document.getElementById("mat-qr").value.trim(); }
   } else {
     var newId = genId();
     var qr = document.getElementById("mat-qr").value.trim() || "MAT-"+document.getElementById("mat-type").value.substring(0,3).toUpperCase()+"-"+String(newId).slice(-4);
-    DB.materiels.push({ id:newId, nom:nom, type:document.getElementById("mat-type").value, statut:document.getElementById("mat-statut").value, localisation:document.getElementById("mat-loc").value.trim(), codeQR:qr });
+    PTRDB.materiels.push({ id:newId, nom:nom, type:document.getElementById("mat-type").value, statut:document.getElementById("mat-statut").value, localisation:document.getElementById("mat-loc").value.trim(), codeQR:qr });
   }
   await sauvegarder(); closeModal("modal-materiel"); toast("Materiel enregistre !","ok"); renderMateriels();
 }
@@ -706,8 +706,8 @@ async function saveMateriel() {
 function renderMateriels() {
   var tbody = document.getElementById("tbl-materiels");
   if (!tbody) return;
-  if (!DB.materiels.length) { tbody.innerHTML="<tr><td colspan=\"5\" style=\"text-align:center;color:#94a3b8;padding:24px;\">Aucun materiel</td></tr>"; return; }
-  tbody.innerHTML = DB.materiels.map(function(m){
+  if (!PTRDB.materiels.length) { tbody.innerHTML="<tr><td colspan=\"5\" style=\"text-align:center;color:#94a3b8;padding:24px;\">Aucun materiel</td></tr>"; return; }
+  tbody.innerHTML = PTRDB.materiels.map(function(m){
     var sc = m.statut==="Operationnel"?"b-green":m.statut==="A verifier"?"b-orange":"b-red";
     return "<tr><td style=\"font-weight:600;\">"+esc(m.nom)+"</td>"
       +"<td style=\"font-size:.8rem;color:#64748b;\">"+m.type+"</td>"
@@ -728,14 +728,14 @@ async function saveConsigne() {
   var titre   = document.getElementById("cons-titre").value.trim();
   var contenu = document.getElementById("cons-contenu").value.trim();
   if (!titre || !contenu) { toast("Titre et contenu requis.","err"); return; }
-  DB.consignes.push({ id:genId(), titre:titre, niveau:document.getElementById("cons-niveau").value, priorite:document.getElementById("cons-prio").value, contenu:contenu, active:true, dateDebut:new Date().toISOString().split("T")[0], dateFin:null });
+  PTRDB.consignes.push({ id:genId(), titre:titre, niveau:document.getElementById("cons-niveau").value, priorite:document.getElementById("cons-prio").value, contenu:contenu, active:true, dateDebut:new Date().toISOString().split("T")[0], dateFin:null });
   await sauvegarder(); closeModal("modal-consigne"); toast("Consigne creee !","ok"); renderConsignes();
 }
 
 function renderConsignes() {
   var el = document.getElementById("body-consignes");
   if (!el) return;
-  var actives = DB.consignes.filter(function(c){ return c.active; });
+  var actives = PTRDB.consignes.filter(function(c){ return c.active; });
   if (!actives.length) { el.innerHTML="<div style=\"text-align:center;color:#94a3b8;padding:32px;\">Aucune consigne active</div>"; return; }
   el.innerHTML = actives.map(function(c){
     var prio = c.priorite==="Urgente"||c.priorite==="Haute"?"b-red":"b-blue";
@@ -750,7 +750,7 @@ function renderConsignes() {
 }
 
 async function supprimerConsigne(id) {
-  DB.consignes = DB.consignes.filter(function(c){ return c.id!==id; });
+  PTRDB.consignes = PTRDB.consignes.filter(function(c){ return c.id!==id; });
   await sauvegarder(); renderConsignes(); toast("Consigne supprimee","ok");
 }
 
@@ -766,7 +766,7 @@ async function saveAgent() {
   var pin    = document.getElementById("ag-pin").value;
   if (!prenom||!nom||pin.length!==6) { toast("Remplissez tous les champs (PIN 6 chiffres).","err"); return; }
   var pinHash = await UTILS.hash(pin);
-  DB.agents.push({ id:genId(), prenom:prenom, nom:nom, qualification:document.getElementById("ag-qualif").value, pinHash:pinHash, pinClair:pin, actif:true, type:"agent_secu", entreprise:CENTER?CENTER.nom:"" });
+  PTRDB.agents.push({ id:genId(), prenom:prenom, nom:nom, qualification:document.getElementById("ag-qualif").value, pinHash:pinHash, pinClair:pin, actif:true, type:"agent_secu", entreprise:CENTER?CENTER.nom:"" });
   await sauvegarder(); closeModal("modal-agent"); toast("Agent cree !","ok"); renderAgents();
 }
 
@@ -775,9 +775,9 @@ async function importerFormateurs() {
   var {data} = await sb.from("formateurs").select("id,nom,prenom,pin_hash,pin_clair,email,telephone").eq("center_id", PATROL_SESSION.centerId).eq("actif", true);
   var added = 0;
   for (var f of (data||[])) {
-    if (DB.agents.find(function(a){ return String(a.id)===String(f.id); })) continue;
+    if (PTRDB.agents.find(function(a){ return String(a.id)===String(f.id); })) continue;
     var pinHash = f.pin_hash || (f.pin_clair ? await UTILS.hash(f.pin_clair) : null);
-    DB.agents.push({ id:f.id, nom:f.nom, prenom:f.prenom, qualification:"SSIAP 2", entreprise:CENTER?CENTER.nom:"", email:f.email||"", telephone:f.telephone||"", pinHash:pinHash, pinClair:f.pin_clair||null, actif:true, type:"formateur" });
+    PTRDB.agents.push({ id:f.id, nom:f.nom, prenom:f.prenom, qualification:"SSIAP 2", entreprise:CENTER?CENTER.nom:"", email:f.email||"", telephone:f.telephone||"", pinHash:pinHash, pinClair:f.pin_clair||null, actif:true, type:"formateur" });
     added++;
   }
   if (added) { await sauvegarder(); toast(added+" formateur(s) importe(s) !","ok"); renderAgents(); }
@@ -795,11 +795,11 @@ async function importerStagiairesSession(sessionId) {
   var added = 0;
   for (var p of (parts||[])) {
     var s = p.stagiaires;
-    if (!s || DB.agents.find(function(a){ return String(a.id)===String(s.id); })) continue;
+    if (!s || PTRDB.agents.find(function(a){ return String(a.id)===String(s.id); })) continue;
     var pinHash = s.pin_hash || (s.pin_clair ? await UTILS.hash(s.pin_clair) : null);
     var niv = s.niveau||"SSIAP1";
     var qualif = niv==="SSIAP3"?"SSIAP 3":niv==="SSIAP2"?"SSIAP 2":"SSIAP 1";
-    DB.agents.push({ id:s.id, nom:s.nom, prenom:s.prenom, qualification:qualif, pinHash:pinHash, pinClair:s.pin_clair||null, actif:true, type:"stagiaire", entreprise:CENTER?CENTER.nom:"" });
+    PTRDB.agents.push({ id:s.id, nom:s.nom, prenom:s.prenom, qualification:qualif, pinHash:pinHash, pinClair:s.pin_clair||null, actif:true, type:"stagiaire", entreprise:CENTER?CENTER.nom:"" });
     added++;
   }
   if (added) { await sauvegarder(); toast(added+" stagiaire(s) importe(s) !","ok"); }
@@ -808,8 +808,8 @@ async function importerStagiairesSession(sessionId) {
 function renderAgents() {
   var tbody = document.getElementById("tbl-agents");
   if (!tbody) return;
-  if (!DB.agents.length) { tbody.innerHTML="<tr><td colspan=\"5\" style=\"text-align:center;color:#94a3b8;padding:24px;\">Aucun agent</td></tr>"; return; }
-  tbody.innerHTML = DB.agents.map(function(a){
+  if (!PTRDB.agents.length) { tbody.innerHTML="<tr><td colspan=\"5\" style=\"text-align:center;color:#94a3b8;padding:24px;\">Aucun agent</td></tr>"; return; }
+  tbody.innerHTML = PTRDB.agents.map(function(a){
     var qcls = a.qualification==="SSIAP 3"?"b-purple":a.qualification==="SSIAP 2"?"b-blue":"b-green";
     var tcls = a.type==="formateur"?"b-orange":a.type==="stagiaire"?"b-blue":"b-gray";
     return "<tr><td><div style=\"font-weight:700;font-size:.83rem;\">"+esc(a.prenom)+" "+esc(a.nom)+"</div><div style=\"font-size:.72rem;color:#94a3b8;\">"+esc(a.email||"")+"</div></td>"
@@ -821,7 +821,7 @@ function renderAgents() {
 }
 
 async function toggleAgent(id, actif) {
-  var a = DB.agents.find(function(x){ return String(x.id)===String(id); });
+  var a = PTRDB.agents.find(function(x){ return String(x.id)===String(id); });
   if (a) { a.actif = !actif; await sauvegarder(); renderAgents(); }
 }
 
@@ -830,21 +830,21 @@ function renderAdmin() {
   var el = document.getElementById("admin-stats");
   if (!el) return;
   el.innerHTML = "<div style=\"display:grid;grid-template-columns:1fr 1fr;gap:10px;\">"
-    +"<div class=\"kpi\"><div style=\"font-size:1.4rem;font-weight:800;color:#6366f1;\">"+DB.agents.length+"</div><div style=\"font-size:.72rem;color:#94a3b8;\">Agents</div></div>"
-    +"<div class=\"kpi\"><div style=\"font-size:1.4rem;font-weight:800;color:#10b981;\">"+DB.materiels.length+"</div><div style=\"font-size:.72rem;color:#94a3b8;\">Materiels</div></div>"
-    +"<div class=\"kpi\"><div style=\"font-size:1.4rem;font-weight:800;color:#8b5cf6;\">"+DB.rondes.length+"</div><div style=\"font-size:.72rem;color:#94a3b8;\">Rondes</div></div>"
-    +"<div class=\"kpi\"><div style=\"font-size:1.4rem;font-weight:800;color:#f59e0b;\">"+DB.mainCourante.length+"</div><div style=\"font-size:.72rem;color:#94a3b8;\">Main courante</div></div>"
+    +"<div class=\"kpi\"><div style=\"font-size:1.4rem;font-weight:800;color:#6366f1;\">"+PTRDB.agents.length+"</div><div style=\"font-size:.72rem;color:#94a3b8;\">Agents</div></div>"
+    +"<div class=\"kpi\"><div style=\"font-size:1.4rem;font-weight:800;color:#10b981;\">"+PTRDB.materiels.length+"</div><div style=\"font-size:.72rem;color:#94a3b8;\">Materiels</div></div>"
+    +"<div class=\"kpi\"><div style=\"font-size:1.4rem;font-weight:800;color:#8b5cf6;\">"+PTRDB.rondes.length+"</div><div style=\"font-size:.72rem;color:#94a3b8;\">Rondes</div></div>"
+    +"<div class=\"kpi\"><div style=\"font-size:1.4rem;font-weight:800;color:#f59e0b;\">"+PTRDB.mainCourante.length+"</div><div style=\"font-size:.72rem;color:#94a3b8;\">Main courante</div></div>"
     +"</div>";
 }
 
 async function reinitialiser() {
   if (!confirm("Supprimer toutes les rondes, evenements et main courante ?")) return;
-  DB.prisesPoste=[]; DB.rondes=[]; DB.evenements=[]; DB.mainCourante=[];
+  PTRDB.prisesPoste=[]; PTRDB.rondes=[]; PTRDB.evenements=[]; PTRDB.mainCourante=[];
   await sauvegarder(); toast("Donnees reinitialises","ok"); renderCurrentPage();
 }
 
 function exporterDonnees() {
-  var data = { version:"3.1", date:new Date().toISOString(), centre:CENTER?CENTER.nom:"", ...DB };
+  var data = { version:"3.1", date:new Date().toISOString(), centre:CENTER?CENTER.nom:"", ...PTRDB };
   var blob = new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   var a = document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="patrol-"+(CENTER?CENTER.nom.replace(/\s/g,"-"):"")+"-"+new Date().toISOString().split("T")[0]+".json"; a.click();
 }
@@ -857,8 +857,8 @@ function fmtTime(d) { return d?new Date(d).toLocaleTimeString("fr-FR",{hour:"2-d
 function fmtDT(d)   { return d?fmtDate(d)+" "+fmtTime(d):"-"; }
 
 function addMC(type, description, agentId) {
-  var agent = DB.agents.find(function(a){ return String(a.id)===String(agentId); });
-  DB.mainCourante.unshift({ id:genId(), date:new Date().toISOString(), type:type, description:description, agent:agent?agent.prenom+" "+agent.nom:"Systeme", agentId:agentId });
+  var agent = PTRDB.agents.find(function(a){ return String(a.id)===String(agentId); });
+  PTRDB.mainCourante.unshift({ id:genId(), date:new Date().toISOString(), type:type, description:description, agent:agent?agent.prenom+" "+agent.nom:"Systeme", agentId:agentId });
 }
 
 function toast(msg, cls) {
