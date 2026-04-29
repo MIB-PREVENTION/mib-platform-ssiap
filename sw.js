@@ -3,16 +3,17 @@
  * Permet le fonctionnement hors-ligne et la mise en cache
  */
 
-const CACHE_NAME = 'ssi-formation-v1.0.0';
+const CACHE_NAME = 'ssi-formation-v1.1.0';
 const CACHE_URLS = [
   './',
   './index.html',
   './manifest.json',
+  './config.js',
+  './supabase.js',
   './icons/icon-192x192.png',
   './icons/icon-512x512.png',
   'https://cdn.tailwindcss.com',
-  'https://unpkg.com/firebase@10.7.1/firebase-app-compat.js',
-  'https://unpkg.com/firebase@10.7.1/firebase-database-compat.js'
+  'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js'
 ];
 
 // Installation du Service Worker
@@ -63,9 +64,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Ignore les requêtes Firebase (besoin du réseau)
-  if (event.request.url.includes('firebaseio.com') ||
-      event.request.url.includes('googleapis.com')) {
+  // Ignore les appels API Supabase (besoin du réseau, données dynamiques)
+  if (event.request.url.includes('.supabase.co/rest/') ||
+      event.request.url.includes('.supabase.co/auth/') ||
+      event.request.url.includes('.supabase.co/realtime/') ||
+      event.request.url.includes('.supabase.co/functions/')) {
     return;
   }
 
