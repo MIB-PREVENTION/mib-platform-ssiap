@@ -1,14 +1,16 @@
 // ============================================================
-// supabase.js — Configuration partagée MIB Prévention Platform
-// À inclure en premier dans chaque page HTML :
-// <script src="supabase.js"></script>
+// supabase.js — Helpers Supabase MIB Prévention Platform
+// Ordre d'inclusion dans chaque page HTML :
+//   1. <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+//   2. <script src="config.js"></script>
+//   3. <script src="supabase.js"></script>
 // ============================================================
 
-// SDK Supabase (à inclure avant ce fichier dans le HTML) :
-// <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-
-const SUPABASE_URL = 'https://ozfkmlokovxigfnwjeuk.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im96ZmttbG9rb3Z4aWdmbndqZXVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODUzODUsImV4cCI6MjA5MTE2MTM4NX0.zu5V20Nz7vO3dSYhOtr7mqS7VAMaUDVS2Ibs01xS9Fk';
+if (!window.MIB_CONFIG) {
+  throw new Error('[MIB] config.js doit être chargé avant supabase.js');
+}
+const SUPABASE_URL = window.MIB_CONFIG.SUPABASE_URL;
+const SUPABASE_ANON_KEY = window.MIB_CONFIG.SUPABASE_ANON_KEY;
 
 // Client Supabase global — utilisé partout
 // On réaffecte window.supabase pour éviter le conflit CDN
