@@ -1,21 +1,18 @@
 // ============================================================
 // login-formateur.js — Logique de connexion formateur (PIN 6 chiffres)
-// Extrait de login-formateur.html.
+// Utilise la RPC sécurisée `auth_formateur` (pin_hash jamais exposé côté anon).
 // Dépend de : config.js, supabase.js (SESSION, UTILS, supabase global).
 // ============================================================
 
 // ── ÉTAT ──
 let pin = [];
 let pinHash = null;
-let foundFormateurs = []; // formateurs trouvés avec ce PIN
+let foundFormateurs = [];
 let selectedFormateur = null;
 
 // ── INIT ──
 window.addEventListener('DOMContentLoaded', () => {
-  // Vider la session — login obligatoire
   SESSION.clear('formateur');
-
-  // Pré-remplir centre si QR code
   const p = new URLSearchParams(window.location.search);
   window.preCentreId = p.get('center') || null;
 });
@@ -37,14 +34,13 @@ function updatePin() {
   document.getElementById('key-ok').disabled = pin.length !== 6;
 }
 
-// Clavier physique
 document.addEventListener('keydown', e => {
   if (e.key >= '0' && e.key <= '9') kp(e.key);
   else if (e.key === 'Backspace') kd();
   else if (e.key === 'Enter' && pin.length === 6) verifyPin();
 });
 
-// ── VÉRIFICATION PIN ──
+// ── VÉRIFICATION PIN (via RPC sécurisée) ──
 async function verifyPin() {
   if (pin.length !== 6) return;
   const errEl = document.getElementById('pin-err');
@@ -55,16 +51,12 @@ async function verifyPin() {
   try {
     pinHash = await UTILS.hash(pin.join(''));
 
-    let query = supabase.from('formateurs')
-      .select('*, centers(id, nom, plan, module_auto_entrainement, module_quiz_salle, module_challenge_cup, module_ssi_supervise, module_ssi_autoformation)')
-      .eq('pin_hash', pinHash)
-      .eq('actif', true);
+    // RPC sécurisée — le pin_hash n'est jamais exposé en SELECT côté anon.
+    const { data, error } = await supabase.rpc('auth_formateur', {
+      p_pin_hash: pinHash,
+      p_center_id: window.preCentreId || null
+    });
 
-    if (window.preCentreId) {
-      query = query.eq('center_id', window.preCentreId);
-    }
-
-    const { data, error } = await query;
     if (error || !data || !data.length) throw new Error('notfound');
 
     foundFormateurs = data;
@@ -99,13 +91,12 @@ function showCentreStep(formateurs) {
     <div class="centre-item" id="centre-item-${i}" onclick="selectCentre(${i})">
       <div class="centre-icon">🏢</div>
       <div>
-        <div style="font-weight:700;font-size:.9rem;color:#111827;">${f.centers?.nom || '—'}</div>
-        <div style="font-size:.72rem;color:#6b7280;margin-top:2px;">Plan ${f.centers?.plan || '—'} · ${f.role}</div>
+        <div style="font-weight:700;font-size:.9rem;color:#111827;">${f.center_nom || '—'}</div>
+        <div style="font-size:.72rem;color:#6b7280;margin-top:2px;">Plan ${f.center_plan || '—'} · ${f.role}</div>
       </div>
     </div>`).join('');
 }
 
-// ── SÉLECTIONNER CENTRE ──
 function selectCentre(idx) {
   selectedFormateur = foundFormateurs[idx];
   document.querySelectorAll('.centre-item').forEach((el, i) => {
@@ -114,7 +105,6 @@ function selectCentre(idx) {
   document.getElementById('btn-confirm').disabled = false;
 }
 
-// ── CONFIRMER ──
 async function confirmCentre() {
   if (!selectedFormateur) return;
   const btnEl = document.getElementById('btn-confirm');
@@ -127,17 +117,16 @@ async function confirmCentre() {
 // ── LOGIN FINAL ──
 function doLogin(formateur) {
   SESSION.save('formateur', {
-    formateur_id: formateur.id,
-    formateur_nom: `${formateur.prenom} ${formateur.nom}`,
-    center_id: formateur.center_id,
-    center_nom: formateur.centers?.nom || '',
+    formateur_id:   formateur.formateur_id,
+    formateur_nom:  `${formateur.prenom} ${formateur.nom}`,
+    center_id:      formateur.center_id,
+    center_nom:     formateur.center_nom || '',
     role_formateur: formateur.role,
-    modules: formateur.centers || {}
+    modules:        formateur.modules || {}
   });
   window.location.href = 'formateur.html';
 }
 
-// ── RETOUR ──
 function backToPin() {
   document.getElementById('step-centre').classList.add('hidden');
   document.getElementById('step-pin').classList.remove('hidden');
